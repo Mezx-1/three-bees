@@ -148,11 +148,13 @@ def test_export_and_settings(c):
 
 
 def test_live_agent_monitoring(c):
+    code = c.post("/api/pairing-codes", json={"purpose": "agent"}, headers=ANALYST).json()["code"]
     r = c.post("/api/agent/register", json={"hostname": "TEST-LAPTOP", "os": "Windows 11", "owner_email": "tester@alnoorlogistics.ae",
-                                            "consent": True, "system_info": {}}, headers=ADMIN)
+                                            "consent": True, "system_info": {}, "pairing_code": code})
     assert r.status_code == 200, r.text
     dev, tok = r.json()["device_id"], {"X-Device-Token": r.json()["token"]}
-    assert c.post("/api/agent/register", json={"hostname": "X", "consent": False}, headers=ADMIN).status_code == 422
+    assert c.post("/api/agent/register", json={"hostname": "X", "consent": False, "pairing_code": "AAAAAAAA"}).status_code == 422
+    assert c.post("/api/agent/register", json={"hostname": "X", "consent": True, "pairing_code": code}).status_code == 401, "codes are single-use"
     c.post("/api/blocklist", json={"type": "ip", "value": "198.51.100.66", "reason": "test"}, headers=ANALYST)
     batch = {"connections": [
         {"process_name": "chrome.exe", "pid": 100, "remote_ip": "142.250.180.14", "remote_port": 443, "direction": "outbound", "status": "ESTABLISHED"},
@@ -253,15 +255,26 @@ def test_mobile_protection(c):
     assert blocked["level"] == "danger" and blocked["label"]
     d = c.get("/api/mobile/call-directory", headers=EMPLOYEE).json()
     assert any(e["number"] == "+447399367678" and e["block"] for e in d["entries"])
+    assert any(e["number"] == "+491775111338" and not e["block"] for e in d["entries"]), "numbers from high-risk SMS must be warned about"
     assert c.get("/api/mobile/caller-check?number=123").status_code == 401
 
 
 def test_phone_pairing_and_filter_config(c):
-    assert c.post("/api/mobile/register", json={"device_name": "iPhone", "consent": False}, headers=EMPLOYEE).status_code == 422
-    r = c.post("/api/mobile/register", json={"device_name": "Sara's iPhone", "consent": True}, headers=EMPLOYEE).json()
+    assert c.post("/api/pairing-codes", json={"purpose": "phone"}, headers=EMPLOYEE).status_code == 403
+    code = c.post("/api/pairing-codes", json={"purpose": "phone"}, headers=ANALYST).json()["code"]
+    assert c.post("/api/mobile/register", json={"pairing_code": code, "device_name": "iPhone", "consent": False}).status_code == 422
+    assert c.post("/api/mobile/register", json={"pairing_code": "WRONG123", "device_name": "iPhone", "consent": True}).status_code == 401
+    r = c.post("/api/mobile/register", json={"pairing_code": code.lower(), "device_name": "Sara's iPhone", "consent": True}).json()
     tok = {"X-Device-Token": r["token"]}
     c.post("/api/blocklist", json={"type": "domain", "value": "ticka.top"}, headers=ANALYST)
     cfg = c.get("/api/mobile/filter-config", headers=tok).json()
     assert "ticka.top" in cfg["blocked_domains"] and "top" in cfg["suspicious_tlds"] and "salik" in cfg["official_domains"]
     chk = c.get("/api/mobile/caller-check?number=%2B8821234567", headers=tok)
     assert chk.status_code == 200
+    assert c.delete("/api/mobile/device", headers=tok).json()["ok"]
+    assert c.get("/api/mobile/filter-config", headers=tok).status_code == 401, "deleted phone loses access"
+
+
+def test_privacy_page_public(c):
+    r = c.get("/privacy")
+    assert r.status_code == 200 and "سياسة الخصوصية" in r.text and "Privacy Policy" in r.text

@@ -51,6 +51,10 @@ class Settings:
 
     rate_limit_per_minute: int = int(os.getenv("WOLVE_RATE_LIMIT_PER_MINUTE", "60"))
 
+    # Authentication. Header-based identity (X-WOLVE-User) is a development/test convenience only.
+    dev_header_auth: bool = _bool("WOLVE_DEV_HEADER_AUTH", False)
+    session_hours: int = int(os.getenv("WOLVE_SESSION_HOURS", "12"))
+
 
 settings = Settings()
 settings.upload_dir.mkdir(parents=True, exist_ok=True)

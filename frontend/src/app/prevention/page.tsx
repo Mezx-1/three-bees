@@ -81,8 +81,8 @@ export default function Prevention() {
         <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
           <Card title={tr("Add to blocklist")}>
             <div className="space-y-3">
-              <div><Label htmlFor="bt">{tr("Type")}</Label><select id="bt" className={inputCls} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>{["domain", "url", "ip", "hash"].map((x) => <option key={x}>{x}</option>)}</select></div>
-              <div><Label htmlFor="bv">{tr("Value")}</Label><input id="bv" dir="ltr" className={inputCls + " font-mono"} value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={form.type === "hash" ? "SHA-256" : form.type === "ip" ? "203.0.113.45" : "phish-example.top"} /></div>
+              <div><Label htmlFor="bt">{tr("Type")}</Label><select id="bt" className={inputCls} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>{["domain", "url", "ip", "hash", "phone"].map((x) => <option key={x} value={x}>{tr(x)}</option>)}</select></div>
+              <div><Label htmlFor="bv">{tr("Value")}</Label><input id="bv" dir="ltr" className={inputCls + " font-mono"} value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={form.type === "hash" ? "SHA-256" : form.type === "ip" ? "203.0.113.45" : form.type === "phone" ? "+971 50 123 4567" : "phish-example.top"} /></div>
               <div><Label htmlFor="br">{tr("Reason")}</Label><input id="br" className={inputCls} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} maxLength={500} /></div>
               <Button variant="danger" loading={busy === `b-${form.value}`} onClick={() => { if (form.value.trim().length < 3) return toast("err", "Enter a value."); block(form.type, form.value.trim(), form.reason); setForm({ ...form, value: "", reason: "" }); }}><Ban className="h-4 w-4" /> {tr("Block")}</Button>
             </div>

@@ -11,6 +11,8 @@ WOLVE AI is a working cybersecurity platform that analyses emails, messages, lin
 .\start.ps1
 ```
 
+Sign in with the passwords generated on first start in `backend/demo-credentials.txt` (git-ignored; change them in Settings → My account).
+
 This installs dependencies on first run, starts the backend (http://localhost:8000, API docs at `/docs`) and the frontend (http://localhost:3000), and opens the browser.
 
 Manual start:
@@ -48,3 +50,8 @@ See [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md) for the full list. In short
 * **Not implemented (shown as unavailable):** live M365/Gmail integration, speech-to-text, deepfake detection, dynamic sandbox, firewall/EDR enforcement, SSO.
 
 Architecture and the future roadmap (Microsoft Graph, Gmail API, Windows agent, sandbox) are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## iPhone app and going live
+- iPhone app (SMS scam filter + call warnings): `mobile/ios/README.md`
+- Publishing (TestFlight / App Store) and HTTPS server: `docs/APP_STORE.md`, `deploy/`
+- Live demo script and backup plan: `docs/LIVE_DEMO.md`

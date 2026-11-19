@@ -1,12 +1,12 @@
 # WOLVE endpoint agent installer (Windows, current user).
 #
 #   Preview only (changes nothing):  powershell -ExecutionPolicy Bypass -File agent\install_agent.ps1 -DryRun
-#   Install:                         powershell -ExecutionPolicy Bypass -File agent\install_agent.ps1 [-Server http://host:8000] [-EnrolAs aisha.admin]
+#   Install:                         powershell -ExecutionPolicy Bypass -File agent\install_agent.ps1 [-Server http://host:8000] -PairCode ABCD2345
 #   Install with firewall response:  (run PowerShell as Administrator) ... -AllowResponse
 #   Remove startup task:             powershell -ExecutionPolicy Bypass -File agent\install_agent.ps1 -Uninstall [-Purge]
 param(
     [string]$Server = "http://localhost:8000",
-    [string]$EnrolAs = "aisha.admin",
+    [string]$PairCode = "",
     [switch]$AllowResponse,
     [switch]$Uninstall,
     [switch]$Purge,
@@ -79,7 +79,8 @@ try {
     }
     & $Py -m pip install --quiet -r (Join-Path $Here "requirements.txt"); Assert-Ok "Installing psutil"
     if (-not (Test-Path $StateFile)) {
-        & $Py $Agent --server $Server --enrol-as $EnrolAs --consent; Assert-Ok "Enrolling with the WOLVE server"
+        if (-not $PairCode) { throw "A pairing code is required: WOLVE web app -> Settings -> Pair a device -> Code for a laptop agent, then pass -PairCode CODE" }
+        & $Py $Agent --server $Server --pair $PairCode --consent; Assert-Ok "Enrolling with the WOLVE server"
     }
     $taskArgs = "`"$Agent`" --monitor"
     if ($AllowResponse) { $taskArgs += " --allow-response" }

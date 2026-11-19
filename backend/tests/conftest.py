@@ -8,3 +8,5 @@ os.environ["WOLVE_UPLOAD_DIR"] = _tmp
 os.environ["WOLVE_EXTERNAL_LOOKUPS"] = "false"
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["WOLVE_RATE_LIMIT_PER_MINUTE"] = "1000"
+os.environ["WOLVE_DEV_HEADER_AUTH"] = "true"  # tests use the X-WOLVE-User shortcut; test_auth.py checks real sign-in
+os.environ["WOLVE_CREDENTIALS_FILE"] = f"{_tmp}/credentials.txt"

@@ -24,14 +24,12 @@ open WolveShield.xcodeproj
 3. Plug in the iPhone, select it as the run destination, and press Run (⌘R). On the phone, trust the developer in Settings → General → VPN & Device Management.
 
 ## Connect it to WOLVE
-The phone must reach the WOLVE server on your network:
-1. On the Windows PC, start the backend listening on the network (Windows will ask to allow it through the firewall — answer only for *Private* networks):
-   ```powershell
-   backend\.venv\Scripts\python -m uvicorn --app-dir backend app.main:app --host 0.0.0.0 --port 8000
-   ```
-2. Find the PC's IP (`ipconfig` → IPv4, e.g. 192.168.1.10).
-3. In the app → **الإعدادات**: server `http://192.168.1.10:8000`, your WOLVE user name, tick the consent box, then **ربط الجوال**.
-4. **الحماية** → **مزامنة قوائم الحماية** downloads the blocklist and scam numbers.
+For the event use the **public HTTPS server** (see `docs/APP_STORE.md`); set `Shared/AppConfig.swift` → `defaultServer`.
+For rehearsals on your Wi-Fi you can use the PC directly (plain HTTP is allowed only for local-network hosts):
+`backend\.venv\Scripts\python -m uvicorn --app-dir backend app.main:app --host 0.0.0.0 --port 8000`, then server `http://<PC-IP>:8000`.
+1. Web app → Settings → **Pair a device** → **Code for an iPhone** (8 letters, 15 minutes, single use).
+2. iPhone app → **الإعدادات**: server address, the code, tick consent → **ربط الجوال**.
+3. **الحماية** → **مزامنة قوائم الحماية**.
 
 ## Turn the protection on (on the iPhone)
 - **Messages:** Settings → Apps → Messages → *Unknown & Spam* → *SMS Filtering* → **WOLVE**
@@ -46,4 +44,5 @@ The phone must reach the WOLVE server on your network:
 - Only messages from **unknown senders** are filtered; WOLVE never sees messages from your contacts.
 - The extension has no internet access, so the phone uses rules synced from the server.
 - Call warnings work for **exact numbers** synced from WOLVE (no prefix ranges, no real-time lookup). No app can hear the voice of a normal phone call — for that, use **Call Guard** with the call on speaker.
-- The development build allows plain HTTP to your local server (`NSAllowsArbitraryLoads`). Use HTTPS before any real deployment.
+- Plain HTTP is allowed only to local-network hosts (`NSAllowsLocalNetworking`); everything else must be HTTPS.
+- Publishing: see `docs/APP_STORE.md`. Live demo: `docs/LIVE_DEMO.md`.

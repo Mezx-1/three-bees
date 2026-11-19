@@ -1,10 +1,10 @@
 "use client";
 
-import { Activity, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
+import { Activity, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { apiGet, getUser, setUser } from "@/lib/api";
+import { apiGet, apiSend, getMe, getToken, type Me, setSession } from "@/lib/api";
 import { DictKey, useI18n, tr } from "@/lib/i18n";
 import { WolfMark } from "./WolfMark";
 import { cn } from "./ui";
@@ -28,28 +28,41 @@ const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[
   { section: "section_system", items: [{ href: "/settings", key: "nav_settings", icon: Settings }] },
 ];
 
-type U = { username: string; full_name: string; role: string };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { t, lang, setLang } = useI18n();
   const [open, setOpen] = useState(false);
-  const [users, setUsers] = useState<U[]>([]);
-  const [me, setMe] = useState("omar.analyst");
-    const [offline, setOffline] = useState(false);
+  const [me, setMe] = useState<Me | null>(null);
+  const [offline, setOffline] = useState(false);
+  const isLogin = path.startsWith("/login");
 
   useEffect(() => {
-    setMe(getUser());
+    if (isLogin) return;
+    if (!getToken()) {
+      window.location.href = "/login";
+      return;
+    }
+    setMe(getMe());
     const load = () => {
-      apiGet<U[]>("/api/users").then((u) => { setUsers(u); setOffline(false); }).catch(() => setOffline(true));
+      apiGet<Me>("/api/auth/me").then((u) => { setMe(u); setOffline(false); })
+        .catch((e) => setOffline(e?.status === 0));
     };
     load();
     const id = setInterval(load, 30000);
     return () => clearInterval(id);
-  }, []);
+  }, [isLogin]);
+
+  const signOut = async () => {
+    try { await apiSend("/api/auth/logout", "POST"); } catch {}
+    setSession(null, null);
+    window.location.href = "/login";
+  };
   useEffect(() => setOpen(false), [path]);
 
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+
+  if (isLogin) return <>{children}</>;
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-5" aria-label={tr("Main")}>
@@ -109,14 +122,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800" aria-label={tr("Switch language")}>
               {lang === "en" ? "العربية" : tr("English")}
             </button>
-            <label className="flex items-center gap-2 text-sm text-ink-400">
-              <span className="hidden sm:inline">{t("acting_as")}</span>
-              <select value={me} onChange={(e) => { setMe(e.target.value); setUser(e.target.value); }}
-                className="rounded-lg border border-ink-600 bg-ink-900 px-2.5 py-1.5 text-sm text-ink-100 focus:border-volt focus:outline-none">
-                {users.length === 0 && <option value={me}>{me}</option>}
-                {users.map((u) => <option key={u.username} value={u.username}>{u.full_name} · {u.role}</option>)}
-              </select>
-            </label>
+            {me && (
+              <span className="hidden text-sm text-ink-300 sm:inline">{me.full_name} · <span className="text-ink-400">{tr(me.role)}</span></span>
+            )}
+            <button onClick={signOut} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800">
+              <LogOut className="h-4 w-4" /> {tr("Sign out")}
+            </button>
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 md:px-6">{children}</main>

@@ -6,7 +6,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContaine
 import { DemoScenario } from "@/components/DemoScenario";
 import { Card, cn, EmptyState, ErrorBox, PageHeader, SEV_HEX, SeverityBadge, SimBadge, Spinner, Stat, StatusDot, timeAgo, useApi } from "@/components/ui";
 import { apiGet } from "@/lib/api";
-import { useI18n, tr } from "@/lib/i18n";
+import { tr, trf, useI18n } from "@/lib/i18n";
 
 const STATUS_BANNER: Record<string, [string, string]> = {
   critical: ["Critical — action needed", "border-red-200 bg-red-50 text-crit"],
@@ -58,7 +58,7 @@ export default function CommandCenter() {
         <Stat label={tr("Critical threats")} value={tot.critical_threats} icon={AlertTriangle} tone={tot.critical_threats ? "crit" : "default"} />
         <Stat label={tr("Files checked")} value={tot.files_analyzed} icon={FileSearch} />
         <Stat label={tr("Active incidents")} value={tot.active_incidents} icon={Siren} tone={tot.active_incidents ? "crit" : "safe"} />
-        <Stat label={tr("Endpoints")} value={tot.endpoints} icon={Cpu} hint={`${tot.endpoints_at_risk} at risk`} tone={tot.endpoints_at_risk ? "warn" : "default"} />
+        <Stat label={tr("Endpoints")} value={tot.endpoints} icon={Cpu} hint={trf("{n} at risk", { n: tot.endpoints_at_risk })} tone={tot.endpoints_at_risk ? "warn" : "default"} />
         <Stat label={tr("Quarantined")} value={tot.quarantined_emails} icon={ShieldBan} tone="volt" />
         <Stat label={tr("Blocked items")} value={tot.blocked_indicators} icon={ShieldBan} />
       </div>

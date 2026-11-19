@@ -40,6 +40,30 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(20))  # admin | analyst | employee
     organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"))
+    password_hash: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+class AuthSession(Base):
+    """Signed-in session. Only a SHA-256 hash of the bearer token is stored."""
+
+    __tablename__ = "auth_sessions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class PairingCode(Base):
+    """One-time code that lets a phone or laptop agent join WOLVE (replaces trusting a user name)."""
+
+    __tablename__ = "pairing_codes"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    purpose: Mapped[str] = mapped_column(String(10))  # phone | agent
+    created_by: Mapped[str] = mapped_column(String(80))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class Device(Base):

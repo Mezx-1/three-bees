@@ -6,6 +6,11 @@ from sqlalchemy import select
 from .db import Base, SessionLocal, engine
 from .demo import scenario
 from .models import Device, Organization, User, utcnow
+import os
+import pathlib
+import secrets
+
+from .services.auth import hash_password
 from .services.store import audit
 
 USERS = [
@@ -23,10 +28,40 @@ DEVICES = [
 ]
 
 
+CRED_FILE = pathlib.Path(os.getenv("WOLVE_CREDENTIALS_FILE", str(pathlib.Path(__file__).resolve().parent.parent / "demo-credentials.txt")))
+
+
+def _migrate() -> None:
+    """Add columns introduced after the first release (SQLite create_all does not alter existing tables)."""
+    with engine.begin() as conn:
+        cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()] if engine.dialect.name == "sqlite" else []
+        if cols and "password_hash" not in cols:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN password_hash VARCHAR(200)")
+
+
+def ensure_passwords() -> None:
+    """Give every user without a password a random one, written to backend/demo-credentials.txt (git-ignored)."""
+    with SessionLocal() as db:
+        missing = db.scalars(select(User).where(User.password_hash.is_(None))).all()
+        if not missing:
+            return
+        lines = []
+        for u in missing:
+            pw = secrets.token_urlsafe(9)
+            u.password_hash = hash_password(pw)
+            lines.append(f"{u.username}\t{u.role}\t{pw}")
+        db.commit()
+    with CRED_FILE.open("a", encoding="utf-8") as fh:
+        fh.write(f"# WOLVE sign-in passwords (generated {utcnow().isoformat()}). Change them in Settings.\n" + "\n".join(lines) + "\n")
+
+
 def seed(reset_by: str = "system") -> None:
     Base.metadata.create_all(engine)
+    _migrate()
     with SessionLocal() as db:
         if db.scalars(select(Organization)).first():
+            db.close()
+            ensure_passwords()
             return
         org = Organization(name=scenario.ORG_NAME, domain=scenario.ORG_DOMAIN)
         db.add(org)
@@ -38,6 +73,7 @@ def seed(reset_by: str = "system") -> None:
                           last_seen=utcnow(), system_info={"note": "Simulated inventory device for the demo"}))
         audit(db, reset_by, "system.seed", org.name)
         db.commit()
+    ensure_passwords()
 
 
 if __name__ == "__main__":

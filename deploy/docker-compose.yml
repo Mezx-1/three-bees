@@ -1,0 +1,29 @@
+# One-server deployment with automatic HTTPS (Let's Encrypt via Caddy).
+#   1. Point your domain's DNS A record at the server.
+#   2. cp deploy/.env.example deploy/.env  and fill it in.
+#   3. docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
+services:
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WOLVE_CORS_ORIGINS: https://${WOLVE_DOMAIN}
+      WOLVE_DEV_HEADER_AUTH: "false"
+    volumes: [wolve-data:/data]
+  frontend:
+    build: ../frontend
+    restart: unless-stopped
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      WOLVE_DOMAIN: ${WOLVE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [backend, frontend]
+volumes:
+  wolve-data:
+  caddy-data:

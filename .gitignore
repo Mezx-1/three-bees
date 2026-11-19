@@ -26,3 +26,5 @@ mobile/ios/*.xcodeproj/
 mobile/ios/build/
 DerivedData/
 xcuserdata/
+backend/demo-credentials.txt
+deploy/.env

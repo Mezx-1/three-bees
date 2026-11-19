@@ -28,16 +28,17 @@ JUNK_THRESHOLD = 50
 
 
 def mobile_caller(db: Session = Depends(get_db), x_device_token: str | None = Header(default=None),
-                  x_wolve_user: str | None = Header(default=None)) -> str:
-    """Phone apps authenticate with their device token; the web simulator uses the signed-in user."""
+                  authorization: str | None = Header(default=None), x_wolve_user: str | None = Header(default=None)) -> str:
+    """Phone apps authenticate with their device token; the web simulator uses the signed-in user's session."""
+    from ..deps import resolve_user
+
     if x_device_token:
         d = db.scalars(select(Device).where(Device.token == x_device_token)).first()
         if d:
             return f"phone:{d.hostname}"
-    if x_wolve_user:
-        u = db.scalars(select(User).where(User.username == x_wolve_user)).first()
-        if u:
-            return u.username
+    u = resolve_user(db, authorization, x_wolve_user)
+    if u:
+        return u.username
     raise HTTPException(401, "Missing device token")
 
 
@@ -130,8 +131,10 @@ def call_directory(db: Session = Depends(get_db), who: str = Depends(mobile_call
     entries: dict[str, dict] = {}
     for b in db.scalars(select(BlockedIndicator).where(BlockedIndicator.type == "phone")).all():
         entries[b.value] = {"number": b.value, "label": "⚠️ WOLVE: reported scam", "block": True}
-    for i in db.scalars(select(Indicator).where(Indicator.type == "phone", Indicator.malicious.is_(True))).all():
-        entries.setdefault(i.value, {"number": i.value, "label": "⚠️ WOLVE: likely scam", "block": False})
+    for i in db.scalars(select(Indicator).where(Indicator.type == "phone")).all():
+        a = db.get(Analysis, i.analysis_id) if i.analysis_id else None
+        if i.malicious or (a is not None and a.risk_score >= 60):  # numbers seen in high-risk calls / messages
+            entries.setdefault(i.value, {"number": i.value, "label": "⚠️ WOLVE: likely scam", "block": False})
     return {"entries": sorted(entries.values(), key=lambda e: e["number"]),
             "prefix_warnings": [{"prefix": "+882", "label": "⚠️ WOLVE: satellite number"}, {"prefix": "+883", "label": "⚠️ WOLVE: satellite number"},
                                 {"prefix": "+881", "label": "⚠️ WOLVE: satellite number"}]}
@@ -140,31 +143,47 @@ def call_directory(db: Session = Depends(get_db), who: str = Depends(mobile_call
 # ---- phone pairing & on-device filter rules --------------------------------------------------
 
 class PhoneRegisterIn(BaseModel):
+    pairing_code: str = Field(min_length=6, max_length=20)
     device_name: str = Field(min_length=1, max_length=100)
-    owner_email: str | None = Field(default=None, max_length=200)
     consent: bool = False
 
 
 @router.post("/register")
-def register_phone(body: PhoneRegisterIn, db: Session = Depends(get_db), x_wolve_user: str | None = Header(default=None)):
-    """Pair a phone. The signed-in WOLVE user (header) pairs their own phone and must consent."""
-    from ..models import Device, utcnow
-    from ..services.store import audit
+def register_phone(body: PhoneRegisterIn, db: Session = Depends(get_db)):
+    """Pair a phone using a one-time code created by an analyst in the WOLVE web app."""
     import secrets
 
-    user = db.scalars(select(User).where(User.username == (x_wolve_user or ""))).first()
-    if not user:
-        raise HTTPException(401, "Unknown user")
+    from ..models import Device, utcnow
+    from ..services.auth import redeem_pairing_code
+    from ..services.store import audit
+
     if not body.consent:
         raise HTTPException(422, "Consent is required to protect this phone.")
-    d = Device(hostname=body.device_name, os="iOS", owner_email=body.owner_email or user.email, source="phone",
-               agent_version="ios-0.1", last_seen=utcnow(), token=secrets.token_urlsafe(24),
-               system_info={"collection": "Only messages from unknown senders are checked on the phone; nothing is uploaded unless you check it manually."})
+    pc = redeem_pairing_code(db, body.pairing_code, "phone")
+    if not pc:
+        raise HTTPException(401, "Pairing code is wrong, already used or expired.")
+    d = Device(hostname=body.device_name, os="iOS", source="phone", agent_version="ios-0.1", last_seen=utcnow(),
+               token=secrets.token_urlsafe(32),
+               system_info={"collection": "Only messages from unknown senders are checked, on the phone; nothing is uploaded unless checked manually."})
     db.add(d)
     db.flush()
-    audit(db, user.username, "phone.register", d.id, {"name": body.device_name, "consent": True})
+    audit(db, pc.created_by, "phone.register", d.id, {"name": body.device_name, "consent": True})
     db.commit()
     return {"device_id": d.id, "token": d.token}
+
+
+@router.delete("/device")
+def delete_phone(db: Session = Depends(get_db), x_device_token: str | None = Header(default=None)):
+    """Unlink the phone and delete its data from WOLVE (App Store account-deletion requirement)."""
+    from ..services.store import audit
+
+    d = db.scalars(select(Device).where(Device.token == (x_device_token or "-"), Device.source == "phone")).first()
+    if not d:
+        raise HTTPException(401, "Missing device token")
+    audit(db, f"phone:{d.hostname}", "phone.deleted", d.id)
+    db.delete(d)
+    db.commit()
+    return {"ok": True, "message": "This phone was unlinked and its data deleted from WOLVE."}
 
 
 @router.get("/filter-config")

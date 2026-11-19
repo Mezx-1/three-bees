@@ -16,7 +16,7 @@ struct ContentView: View {
 // MARK: - Protection status & setup
 
 struct ProtectionView: View {
-    @AppStorage("serverURL") private var serverURL = "http://192.168.1.10:8000"
+    @AppStorage("serverURL") private var serverURL = AppConfig.defaultServer
     @State private var callStatus = "…"
     @State private var syncing = false
     @State private var message: String?
@@ -97,7 +97,7 @@ struct ProtectionView: View {
 // MARK: - Manual checks (uses the WOLVE server, or offline rules if not connected)
 
 struct CheckView: View {
-    @AppStorage("serverURL") private var serverURL = "http://192.168.1.10:8000"
+    @AppStorage("serverURL") private var serverURL = AppConfig.defaultServer
     @State private var sender = ""
     @State private var text = ""
     @State private var number = ""
@@ -168,39 +168,47 @@ struct CheckView: View {
 // MARK: - Pairing
 
 struct SettingsView: View {
-    @AppStorage("serverURL") private var serverURL = "http://192.168.1.10:8000"
-    @AppStorage("username") private var username = "sara.ahmed"
+    @AppStorage("serverURL") private var serverURL = AppConfig.defaultServer
+    @State private var code = ""
     @State private var consent = false
     @State private var paired = Keychain.load("deviceToken") != nil
     @State private var busy = false
+    @State private var confirmDelete = false
     @State private var message: String?
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("خادم WOLVE") {
-                    TextField("http://192.168.1.10:8000", text: $serverURL)
+                    TextField(AppConfig.defaultServer, text: $serverURL)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                         .environment(\.layoutDirection, .leftToRight)
-                    TextField("اسم المستخدم في WOLVE", text: $username)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
                 Section("الخصوصية") {
                     Text("يفحص WOLVE رسائل المرسلين المجهولين على الجوال نفسه ولا يرفعها. لا يقرأ رسائل جهات الاتصال، ولا يستمع للمكالمات. عند الفحص اليدوي فقط يُرسل النص إلى خادم WOLVE.")
                         .font(.footnote)
-                    Toggle("أوافق على حماية هذا الجوال", isOn: $consent)
+                    Link("سياسة الخصوصية", destination: URL(string: serverURL + "/privacy") ?? URL(string: AppConfig.defaultServer)!)
                 }
-                Section {
-                    if paired {
+                if paired {
+                    Section {
                         Label("الجوال مربوط بـ WOLVE", systemImage: "checkmark.seal.fill").foregroundStyle(.green)
-                        Button("فك الربط", role: .destructive) { Keychain.delete("deviceToken"); paired = false }
-                    } else {
-                        Button("ربط الجوال") { Task { await pair() } }.disabled(!consent || busy || username.isEmpty)
+                        Button("فك الربط وحذف بيانات هذا الجوال", role: .destructive) { confirmDelete = true }
                     }
-                    if let message { Text(message).font(.footnote) }
+                } else {
+                    Section("ربط الجوال") {
+                        TextField("رمز الربط (من WOLVE ← الإعدادات ← ربط جهاز)", text: $code)
+                            .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                        Toggle("أوافق على حماية هذا الجوال", isOn: $consent)
+                        Button("ربط الجوال") { Task { await pair() } }.disabled(!consent || busy || code.count < 6)
+                    }
                 }
+                if let message { Section { Text(message).font(.footnote) } }
             }
             .navigationTitle("الإعدادات")
+            .confirmationDialog("سيتم فك ربط الجوال وحذف بياناته من خادم WOLVE.", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("فك الربط والحذف", role: .destructive) { Task { await unpair() } }
+                Button("إلغاء", role: .cancel) {}
+            }
         }
     }
 
@@ -209,11 +217,27 @@ struct SettingsView: View {
         busy = true
         defer { busy = false }
         do {
-            try await WolveAPI(baseURL: url).register(deviceName: UIDevice.current.name, username: username)
+            try await WolveAPI(baseURL: url).register(pairingCode: code, deviceName: UIDevice.current.name)
             paired = true
+            code = ""
             message = "تم الربط. اذهب إلى «الحماية» واضغط مزامنة."
         } catch {
             message = error.localizedDescription
         }
+    }
+
+    private func unpair() async {
+        guard let url = URL(string: serverURL) else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            try await WolveAPI(baseURL: url).deleteDevice()
+            message = "تم فك الربط وحذف بيانات الجوال من الخادم."
+        } catch {
+            Keychain.delete("deviceToken")
+            message = "تم فك الربط على الجوال، لكن تعذّر الوصول للخادم: \(error.localizedDescription)"
+        }
+        try? SharedStore.saveDirectory([])
+        paired = false
     }
 }

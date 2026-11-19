@@ -4,7 +4,7 @@ import { Download, KeyRound, PlugZap, RotateCcw, Settings as Gear, Users } from 
 import { useEffect, useState } from "react";
 import { DemoScenario } from "@/components/DemoScenario";
 import { broadcastRefresh, Button, Card, fmtTime, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, useApi, useToast } from "@/components/ui";
-import { API_URL, apiGet, apiSend, getUser, setUser } from "@/lib/api";
+import { API_URL, apiGet, apiSend } from "@/lib/api";
 import { tr, trf, useI18n } from "@/lib/i18n";
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
@@ -21,13 +21,39 @@ export default function SettingsPage() {
   const toast = useToast();
   const st = useApi<any>(() => apiGet("/api/settings"), []);
   const sys = useApi<any>(() => apiGet("/api/system/status"), []);
-  const users = useApi<any[]>(() => apiGet("/api/users"), []);
-  const [me, setMe] = useState("");
+  const meQ = useApi<any>(() => apiGet("/api/auth/me"), []);
+  const [pw, setPw] = useState({ current: "", next: "" });
+  const [pair, setPair] = useState<{ code: string; purpose: string; expires_at: string } | null>(null);
   const [threshold, setThreshold] = useState(60);
   const [busy, setBusy] = useState<string | null>(null);
-  useEffect(() => setMe(getUser()), []);
   useEffect(() => { if (st.data) setThreshold(st.data.auto_incident_threshold); }, [st.data]);
-  const role = users.data?.find((u) => u.username === me)?.role;
+  const role = meQ.data?.role;
+  const isAnalyst = role === "admin" || role === "analyst";
+
+  const changePassword = async () => {
+    if (pw.next.length < 10) return toast("err", tr("The new password must be at least 10 characters."));
+    setBusy("pw");
+    try {
+      await apiSend("/api/auth/password", "POST", { current_password: pw.current, new_password: pw.next });
+      setPw({ current: "", next: "" });
+      toast("ok", tr("Password changed."));
+    } catch (e: any) {
+      toast("err", e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const makeCode = async (purpose: "phone" | "agent") => {
+    setBusy("pair-" + purpose);
+    try {
+      setPair(await apiSend("/api/pairing-codes", "POST", { purpose }));
+    } catch (e: any) {
+      toast("err", e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
   const isAdmin = role === "admin";
 
   const put = async (k: string, body: any) => {
@@ -48,22 +74,38 @@ export default function SettingsPage() {
     <div className="space-y-5">
       <PageHeader title={t("nav_settings")} subtitle={tr("Identity, analysis engine, integrations and demo environment")} icon={Gear} />
       <div className="grid gap-5 xl:grid-cols-2">
-        <Card title={<span className="flex items-center gap-2"><Users className="h-4 w-4 text-volt" /> {tr("Identity & roles")}</span>} subtitle={tr("MVP identity: pick a seeded user. Roles are enforced by the backend. SSO (Entra ID) is planned.")}>
-          {!users.data ? <ScanBar /> : (
-            <ul className="space-y-2">
-              {users.data.map((u) => (
-                <li key={u.username} className="flex items-center gap-3 rounded-lg border border-ink-700 bg-ink-850/60 p-2.5 text-sm">
-                  <div className="flex-1"><div className="text-ink-100">{u.full_name}</div><div className="text-xs text-ink-400">{u.email}</div></div>
-                  <Pill className="uppercase">{u.role}</Pill>
-                  <Button variant={me === u.username ? "primary" : "subtle"} className="h-8 text-xs" onClick={() => { setMe(u.username); setUser(u.username); broadcastRefresh(); toast("info", `Now acting as ${u.full_name} (${u.role}).`); }}>
-                    {me === u.username ? tr("Active") : tr("Use")}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-xs text-ink-400">{tr("Employees can submit and report. Analysts can quarantine, block, manage incidents and endpoints. Admins can change settings and reset the demo.")}</p>
-        </Card>
+        <div className="space-y-5">
+          <Card title={<span className="flex items-center gap-2"><Users className="h-4 w-4 text-volt" /> {tr("My account")}</span>}>
+            {!meQ.data ? <ScanBar /> : (
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3"><div className="flex-1"><div className="text-ink-100">{meQ.data.full_name}</div><div className="text-xs text-ink-400" dir="ltr">{meQ.data.username} · {meQ.data.email}</div></div><Pill>{tr(meQ.data.role)}</Pill></div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input type="password" dir="ltr" autoComplete="current-password" className={inputCls} placeholder={tr("Current password")} value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
+                  <input type="password" dir="ltr" autoComplete="new-password" className={inputCls} placeholder={tr("New password (10+ characters)")} value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
+                </div>
+                <Button className="text-xs" loading={busy === "pw"} disabled={!pw.current || !pw.next} onClick={changePassword}>{tr("Change password")}</Button>
+                <p className="text-xs text-ink-400">{tr("Employees can submit and report. Analysts can quarantine, block, manage incidents and endpoints. Admins can change settings and reset the demo.")}</p>
+              </div>
+            )}
+          </Card>
+          <Card title={tr("Pair a device")} subtitle={tr("One-time code for the WOLVE iPhone app or a laptop agent. Valid for 15 minutes.")}>
+            {!isAnalyst ? <p className="text-sm text-ink-400">{tr("Ask an analyst or admin to create a pairing code.")}</p> : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Button loading={busy === "pair-phone"} onClick={() => makeCode("phone")}>{tr("Code for an iPhone")}</Button>
+                  <Button loading={busy === "pair-agent"} onClick={() => makeCode("agent")}>{tr("Code for a laptop agent")}</Button>
+                </div>
+                {pair && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-center">
+                    <div className="text-xs text-ink-400">{pair.purpose === "phone" ? tr("Enter this code in the iPhone app → Settings") : tr("Run: python agent/wolve_agent.py --pair CODE --consent")}</div>
+                    <div dir="ltr" className="my-2 font-mono text-4xl font-bold tracking-[0.3em] text-volt">{pair.code}</div>
+                    <div className="text-xs text-ink-400">{tr("Expires")} {fmtTime(pair.expires_at)} · {tr("can be used once")}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
 
         <Card title={tr("Analysis engine")} subtitle={isAdmin ? tr("Admin") : tr("Read-only — switch to an admin user to change")}>
           {st.error ? <ErrorBox error={st.error} /> : !st.data || !s ? <ScanBar /> : (

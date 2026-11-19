@@ -165,13 +165,13 @@ export default function Endpoints() {
         <div className="space-y-3 text-sm">
           <div className="font-medium text-ink-100">{tr("Install on a laptop (Windows)")}</div>
           <div><div className="mb-1 text-ink-300">{tr("1. Enrol the device (admin, with the user's consent)")}</div>
-            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --server http://localhost:8000 --enrol-as aisha.admin --consent</pre></div>
+            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --server http://localhost:8000 --pair CODE --consent</pre></div>
           <div><div className="mb-1 text-ink-300">{tr("2. Start live monitoring")}</div>
             <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --monitor</pre></div>
           <div><div className="mb-1 text-ink-300">{tr("3. Optional: allow analysts to block IPs in Windows Firewall (run as administrator)")}</div>
             <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --monitor --allow-response</pre></div>
           <div><div className="mb-1 text-ink-300">{tr("Or install it to start automatically at sign-in:")}</div>
-            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">powershell -ExecutionPolicy Bypass -File agent/install_agent.ps1</pre></div>
+            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">powershell -ExecutionPolicy Bypass -File agent/install_agent.ps1 -PairCode CODE</pre></div>
         </div>
       </Card>
     </div>

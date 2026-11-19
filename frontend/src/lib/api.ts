@@ -1,23 +1,45 @@
 import { getLang } from "./i18n";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Empty string = same origin (production behind Caddy); unset = local development backend.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const USER_KEY = "wolve.user";
+const TOKEN_KEY = "wolve.token";
+const ME_KEY = "wolve.me";
 
-export function getUser(): string {
-  if (typeof window === "undefined") return "omar.analyst";
+export type Me = { username: string; full_name: string; role: string; email: string };
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
   try {
-    return localStorage.getItem(USER_KEY) || "omar.analyst";
+    return localStorage.getItem(TOKEN_KEY);
   } catch {
-    return "omar.analyst";
+    return null;
   }
 }
 
-export function setUser(u: string) {
+export function getMe(): Me | null {
   try {
-    localStorage.setItem(USER_KEY, u);
+    const raw = localStorage.getItem(ME_KEY);
+    return raw ? (JSON.parse(raw) as Me) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setSession(token: string | null, me: Me | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+    if (me) localStorage.setItem(ME_KEY, JSON.stringify(me));
+    else localStorage.removeItem(ME_KEY);
   } catch {}
   window.dispatchEvent(new Event("wolve-user"));
+}
+
+function onUnauthorized() {
+  if (typeof window === "undefined" || window.location.pathname.startsWith("/login")) return;
+  setSession(null, null);
+  window.location.href = "/login";
 }
 
 export class ApiError extends Error {
@@ -29,6 +51,7 @@ export class ApiError extends Error {
 }
 
 async function handle<T>(res: Response): Promise<T> {
+  if (res.status === 401) onUnauthorized();
   if (!res.ok) {
     let msg = `Request failed (${res.status})`;
     try {
@@ -41,7 +64,8 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 function headers(extra?: Record<string, string>) {
-  return { "X-WOLVE-User": getUser(), "X-WOLVE-Lang": getLang(), ...(extra || {}) };
+  const t = getToken();
+  return { ...(t ? { Authorization: `Bearer ${t}` } : {}), "X-WOLVE-Lang": getLang(), ...(extra || {}) } as Record<string, string>;
 }
 
 export async function apiGet<T = any>(path: string): Promise<T> {

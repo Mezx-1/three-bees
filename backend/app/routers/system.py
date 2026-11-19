@@ -52,7 +52,7 @@ def system_status(db: Session = Depends(get_db)):
 
 
 @router.get("/users")
-def users(db: Session = Depends(get_db)):
+def users(db: Session = Depends(get_db), user: User = Depends(current_user)):
     return [{"username": u.username, "full_name": u.full_name, "role": u.role, "email": u.email} for u in db.scalars(select(User)).all()]
 
 
@@ -163,3 +163,33 @@ def demo_reset(db: Session = Depends(get_db), user: User = Depends(require("admi
     for f in (settings.upload_dir / "quarantine").glob("*.quarantined"):
         f.unlink(missing_ok=True)
     return {"ok": True, "message": "Demo environment reset."}
+
+
+PRIVACY_HTML = """<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WOLVE — سياسة الخصوصية / Privacy Policy</title>
+<style>body{font-family:-apple-system,Segoe UI,Tahoma,Arial,sans-serif;max-width:760px;margin:0 auto;padding:24px 16px;line-height:1.7;color:#101828;background:#fff}
+h1{color:#1d4ed8;font-size:1.6rem}h2{font-size:1.15rem;margin-top:1.6em}section[lang=en]{direction:ltr;text-align:left;border-top:1px solid #e2e7ee;margin-top:2.5em;padding-top:1em}</style></head><body>
+<h1>سياسة الخصوصية — WOLVE</h1>
+<p>WOLVE تطبيق لحماية المستخدمين من رسائل ومكالمات الاحتيال. نحن نجمع أقل قدر ممكن من البيانات.</p>
+<h2>الرسائل النصية</h2><p>تُفحص رسائل المرسلين <b>غير الموجودين في جهات اتصالك</b> فقط، وذلك <b>على جهازك نفسه</b>، ولا تُرسل إلى أي خادم. لا يمكن للتطبيق قراءة رسائل جهات الاتصال. عند استخدام «افحص» يدوياً فقط يُرسل النص الذي تكتبه إلى خادم WOLVE لتحليله، ولا تُحفظ إلا الرسائل التي تُصنّف احتيالاً كدليل.</p>
+<h2>المكالمات</h2><p>لا يستطيع التطبيق الاستماع إلى المكالمات أو تسجيلها. يعرض تحذيراً على أرقام مُبلّغ عنها بناءً على قائمة تُحمّل من خادم WOLVE إلى جهازك.</p>
+<h2>بيانات الربط</h2><p>عند ربط الجوال نحفظ اسم الجهاز ورمزاً سرياً للجهاز. يمكنك حذفها في أي وقت من الإعدادات ← «فك الربط وحذف بيانات هذا الجوال».</p>
+<h2>لا تتبّع ولا إعلانات</h2><p>لا نستخدم أي تتبّع أو إعلانات أو تحليلات من جهات خارجية، ولا نبيع أي بيانات.</p>
+<h2>التواصل</h2><p>للاستفسارات حول الخصوصية تواصل مع فريق WOLVE عبر الجهة التي زودتك بالتطبيق.</p>
+<section lang="en"><h1>Privacy Policy — WOLVE</h1>
+<p>WOLVE protects people from scam messages and calls and collects as little data as possible.</p>
+<h2>Text messages</h2><p>Only messages from senders <b>not in your contacts</b> are checked, <b>on your device</b>; they are not sent to any server. The app cannot read messages from your contacts. Only when you use “Check” manually is the text you enter sent to the WOLVE server for analysis; only messages classified as scams are kept as evidence.</p>
+<h2>Calls</h2><p>The app cannot listen to or record calls. It shows warnings for reported numbers using a list downloaded from the WOLVE server to your device.</p>
+<h2>Pairing data</h2><p>When you pair the phone we store the device name and a secret device token. Delete them at any time in Settings → “Unlink and delete this phone's data”.</p>
+<h2>No tracking, no ads</h2><p>No third-party tracking, advertising or analytics. We never sell data.</p></section>
+</body></html>"""
+
+
+public_router = APIRouter(tags=["public"])
+
+
+@public_router.get("/privacy", include_in_schema=False)
+def privacy_page():
+    from fastapi.responses import HTMLResponse
+
+    return HTMLResponse(PRIVACY_HTML)

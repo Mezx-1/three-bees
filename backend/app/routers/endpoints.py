@@ -35,6 +35,7 @@ class AgentRegisterIn(DeviceIn):
     agent_version: str = Field(default="0.1.0", max_length=40)
     system_info: dict = Field(default_factory=dict)
     consent: bool = Field(description="The device user agreed to WOLVE monitoring")
+    pairing_code: str = Field(min_length=6, max_length=20)
 
 
 class EventIn(BaseModel):
@@ -124,19 +125,24 @@ agent_router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 
 @agent_router.post("/register")
-def agent_register(body: AgentRegisterIn, db: Session = Depends(get_db), user: User = Depends(require("admin"))):
-    """Called by the WOLVE agent installer with an admin enrolment identity. Returns the device token."""
+def agent_register(body: AgentRegisterIn, db: Session = Depends(get_db)):
+    """Called by the WOLVE agent with a one-time pairing code (created by an analyst). Returns the device token."""
+    from ..services.auth import redeem_pairing_code
+
     if not body.consent:
         raise HTTPException(422, "Device user consent is required before WOLVE monitoring can be enabled.")
+    pc = redeem_pairing_code(db, body.pairing_code, "agent")
+    if not pc:
+        raise HTTPException(401, "Pairing code is wrong, already used or expired.")
     d = db.scalars(select(Device).where(Device.hostname == body.hostname, Device.source == "agent")).first()
     if not d:
         d = Device(hostname=body.hostname, source="agent")
         db.add(d)
     d.os, d.owner_email, d.ip_address = body.os, body.owner_email, body.ip_address
     d.agent_version, d.system_info, d.last_seen = body.agent_version, body.system_info, utcnow()
-    d.token = secrets.token_urlsafe(24)
+    d.token = secrets.token_urlsafe(32)
     db.flush()
-    audit(db, user.username, "agent.register", d.id, {"hostname": d.hostname, "consent": True})
+    audit(db, pc.created_by, "agent.register", d.id, {"hostname": d.hostname, "consent": True})
     db.commit()
     return {"device_id": d.id, "token": d.token}
 

@@ -84,11 +84,17 @@ final class WolveAPI {
         return data
     }
 
-    func register(deviceName: String, username: String) async throws {
-        struct Body: Encodable { let device_name: String; let consent: Bool }
-        let data = try await request("/api/mobile/register", method: "POST", body: Body(device_name: deviceName, consent: true), user: username)
+    func register(pairingCode: String, deviceName: String) async throws {
+        struct Body: Encodable { let pairing_code: String; let device_name: String; let consent: Bool }
+        let data = try await request("/api/mobile/register", method: "POST", body: Body(pairing_code: pairingCode, device_name: deviceName, consent: true))
         let r = try JSONDecoder().decode(RegisterResponse.self, from: data)
         Keychain.save(r.token, for: "deviceToken")
+    }
+
+    /// Unlink this phone and delete its data on the server (Apple requires in-app data deletion).
+    func deleteDevice() async throws {
+        _ = try await request("/api/mobile/device", method: "DELETE")
+        Keychain.delete("deviceToken")
     }
 
     func syncProtection() async throws -> (rules: Int, numbers: Int) {

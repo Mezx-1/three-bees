@@ -422,6 +422,13 @@ EXACT: dict[str, str] = {
     "Simulated inventory device for the demo": "جهاز محاكاة في الجرد لأغراض العرض",
     # --- call guard
     "Call Guard": "حارس المكالمات",
+    "Wrong user name or password.": "اسم المستخدم أو كلمة المرور غير صحيحة.",
+    "Too many sign-in attempts — wait a minute.": "محاولات دخول كثيرة — انتظر دقيقة.",
+    "Please sign in.": "يرجى تسجيل الدخول.",
+    "Current password is wrong.": "كلمة المرور الحالية غير صحيحة.",
+    "Pairing code is wrong, already used or expired.": "رمز الربط غير صحيح أو مستخدم أو منتهي الصلاحية.",
+    "Consent is required to protect this phone.": "الموافقة مطلوبة لحماية هذا الجوال.",
+    "This phone was unlinked and its data deleted from WOLVE.": "تم فك ربط هذا الجوال وحذف بياناته من WOLVE.",
     "Repeated failed logins for local account": "محاولات دخول فاشلة متكررة لحساب محلي",
     "powershell.exe launched by WINWORD.EXE": "WINWORD.EXE شغّل powershell.exe",
     "Teams.exe updated": "تم تحديث Teams.exe",

@@ -12,7 +12,7 @@ passwords or phone calls. Response actions (blocking an IP in Windows Firewall) 
 agent was started with --allow-response; otherwise they are refused and reported back.
 
 Usage:
-  python wolve_agent.py --server http://localhost:8000 --enrol-as aisha.admin --consent
+  python wolve_agent.py --server http://localhost:8000 --pair ABCD2345 --consent
   python wolve_agent.py --monitor                       # run with the saved enrolment
   python wolve_agent.py --monitor --allow-response      # also allow firewall block/unblock commands
   python wolve_agent.py --simulate-demo                 # send the labelled demo attack events
@@ -362,7 +362,7 @@ def monitor(srv: Server, interval: int, allow_response: bool) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="WOLVE endpoint agent")
     ap.add_argument("--server", default=None, help="WOLVE server URL (default: saved, else http://localhost:8000)")
-    ap.add_argument("--enrol-as", help="WOLVE admin username authorising enrolment")
+    ap.add_argument("--pair", metavar="CODE", help="One-time pairing code from WOLVE → Settings → Pair a device")
     ap.add_argument("--owner", help="Device owner email", default=None)
     ap.add_argument("--consent", action="store_true", help="Confirm the device user consents to WOLVE monitoring")
     ap.add_argument("--monitor", action="store_true", help="Continuously monitor connections, processes and posture")
@@ -373,10 +373,11 @@ def main() -> None:
 
     state = json.loads(STATE.read_text()) if STATE.exists() else {}
     server = a.server or state.get("server") or "http://localhost:8000"
-    if a.enrol_as:
+    if a.pair:
         if not a.consent:
             sys.exit("[wolve-agent] Refusing to enrol: pass --consent to confirm the device user agreed to monitoring.")
-        res = Server(server, user=a.enrol_as).call("/api/agent/register", {
+        res = Server(server).call("/api/agent/register", {
+            "pairing_code": a.pair,
             "hostname": socket.gethostname(), "os": f"{platform.system()} {platform.release()}",
             "owner_email": a.owner or f"{getpass.getuser()}@local", "ip_address": local_ip(),
             "agent_version": VERSION, "system_info": system_info(), "consent": True,
@@ -385,7 +386,7 @@ def main() -> None:
         STATE.write_text(json.dumps(state))
         log(f"enrolled as {res['device_id']} (token saved to {STATE.name})")
     if not state.get("token"):
-        sys.exit("[wolve-agent] not enrolled — run with --enrol-as <admin> --consent first")
+        sys.exit("[wolve-agent] not enrolled — run with --pair <CODE> --consent first (code: WOLVE → Settings → Pair a device)")
     srv = Server(server, token=state["token"])
 
     if a.simulate_demo:
@@ -403,7 +404,7 @@ def main() -> None:
             monitor(srv, max(3, a.interval), a.allow_response)
         except KeyboardInterrupt:
             log("stopped")
-    elif not a.enrol_as and not a.simulate_demo:
+    elif not a.pair and not a.simulate_demo:
         log("heartbeat: " + json.dumps(srv.call("/api/agent/heartbeat", system_info())))
 
 
