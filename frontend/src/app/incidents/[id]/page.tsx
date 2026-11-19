@@ -1,5 +1,6 @@
 "use client";
 
+import { tr } from "@/lib/i18n";
 import { ArrowLeft, Bot, CheckCircle2, GitMerge, Megaphone, Network, ShieldBan } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -40,7 +41,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
     }
   };
 
-  if (loading && !inc) return <Spinner label="Loading incident…" />;
+  if (loading && !inc) return <Spinner label={tr("Loading incident…")} />;
   if (error && !inc) return <ErrorBox error={error} onRetry={() => reload()} />;
   if (!inc) return null;
 
@@ -60,28 +61,28 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-5">
-      <Link href="/incidents" className="inline-flex items-center gap-1 text-sm text-ink-300 hover:text-ink-100"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /> Incidents</Link>
+      <Link href="/incidents" className="inline-flex items-center gap-1 text-sm text-ink-300 hover:text-ink-100"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {tr("Incidents")}</Link>
       <Card>
         <div className="flex flex-wrap items-start gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-sm text-volt">{inc.id}</span><SeverityBadge s={inc.severity} /><StatusDot s={inc.status} />
-              {inc.correlated && <Pill className="text-volt"><GitMerge className="h-3 w-3" /> correlated</Pill>}
-              {inc.escalated && <Pill className="text-crit">escalated</Pill>}{inc.demo && <SimBadge label="demo" />}
+              {inc.correlated && <Pill className="text-volt"><GitMerge className="h-3 w-3" /> {tr("correlated")}</Pill>}
+              {inc.escalated && <Pill className="text-crit">{tr("escalated")}</Pill>}{inc.demo && <SimBadge label={tr("demo")} />}
             </div>
             <h1 className="mt-2 text-lg font-semibold text-ink-100">{inc.title}</h1>
-            <p className="mt-1 text-xs text-ink-400">Source: {inc.source} · Risk {inc.risk_score}/100 · Created {fmtTime(inc.created_at)} · Updated {fmtTime(inc.updated_at)}</p>
+            <p className="mt-1 text-xs text-ink-400">{tr("Source:")} {inc.source} · Risk {inc.risk_score}/100 · Created {fmtTime(inc.created_at)} · Updated {fmtTime(inc.updated_at)}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/graph?incident=${inc.id}`}><Button><Network className="h-4 w-4" /> Attack graph</Button></Link>
-            <Button variant="danger" loading={busy === "esc"} disabled={inc.escalated} onClick={() => act("esc", async () => { const r = await apiSend(`/api/incidents/${id}/escalate`, "POST"); toast("ok", r.message); })}><Megaphone className="h-4 w-4" /> {inc.escalated ? "Escalated" : "Escalate"}</Button>
+            <Link href={`/graph?incident=${inc.id}`}><Button><Network className="h-4 w-4" /> {tr("Attack graph")}</Button></Link>
+            <Button variant="danger" loading={busy === "esc"} disabled={inc.escalated} onClick={() => act("esc", async () => { const r = await apiSend(`/api/incidents/${id}/escalate`, "POST"); toast("ok", r.message); })}><Megaphone className="h-4 w-4" /> {inc.escalated ? tr("Escalated") : tr("Escalate")}</Button>
           </div>
         </div>
       </Card>
 
       <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
-          <Card title="Timeline">
+          <Card title={tr("Timeline")}>
             <ol className="relative space-y-4 border-s border-ink-700 ps-5">
               {inc.timeline.map((e: any) => (
                 <li key={e.id} className="relative">
@@ -92,7 +93,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
               ))}
             </ol>
           </Card>
-          <Card title={`Evidence — analyses (${inc.analyses.length}) & endpoint events (${inc.endpoint_events.length})`}>
+          <Card title={`${tr("Evidence")} — ${tr("analyses")} (${inc.analyses.length}) · ${tr("endpoint events")} (${inc.endpoint_events.length})`}>
             <ul className="space-y-2">
               {inc.analyses.map((a: any) => (
                 <li key={a.id}><Link href={`/analyses/${a.id}`} className="flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-850/60 p-2.5 text-sm hover:border-ink-500">
@@ -105,7 +106,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
               ))}
             </ul>
           </Card>
-          <Card title={`Related indicators (${inc.indicators.length})`}>
+          <Card title={`${tr("Related indicators")} (${inc.indicators.length})`}>
             <div className="flex flex-wrap gap-1.5">
               {inc.indicators.map((i: any) => (
                 <span key={i.id} className={cn("rounded px-2 py-1 font-mono text-[11px] ring-1", i.malicious ? "bg-crit/10 text-rose-700 ring-crit/40" : "bg-ink-850 text-ink-200 ring-ink-600")} title={i.role}>
@@ -117,50 +118,50 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
         </div>
 
         <div className="space-y-5">
-          <Card title="Manage">
+          <Card title={tr("Manage")}>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label htmlFor="st">Status</Label>
+                <div><Label htmlFor="st">{tr("Status")}</Label>
                   <select id="st" className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
                     {["open", "investigating", "contained", "resolved", "false_positive"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
                   </select></div>
-                <div><Label htmlFor="as">Assigned analyst</Label>
+                <div><Label htmlFor="as">{tr("Assigned analyst")}</Label>
                   <select id="as" className={inputCls} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-                    <option value="">Unassigned</option>{analysts.map((u) => <option key={u.username} value={u.username}>{u.full_name}</option>)}
+                    <option value="">{tr("Unassigned")}</option>{analysts.map((u) => <option key={u.username} value={u.username}>{u.full_name}</option>)}
                   </select></div>
               </div>
-              <div><Label htmlFor="nt">Note {["resolved", "false_positive"].includes(status) && status !== inc.status && <span className="text-crit">(required to close)</span>}</Label>
-                <textarea id="nt" className={inputCls + " min-h-20"} value={note} onChange={(e) => setNote(e.target.value)} maxLength={5000} placeholder="Investigation notes, containment steps, resolution…" /></div>
+              <div><Label htmlFor="nt">{tr("Note")} {["resolved", "false_positive"].includes(status) && status !== inc.status && <span className="text-crit">{tr("(required to close)")}</span>}</Label>
+                <textarea id="nt" className={inputCls + " min-h-20"} value={note} onChange={(e) => setNote(e.target.value)} maxLength={5000} placeholder={tr("Investigation notes, containment steps, resolution…")} /></div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="primary" loading={busy === "save"} onClick={save}>Save changes</Button>
+                <Button variant="primary" loading={busy === "save"} onClick={save}>{tr("Save changes")}</Button>
                 {inc.status !== "resolved" && <Button variant="success" loading={busy === "res"} onClick={() => {
-                  const n = note.trim() || window.prompt("Resolution note (required):") || "";
+                  const n = note.trim() || window.prompt(tr("Resolution note (required):")) || "";
                   if (!n.trim()) return;
                   act("res", async () => { await apiSend(`/api/incidents/${id}`, "PATCH", { status: "resolved", note: n }); setNote(""); toast("ok", "Incident resolved."); });
-                }}><CheckCircle2 className="h-4 w-4" /> Resolve</Button>}
+                }}><CheckCircle2 className="h-4 w-4" /> {tr("Resolve")}</Button>}
               </div>
             </div>
           </Card>
           {inc.ai_explanation ? (
-            <Card title={<span className="flex items-center gap-2"><Bot className="h-4 w-4 text-slate-600" /> AI explanation</span>}><p className="text-sm text-ink-200">{inc.ai_explanation}</p><p className="mt-2 text-[11px] text-ink-500">Model-generated; verify against evidence.</p></Card>
+            <Card title={<span className="flex items-center gap-2"><Bot className="h-4 w-4 text-slate-600" /> {tr("AI explanation")}</span>}><p className="text-sm text-ink-200">{inc.ai_explanation}</p><p className="mt-2 text-[11px] text-ink-500">{tr("Model-generated; verify against evidence.")}</p></Card>
           ) : (
-            <Card title="Summary"><p className="text-sm text-ink-300">{inc.summary || "—"}</p><p className="mt-2 text-[11px] text-ink-500">AI explanation unavailable — summary built from deterministic findings.</p></Card>
+            <Card title={tr("Summary")}><p className="text-sm text-ink-300">{inc.summary || "—"}</p><p className="mt-2 text-[11px] text-ink-500">{tr("AI explanation unavailable — summary built from deterministic findings.")}</p></Card>
           )}
-          <Card title="Recommended response">
+          <Card title={tr("Recommended response")}>
             <ol className="list-decimal space-y-1.5 ps-5 text-sm text-ink-200">{(inc.recommended_response || []).map((r: string) => <li key={r}>{r}</li>)}</ol>
             {badDomains.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2 border-t border-ink-700 pt-3">
                 {badDomains.slice(0, 4).map((d: any) => (
                   <Button key={d.value} variant="danger" className="text-xs" loading={busy === d.value} onClick={() => act(d.value, async () => { const r = await apiSend("/api/blocklist", "POST", { type: d.type, value: d.value, reason: `Incident ${id}` }); toast("ok", r.message); })}>
-                    <ShieldBan className="h-3.5 w-3.5" /> Block {d.value}
+                    <ShieldBan className="h-3.5 w-3.5" /> {tr("Block")} {d.value}
                   </Button>
                 ))}
               </div>
             )}
           </Card>
-          <Card title="Response actions log">
-            {inc.actions.length === 0 ? <p className="text-xs text-ink-400">No response actions yet.</p> : (
-              <ul className="space-y-2 text-xs">{inc.actions.map((x: any, i: number) => <li key={i}><span className="font-mono text-volt">{x.action}</span> · {x.actor} · {fmtTime(x.created_at)}{x.simulated && <> <SimBadge label="demo env" /></>}<p className="text-ink-400">{x.result}</p></li>)}</ul>
+          <Card title={tr("Response actions log")}>
+            {inc.actions.length === 0 ? <p className="text-xs text-ink-400">{tr("No response actions yet.")}</p> : (
+              <ul className="space-y-2 text-xs">{inc.actions.map((x: any, i: number) => <li key={i}><span className="font-mono text-volt">{x.action}</span> · {x.actor} · {fmtTime(x.created_at)}{x.simulated && <> <SimBadge label={tr("demo env")} /></>}<p className="text-ink-400">{x.result}</p></li>)}</ul>
             )}
           </Card>
         </div>

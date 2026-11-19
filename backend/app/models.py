@@ -184,6 +184,55 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class Connection(Base):
+    """A network connection observed by the endpoint agent (metadata only — never packet contents)."""
+
+    __tablename__ = "connections"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    device_id: Mapped[str] = mapped_column(ForeignKey("devices.id", ondelete="CASCADE"), index=True)
+    process_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    exe: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    pid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    protocol: Mapped[str] = mapped_column(String(8), default="tcp")
+    direction: Mapped[str] = mapped_column(String(10), default="outbound")  # outbound | inbound
+    local_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    remote_ip: Mapped[str] = mapped_column(String(64), index=True)
+    remote_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    hits: Mapped[int] = mapped_column(Integer, default=1)
+    risk_score: Mapped[int] = mapped_column(Integer, default=0)
+    flags: Mapped[list] = mapped_column(JSON, default=list)
+    event_created: Mapped[bool] = mapped_column(Boolean, default=False)
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class IpIntel(Base):
+    """Cache of IP origin lookups (approximate geolocation / network owner) with source + timestamp."""
+
+    __tablename__ = "ip_intel"
+    ip: Mapped[str] = mapped_column(String(64), primary_key=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    source: Mapped[str] = mapped_column(String(80), default="")
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AgentCommand(Base):
+    """Response action queued for an endpoint agent (e.g. block an IP in Windows Firewall)."""
+
+    __tablename__ = "agent_commands"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    device_id: Mapped[str] = mapped_column(ForeignKey("devices.id", ondelete="CASCADE"), index=True)
+    type: Mapped[str] = mapped_column(String(40))
+    params: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|sent|done|failed|refused
+    result: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[str] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class AppSetting(Base):
     __tablename__ = "app_settings"
     key: Mapped[str] = mapped_column(String(80), primary_key=True)

@@ -9,9 +9,14 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user, require, ser_device, ser_event
-from ..models import Device, EndpointEvent, Incident, ResponseAction, User, utcnow
-from ..services.endpoint_engine import ingest_event
-from ..services.store import add_event, audit
+import ipaddress
+
+from ..deps import iso
+from ..models import AgentCommand, Connection, Device, EndpointEvent, Incident, ResponseAction, User, utcnow
+from ..services.connection_engine import device_summary, enrich_ips, ingest_connections, posture_findings
+from ..services.endpoint_engine import ingest_event, score_event
+from ..services.risk import combine
+from ..services.store import add_event, audit, get_setting
 
 router = APIRouter(prefix="/api/endpoints", tags=["endpoints"])
 
@@ -163,8 +168,142 @@ def agent_events(events: list[EventIn], x_device_token: str | None = Header(defa
         raise HTTPException(413, "Max 200 events per batch")
     d.last_seen = utcnow()
     out = []
+    skipped = 0
     for e in events:
+        simulated = bool(e.details.get("simulated"))
+        # Real telemetry: ordinary process starts are not stored — only ones that trip a detection rule.
+        # (score < 25: e.g. a developer tool starting cmd.exe — too common on real machines to be useful as an alert)
+        if not simulated and e.event_type == "process" and combine(score_event("process", e.details, {"ip": set(), "domain": set()})) < 25:
+            skipped += 1
+            continue
         ev, corr = ingest_event(db, d, e.event_type, e.title, e.details, simulated=bool(e.details.get("simulated")), actor=f"agent:{d.hostname}")
         out.append({"event_id": ev.id, "risk_score": ev.risk_score, "incident_id": corr.get("incident_id")})
     db.commit()
-    return {"ingested": len(out), "results": out}
+    return {"ingested": len(out), "skipped_benign": skipped, "results": out}
+
+
+# ---- live connections, posture & response commands -----------------------------------------
+
+class ConnIn(BaseModel):
+    process_name: str | None = Field(default=None, max_length=200)
+    pid: int | None = None
+    exe: str | None = Field(default=None, max_length=500)
+    protocol: str = Field(default="tcp", max_length=8)
+    local_ip: str | None = Field(default=None, max_length=64)
+    local_port: int | None = None
+    remote_ip: str = Field(max_length=64)
+    remote_port: int | None = None
+    status: str = Field(default="", max_length=20)
+    direction: str = Field(default="outbound", pattern="^(inbound|outbound)$")
+
+
+class ConnBatch(BaseModel):
+    connections: list[ConnIn] = Field(default_factory=list, max_length=1000)
+    listening: list[dict] = Field(default_factory=list, max_length=500)
+
+
+def ser_conn(c: Connection, origin: dict | None = None) -> dict:
+    return {"id": c.id, "process_name": c.process_name, "exe": c.exe, "pid": c.pid, "protocol": c.protocol, "direction": c.direction,
+            "local_port": c.local_port, "remote_ip": c.remote_ip, "remote_port": c.remote_port, "status": c.status, "active": c.active,
+            "hits": c.hits, "risk_score": c.risk_score, "flags": c.flags, "first_seen": iso(c.first_seen), "last_seen": iso(c.last_seen),
+            "origin": origin or {}}
+
+
+@agent_router.post("/connections")
+def agent_connections(body: ConnBatch, x_device_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    d = _agent_device(db, x_device_token)
+    d.last_seen = utcnow()
+    res = ingest_connections(db, d, [c.model_dump() for c in body.connections], body.listening,
+                             external=bool(get_setting(db, "external_lookups")), actor=f"agent:{d.hostname}")
+    db.commit()
+    return res
+
+
+@agent_router.post("/posture")
+def agent_posture(posture: dict, x_device_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    d = _agent_device(db, x_device_token)
+    info = dict(d.system_info or {})
+    old_titles = {f["title"] for f in (info.get("posture_findings") or [])}
+    findings = posture_findings(posture)
+    info["posture"], info["posture_findings"] = posture, [f.to_dict() for f in findings]
+    d.system_info = info
+    for f in findings:  # raise an endpoint event only when a weakness newly appears
+        if f.title not in old_titles:
+            ingest_event(db, d, "posture", f.title, {"title": f.title, "finding": f.detail, "severity": f.severity, "weight": f.weight,
+                                                     "source": "agent posture check"}, simulated=False, actor=f"agent:{d.hostname}")
+    db.commit()
+    return {"ok": True, "findings": len(findings)}
+
+
+@agent_router.get("/commands")
+def agent_commands(x_device_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    d = _agent_device(db, x_device_token)
+    cmds = db.scalars(select(AgentCommand).where(AgentCommand.device_id == d.id, AgentCommand.status == "pending")).all()
+    for c in cmds:
+        c.status = "sent"
+    db.commit()
+    return {"commands": [{"id": c.id, "type": c.type, "params": c.params} for c in cmds]}
+
+
+class CmdResult(BaseModel):
+    status: str = Field(pattern="^(done|failed|refused)$")
+    result: str = Field(default="", max_length=2000)
+
+
+@agent_router.post("/commands/{cid}/result")
+def agent_command_result(cid: int, body: CmdResult, x_device_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    d = _agent_device(db, x_device_token)
+    c = db.get(AgentCommand, cid)
+    if not c or c.device_id != d.id:
+        raise HTTPException(404, "Command not found")
+    c.status, c.result, c.completed_at = body.status, body.result, utcnow()
+    db.add(ResponseAction(action=f"agent.{c.type}", target_type="device", target_id=d.id, actor=c.created_by, simulated=False,
+                          result=f"{body.status}: {body.result} ({c.params})"))
+    audit(db, f"agent:{d.hostname}", f"agent.command.{body.status}", str(cid), {"type": c.type, "params": c.params, "result": body.result})
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/{device_id}/connections")
+def device_connections(device_id: str, active: bool = True, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    d = db.get(Device, device_id)
+    if not d:
+        raise HTTPException(404, "Device not found")
+    stmt = select(Connection).where(Connection.device_id == d.id)
+    if active:
+        stmt = stmt.where(Connection.active.is_(True))
+    rows = db.scalars(stmt.order_by(Connection.risk_score.desc(), Connection.last_seen.desc()).limit(500)).all()
+    origins = enrich_ips(db, {r.remote_ip for r in rows}, external=False)
+    return {"connections": [ser_conn(r, origins.get(r.remote_ip)) for r in rows], "summary": device_summary(db, d),
+            "listening": (d.system_info or {}).get("listening_ports", []), "updated_at": (d.system_info or {}).get("connections_updated_at"),
+            "posture": (d.system_info or {}).get("posture"), "posture_findings": (d.system_info or {}).get("posture_findings", [])}
+
+
+class CommandIn(BaseModel):
+    type: str = Field(pattern="^(block_ip|unblock_ip)$")
+    ip: str
+
+
+@router.post("/{device_id}/commands")
+def queue_command(device_id: str, body: CommandIn, db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
+    d = db.get(Device, device_id)
+    if not d:
+        raise HTTPException(404, "Device not found")
+    if d.source != "agent":
+        raise HTTPException(422, "This device has no WOLVE agent installed, so it cannot receive commands.")
+    try:
+        ip = str(ipaddress.ip_address(body.ip))
+    except ValueError:
+        raise HTTPException(422, "Invalid IP address")
+    c = AgentCommand(device_id=d.id, type=body.type, params={"ip": ip}, created_by=user.username)
+    db.add(c)
+    audit(db, user.username, f"endpoint.command.{body.type}", d.id, {"ip": ip})
+    db.commit()
+    return {"ok": True, "id": c.id, "message": f"Command queued. The agent on {d.hostname} will run it on its next check-in (only if it was started with --allow-response)."}
+
+
+@router.get("/{device_id}/commands")
+def list_commands(device_id: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    rows = db.scalars(select(AgentCommand).where(AgentCommand.device_id == device_id).order_by(AgentCommand.created_at.desc()).limit(50)).all()
+    return [{"id": c.id, "type": c.type, "params": c.params, "status": c.status, "result": c.result, "created_by": c.created_by,
+             "created_at": iso(c.created_at), "completed_at": iso(c.completed_at)} for c in rows]

@@ -1,85 +1,81 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, Fragment, useContext, useEffect, useState } from "react";
+import { AR, AR_PATTERNS } from "./ar";
 
-type Lang = "en" | "ar";
+export type Lang = "en" | "ar";
+
+/** Arabic is the default interface language. */
+export const DEFAULT_LANG: Lang = "ar";
+
+let currentLang: Lang = DEFAULT_LANG;
+
+/**
+ * Translate an English UI string. Keys are the English text itself, so untranslated strings
+ * simply fall back to English. Usable anywhere (components, helpers) without a hook — the
+ * provider remounts the tree when the language changes.
+ */
+export function tr(en: string): string {
+  if (!en || currentLang === "en") return en;
+  const hit = AR[en];
+  if (hit !== undefined) return hit;
+  for (const [rx, rep] of AR_PATTERNS) if (rx.test(en)) return en.replace(rx, rep);
+  return en;
+}
+
+/** Translate with {placeholders}. */
+export function trf(en: string, vars: Record<string, string | number>): string {
+  let s = tr(en);
+  for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
+  return s;
+}
+
+export const getLang = () => currentLang;
 
 const dict = {
-  en: {
-    brand_tag: "Think like a wolf. Detect before the attack.",
-    nav_command: "Command Center",
-    nav_scam: "Scam Analyzer",
-    nav_email: "Email Security",
-    nav_forensics: "File & Image Forensics",
-    nav_endpoints: "Endpoint Protection",
-    nav_network: "Network Intelligence",
-    nav_graph: "Threat Intelligence Graph",
-    nav_incidents: "Incident Management",
-    nav_prevention: "Prevention Center",
-    nav_settings: "Settings",
-    section_detect: "Detect",
-    section_respond: "Respond",
-    section_system: "System",
-    acting_as: "User",
-    analyze: "Analyze",
-    analyzing: "Analyzing…",
-    risk_score: "Risk score",
-    severity: "Severity",
-    classification: "Classification",
-    confidence: "Confidence",
-    recommended: "Recommended actions",
-    limitations: "Evidence & analysis limitations",
-    verified: "Verified technical findings",
-    heuristic: "Heuristic indicators",
-    ai_assessment: "AI assessment",
-    no_data: "Nothing here yet",
-    security_status: "Security status",
-  },
-  ar: {
-    brand_tag: "فكّر كالذئب. اكتشف قبل الهجوم.",
-    nav_command: "مركز القيادة",
-    nav_scam: "محلل الاحتيال",
-    nav_email: "أمن البريد الإلكتروني",
-    nav_forensics: "تحليل الملفات والصور",
-    nav_endpoints: "حماية الأجهزة",
-    nav_network: "استخبارات الشبكة",
-    nav_graph: "مخطط استخبارات التهديدات",
-    nav_incidents: "إدارة الحوادث",
-    nav_prevention: "مركز الوقاية والاستجابة",
-    nav_settings: "الإعدادات",
-    section_detect: "الكشف",
-    section_respond: "الاستجابة",
-    section_system: "النظام",
-    acting_as: "المستخدم",
-    analyze: "تحليل",
-    analyzing: "جارٍ التحليل…",
-    risk_score: "درجة الخطورة",
-    severity: "مستوى الخطورة",
-    classification: "التصنيف",
-    confidence: "مستوى الثقة",
-    recommended: "الإجراءات الموصى بها",
-    limitations: "حدود الأدلة والتحليل",
-    verified: "نتائج تقنية مؤكدة",
-    heuristic: "مؤشرات استدلالية",
-    ai_assessment: "تقييم الذكاء الاصطناعي",
-    no_data: "لا توجد بيانات بعد",
-    security_status: "الحالة الأمنية",
-  },
+  brand_tag: "Think like a wolf. Detect before the attack.",
+  nav_command: "Command Center",
+  nav_scam: "Scam Analyzer",
+  nav_email: "Email Security",
+  nav_forensics: "File & Image Forensics",
+  nav_endpoints: "Endpoint Protection",
+  nav_network: "Network Intelligence",
+  nav_graph: "Threat Intelligence Graph",
+  nav_incidents: "Incident Management",
+  nav_prevention: "Prevention Center",
+  nav_settings: "Settings",
+  section_detect: "Detect",
+  section_respond: "Respond",
+  section_system: "System",
+  acting_as: "User",
+  analyze: "Analyze",
+  analyzing: "Analyzing…",
+  risk_score: "Risk score",
+  severity: "Severity",
+  classification: "Classification",
+  confidence: "Confidence",
+  recommended: "Recommended actions",
+  limitations: "Evidence & analysis limitations",
+  verified: "Verified technical findings",
+  heuristic: "Heuristic indicators",
+  ai_assessment: "AI assessment",
+  no_data: "Nothing here yet",
+  security_status: "Security status",
 } as const;
 
-export type DictKey = keyof (typeof dict)["en"];
+export type DictKey = keyof typeof dict;
 
 const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: DictKey) => string }>({
-  lang: "en",
+  lang: DEFAULT_LANG,
   setLang: () => {},
-  t: (k) => dict.en[k],
+  t: (k) => tr(dict[k]),
 });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("wolve.lang") as Lang | null;
+      const saved = localStorage.getItem("wolve.lang.v2") as Lang | null;
       if (saved === "ar" || saved === "en") setLangState(saved);
     } catch {}
   }, []);
@@ -90,10 +86,18 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const setLang = (l: Lang) => {
     setLangState(l);
     try {
-      localStorage.setItem("wolve.lang", l);
+      localStorage.setItem("wolve.lang.v2", l);
     } catch {}
   };
-  return <Ctx.Provider value={{ lang, setLang, t: (k) => dict[lang][k] ?? dict.en[k] }}>{children}</Ctx.Provider>;
+  currentLang = lang; // set before children render so tr() uses the active language
+  return (
+    <Ctx.Provider value={{ lang, setLang, t: (k) => tr(dict[k]) }}>
+      <Fragment key={lang}>{children}</Fragment>
+    </Ctx.Provider>
+  );
 }
 
 export const useI18n = () => useContext(Ctx);
+
+/** Locale for dates and numbers. */
+export const locale = () => (currentLang === "ar" ? "ar-AE" : "en-GB");

@@ -59,6 +59,9 @@ def score_event(event_type: str, d: dict, ctx_blocked: dict) -> list[Finding]:
         name = (d.get("file_name") or "").lower()
         if re.search(r"\.(exe|scr|js|vbs|bat|cmd|hta|ps1|lnk)$", name):
             f.append(Finding("Executable file written", f"{name} was created on disk.", "endpoint", "medium", 16, "verified", ["malware_delivery"]))
+    elif event_type == "posture":
+        f.append(Finding(d.get("title", "Security posture weakness"), d.get("finding", ""), "endpoint", d.get("severity", "medium"),
+                         int(d.get("weight", 20)), "verified", ["malware_delivery"]))
     elif event_type == "login":
         if d.get("result") == "failure" and int(d.get("attempts", 1)) >= 5:
             f.append(Finding("Repeated failed logins", f"{d.get('attempts')} failed login attempts.", "endpoint", "medium", 22, "verified", ["credential_theft"]))

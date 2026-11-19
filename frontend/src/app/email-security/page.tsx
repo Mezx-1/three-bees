@@ -8,7 +8,7 @@ import { FileDrop } from "@/components/FileDrop";
 import { ReportView } from "@/components/ReportView";
 import { broadcastRefresh, Button, Card, EmptyState, ErrorBox, inputCls, PageHeader, Pill, ScanBar, SeverityBadge, StatusDot, Tabs, timeAgo, useApi, useToast } from "@/components/ui";
 import { apiGet, apiSend, apiUpload, fetchSampleFile } from "@/lib/api";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, tr } from "@/lib/i18n";
 import type { Analysis } from "@/lib/types";
 
 const FILTERS = ["all", "suspicious", "quarantined", "reported", "safe", "new"] as const;
@@ -84,35 +84,35 @@ export default function EmailSecurity() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("nav_email")} subtitle="Inspect emails, headers, links, images and attachments — then quarantine, report or clear them" icon={Mail} />
+      <PageHeader title={t("nav_email")} subtitle={tr("Inspect emails, headers, links, images and attachments — then quarantine, report or clear them")} icon={Mail} />
 
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-ink-700 bg-ink-900/70 px-3 py-2 text-xs text-ink-300">
         <PlugZap className="h-4 w-4 text-ink-400" />
-        Mailbox integrations: <Pill>Microsoft 365 — not connected</Pill><Pill>Google Workspace — not connected</Pill>
-        <span className="text-ink-400">Planned via Microsoft Graph / Gmail API with admin consent. In this MVP, emails are submitted manually and actions apply to WOLVE records only.</span>
+        {tr("Mailbox integrations:")} <Pill>{tr("Microsoft 365 — not connected")}</Pill><Pill>{tr("Google Workspace — not connected")}</Pill>
+        <span className="text-ink-400">{tr("Planned via Microsoft Graph / Gmail API with admin consent. In this MVP, emails are submitted manually and actions apply to WOLVE records only.")}</span>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
-        <Card title="Submit an email">
+        <Card title={tr("Submit an email")}>
           <div className="space-y-3">
-            <Tabs value={mode} onChange={setMode} items={[{ value: "upload", label: "Upload .eml" }, { value: "paste", label: "Paste source / body" }]} />
+            <Tabs value={mode} onChange={setMode} items={[{ value: "upload", label: tr("Upload .eml") }, { value: "paste", label: tr("Paste source / body") }]} />
             {mode === "upload" ? (
-              <FileDrop file={file} onFile={setFile} accept=".eml,message/rfc822,.txt" hint=".eml files with full headers give the best results (SPF/DKIM/DMARC, Received chain, attachments)" />
+              <FileDrop file={file} onFile={setFile} accept=".eml,message/rfc822,.txt" hint={tr(".eml files with full headers give the best results (SPF/DKIM/DMARC, Received chain, attachments)")} />
             ) : (
-              <textarea aria-label="Raw email" dir="auto" className={inputCls + " min-h-52 font-mono text-[12px]"} value={raw} onChange={(e) => setRaw(e.target.value)}
+              <textarea aria-label={tr("Raw email")} dir="auto" className={inputCls + " min-h-52 font-mono text-[12px]"} value={raw} onChange={(e) => setRaw(e.target.value)}
                 placeholder={"From: \"IT Support\" <it@example-secure.top>\nTo: you@company.ae\nSubject: Password expires today\nAuthentication-Results: ...\n\nDear user, verify your account..."} />
             )}
             {err && <ErrorBox error={err} />}
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="primary" loading={busy} onClick={submit}>{busy ? t("analyzing") : "Analyze email"}</Button>
-              <span className="text-xs text-ink-400">Samples:</span>
-              <Button variant="ghost" className="text-xs" onClick={() => loadSample("phishing-ceo-fraud.eml")}>CEO-fraud phishing .eml</Button>
-              <Button variant="ghost" className="text-xs" onClick={() => loadSample("legitimate-hr.eml")}>Legitimate HR .eml</Button>
+              <Button variant="primary" loading={busy} onClick={submit}>{busy ? t("analyzing") : tr("Analyze email")}</Button>
+              <span className="text-xs text-ink-400">{tr("Samples:")}</span>
+              <Button variant="ghost" className="text-xs" onClick={() => loadSample("phishing-ceo-fraud.eml")}>{tr("CEO-fraud phishing .eml")}</Button>
+              <Button variant="ghost" className="text-xs" onClick={() => loadSample("legitimate-hr.eml")}>{tr("Legitimate HR .eml")}</Button>
             </div>
             {busy && <ScanBar />}
           </div>
         </Card>
-        <Card title="Inspection pipeline">
+        <Card title={tr("Inspection pipeline")}>
           <ol className="space-y-1.5 text-xs">
             {PIPELINE.map((p, i) => (
               <li key={p} className="flex items-center gap-2">
@@ -126,15 +126,15 @@ export default function EmailSecurity() {
 
       {result && <ReportView a={result} actions={<AnalysisActions a={result} onChange={(a) => { setResult(a); list.reload(true); }} />} />}
 
-      <Card title={<span className="flex items-center gap-2"><Inbox className="h-4 w-4 text-volt" /> Email security queue</span>}
+      <Card title={<span className="flex items-center gap-2"><Inbox className="h-4 w-4 text-volt" /> {tr("Email security queue")}</span>}
         action={<Tabs value={filter} onChange={setFilter} items={FILTERS.map((f) => ({ value: f, label: <span className="capitalize">{f}</span> }))} />}>
         {list.error ? <ErrorBox error={list.error} onRetry={() => list.reload()} /> : !list.data ? <ScanBar /> : list.data.length === 0 ? (
-          <EmptyState title={filter === "all" ? "No emails analysed yet" : `No ${filter} emails`} icon={Mail}>Upload an .eml or load the phishing sample above.</EmptyState>
+          <EmptyState title={filter === "all" ? tr("No emails analysed yet") : `No ${filter} emails`} icon={Mail}>{tr("Upload an .eml or load the phishing sample above.")}</EmptyState>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs font-medium text-ink-400">
-                <tr><th className="py-2 pe-3 text-start">Subject</th><th className="pe-3 text-start">From</th><th className="pe-3 text-start">Risk</th><th className="pe-3 text-start">Status</th><th className="pe-3 text-start">Received</th><th className="text-end">Action</th></tr>
+                <tr><th className="py-2 pe-3 text-start">{tr("Subject")}</th><th className="pe-3 text-start">{tr("From")}</th><th className="pe-3 text-start">{tr("Risk")}</th><th className="pe-3 text-start">{tr("Status")}</th><th className="pe-3 text-start">{tr("Received")}</th><th className="text-end">{tr("Action")}</th></tr>
               </thead>
               <tbody className="divide-y divide-ink-800">
                 {list.data.map((a) => (
@@ -147,8 +147,8 @@ export default function EmailSecurity() {
                     <td className="pe-3 text-xs text-ink-400">{timeAgo(a.created_at)}</td>
                     <td className="text-end">
                       {a.status !== "quarantined" && a.status !== "safe" && a.risk_score >= 30 ? (
-                        <Button variant="warn" className="h-7 !px-2 text-xs" loading={rowBusy === a.id} onClick={() => quickQuarantine(a.id)}><ShieldBan className="h-3.5 w-3.5" /> Quarantine</Button>
-                      ) : <Link href={`/analyses/${a.id}`} className="text-xs text-volt hover:underline">Open</Link>}
+                        <Button variant="warn" className="h-7 !px-2 text-xs" loading={rowBusy === a.id} onClick={() => quickQuarantine(a.id)}><ShieldBan className="h-3.5 w-3.5" /> {tr("Quarantine")}</Button>
+                      ) : <Link href={`/analyses/${a.id}`} className="text-xs text-volt hover:underline">{tr("Open")}</Link>}
                     </td>
                   </tr>
                 ))}

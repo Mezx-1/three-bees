@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiGet, getUser, setUser } from "@/lib/api";
-import { DictKey, useI18n } from "@/lib/i18n";
+import { DictKey, useI18n, tr } from "@/lib/i18n";
 import { WolfMark } from "./WolfMark";
 import { cn } from "./ui";
 
@@ -50,12 +50,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
   const sidebar = (
-    <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-5" aria-label="Main">
+    <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-5" aria-label={tr("Main")}>
       <Link href="/" className="flex items-center gap-3 px-2">
         <WolfMark />
         <div>
-          <div className="text-lg font-bold tracking-wide text-ink-100">WOLVE</div>
-          <div className="text-xs leading-tight text-ink-400">Security Center</div>
+          <div className="text-lg font-bold tracking-wide text-ink-100">{tr("WOLVE")}</div>
+          <div className="text-xs leading-tight text-ink-400">{tr("Security Center")}</div>
         </div>
       </Link>
       {NAV.map((sec) => (
@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ))}
       <p className="mt-auto px-3 text-xs leading-relaxed text-ink-400">
-        Results are based on the evidence found and can&apos;t catch every attack. Demo data is always marked.
+        {tr("Results are based on the evidence found and can't catch every attack. Demo data is always marked.")}
       </p>
     </nav>
   );
@@ -88,24 +88,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
           <aside className="absolute inset-y-0 start-0 w-72 border-e border-ink-700 bg-ink-900">
-            <button className="absolute end-3 top-3 text-ink-300" aria-label="Close menu" onClick={() => setOpen(false)}><X className="h-5 w-5" /></button>
+            <button className="absolute end-3 top-3 text-ink-300" aria-label={tr("Close menu")} onClick={() => setOpen(false)}><X className="h-5 w-5" /></button>
             {sidebar}
           </aside>
         </div>
       )}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-ink-700 bg-ink-900/95 px-4 py-2.5">
-          <button className="rounded-md p-1.5 text-ink-300 hover:bg-ink-800 lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}><Menu className="h-5 w-5" /></button>
+          <button className="rounded-md p-1.5 text-ink-300 hover:bg-ink-800 lg:hidden" aria-label={tr("Open menu")} onClick={() => setOpen(true)}><Menu className="h-5 w-5" /></button>
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {offline ? (
-              <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 font-medium text-crit"><Activity className="h-3.5 w-3.5" /> Can&apos;t reach the server — start the backend</span>
+              <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 font-medium text-crit"><Activity className="h-3.5 w-3.5" /> {tr("Can't reach the server — start the backend")}</span>
             ) : (
-              <span className="flex items-center gap-1.5 text-ink-400"><span className="h-2 w-2 rounded-full bg-green-500" /> Connected</span>
+              <span className="flex items-center gap-1.5 text-ink-400"><span className="h-2 w-2 rounded-full bg-green-500" /> {tr("Connected")}</span>
             )}
           </div>
           <div className="ms-auto flex items-center gap-2">
-            <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800" aria-label="Switch language">
-              {lang === "en" ? "العربية" : "English"}
+            <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800" aria-label={tr("Switch language")}>
+              {lang === "en" ? "العربية" : tr("English")}
             </button>
             <label className="flex items-center gap-2 text-sm text-ink-400">
               <span className="hidden sm:inline">{t("acting_as")}</span>

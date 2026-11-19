@@ -6,7 +6,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+import json
+
+from fastapi.responses import JSONResponse, Response
+
+from .i18n_ar import translate_obj
 
 from .config import settings
 from .routers import analyze, dashboard, emails, endpoints, incidents, response, system
@@ -25,6 +29,21 @@ app = FastAPI(title="WOLVE AI", version="0.1.0", lifespan=lifespan,
               description="AI-powered scam, phishing and threat analysis platform (hackathon MVP)")
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=False,
                    allow_methods=["*"], allow_headers=["*"])
+
+
+@app.middleware("http")
+async def arabic_responses(request: Request, call_next):
+    """Translate display text in JSON responses when the client asks for Arabic (X-WOLVE-Lang: ar)."""
+    response = await call_next(request)
+    if request.headers.get("x-wolve-lang") != "ar" or "application/json" not in response.headers.get("content-type", ""):
+        return response
+    body = b"".join([chunk async for chunk in response.body_iterator])
+    try:
+        data = translate_obj(json.loads(body))
+    except Exception:
+        return Response(content=body, status_code=response.status_code, headers=dict(response.headers), media_type=response.media_type)
+    headers = {k: v for k, v in response.headers.items() if k.lower() not in ("content-length", "content-type")}
+    return JSONResponse(data, status_code=response.status_code, headers=headers)
 
 
 @app.exception_handler(RequestValidationError)

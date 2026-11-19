@@ -1,5 +1,6 @@
 "use client";
 
+import { tr } from "@/lib/i18n";
 import { UploadCloud, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "./ui";
@@ -38,12 +39,12 @@ export function FileDrop({ file, onFile, accept, hint, maxMb = 25 }: { file: Fil
         {file ? (
           <div className="flex items-center gap-2 text-sm text-ink-100">
             <span className="font-medium">{file.name}</span>
-            <span className="text-ink-400">({(file.size / 1024).toFixed(1)} KB)</span>
-            <button type="button" aria-label="Remove file" onClick={(e) => { e.stopPropagation(); onFile(null); if (ref.current) ref.current.value = ""; }} className="rounded p-0.5 hover:bg-ink-700"><X className="h-4 w-4" /></button>
+            <span className="text-ink-400">({(file.size / 1024).toFixed(1)} {tr("KB)")}</span>
+            <button type="button" aria-label={tr("Remove file")} onClick={(e) => { e.stopPropagation(); onFile(null); if (ref.current) ref.current.value = ""; }} className="rounded p-0.5 hover:bg-ink-700"><X className="h-4 w-4" /></button>
           </div>
         ) : (
           <>
-            <p className="text-sm text-ink-200">Drop a file here or <span className="text-volt">browse</span></p>
+            <p className="text-sm text-ink-200">{tr("Drop a file here or")} <span className="text-volt">{tr("browse")}</span></p>
             <p className="text-xs text-ink-400">{hint || `Max ${maxMb} MB. Files are inspected statically and never executed.`}</p>
           </>
         )}

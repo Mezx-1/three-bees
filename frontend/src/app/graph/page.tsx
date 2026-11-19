@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Card, EmptyState, ErrorBox, inputCls, PageHeader, Pill, ScanBar, SEV_HEX, SeverityBadge, SimBadge, useApi } from "@/components/ui";
 import { apiGet } from "@/lib/api";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, tr } from "@/lib/i18n";
 
 const TYPE_META: Record<string, { icon: any; color: string; col: number; label: string }> = {
   incident: { icon: Siren, color: "#d92d20", col: 0, label: "Incident" },
@@ -35,9 +35,9 @@ function EntityNode({ data }: NodeProps) {
     <div className="rounded-lg border bg-ink-900 px-2.5 py-2 shadow-sm" style={{ borderColor: d.malicious || d.severity === "critical" ? "#d92d20" : meta.color + "88", minWidth: 170, maxWidth: 220 }}>
       <Handle type="target" position={Position.Left} style={{ background: meta.color, width: 6, height: 6 }} />
       <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
-        <Icon className="h-3.5 w-3.5" /> {meta.label}
-        {d.malicious && <span className="ms-auto rounded bg-crit/20 px-1 text-[9px] text-crit">malicious</span>}
-        {d.simulated && <span className="ms-auto rounded bg-violet-100 px-1 text-[9px] text-violet-700">sim</span>}
+        <Icon className="h-3.5 w-3.5" /> {tr(meta.label)}
+        {d.malicious && <span className="ms-auto rounded bg-crit/20 px-1 text-[9px] text-crit">{tr("malicious")}</span>}
+        {d.simulated && <span className="ms-auto rounded bg-violet-100 px-1 text-[9px] text-violet-700">{tr("sim")}</span>}
       </div>
       <div className="mt-0.5 break-all font-mono text-[11px] leading-snug text-ink-100">{d.label}</div>
       {d.severity && <div className="mt-1 h-1 rounded" style={{ background: SEV_HEX[d.severity] }} />}
@@ -100,39 +100,39 @@ export default function GraphPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("nav_graph")} subtitle="Entities and relationships across emails, files, infrastructure and endpoints" icon={NetIcon}
+      <PageHeader title={t("nav_graph")} subtitle={tr("Entities and relationships across emails, files, infrastructure and endpoints")} icon={NetIcon}
         actions={
-          <select aria-label="Incident" className={inputCls + " !w-auto"} value={incident} onChange={(e) => { setIncident(e.target.value); setPicked(null); }}>
-            <option value="">Latest incidents (up to 8)</option>
+          <select aria-label={tr("Incident")} className={inputCls + " !w-auto"} value={incident} onChange={(e) => { setIncident(e.target.value); setPicked(null); }}>
+            <option value="">{tr("Latest incidents (up to 8)")}</option>
             {(incidents.data || []).map((i) => <option key={i.id} value={i.id}>{i.id} · {i.severity} · {i.title.slice(0, 50)}</option>)}
           </select>
         } />
       <div className="flex flex-wrap items-center gap-3 text-xs text-ink-300">
-        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 bg-volt" /> Observed — present in evidence/telemetry</span>
-        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 border-t-2 border-dashed border-warn" /> Inferred — linked by WOLVE without a shared artefact</span>
-        <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded border border-crit" /> Malicious indicator</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 bg-volt" /> {tr("Observed — present in evidence/telemetry")}</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 border-t-2 border-dashed border-warn" /> {tr("Inferred — linked by WOLVE without a shared artefact")}</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded border border-crit" /> {tr("Malicious indicator")}</span>
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
         <div className="h-[640px] overflow-hidden rounded-xl border border-ink-700 bg-ink-900">
           {graph.error ? <div className="p-4"><ErrorBox error={graph.error} onRetry={() => graph.reload()} /></div> : graph.loading && !graph.data ? <div className="p-4"><ScanBar /></div> :
-            nodes.length === 0 ? <div className="p-6"><EmptyState title="No incidents to graph yet" icon={NetIcon}>Run the demo scenario or analyse a high-risk email to create an incident.</EmptyState></div> : (
+            nodes.length === 0 ? <div className="p-6"><EmptyState title={tr("No incidents to graph yet")} icon={NetIcon}>{tr("Run the demo scenario or analyse a high-risk email to create an incident.")}</EmptyState></div> : (
               <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.2} onNodeClick={(_, n) => setPicked(n.data)} proOptions={{ hideAttribution: true }} style={{ background: "#fbfcfd" }}>
                 <Background color="#d0d7e1" bgColor="#fbfcfd" gap={24} />
                 <Controls />
               </ReactFlow>
             )}
         </div>
-        <Card title="Entity details">
-          {!picked ? <p className="text-sm text-ink-400">Click a node to inspect it.</p> : (
+        <Card title={tr("Entity details")}>
+          {!picked ? <p className="text-sm text-ink-400">{tr("Click a node to inspect it.")}</p> : (
             <div className="space-y-2 text-sm">
-              <Pill>{picked.meta.label}</Pill>
+              <Pill>{tr(picked.meta.label)}</Pill>
               <p className="break-all font-mono text-xs text-ink-100">{picked.title || picked.label}</p>
               {picked.severity && <SeverityBadge s={picked.severity} />}
-              {picked.malicious && <p className="text-xs text-crit">Flagged malicious by analysis or blocklist.</p>}
+              {picked.malicious && <p className="text-xs text-crit">{tr("Flagged malicious by analysis or blocklist.")}</p>}
               {picked.simulated && <SimBadge />}
-              {picked.status && <p className="text-xs text-ink-300">Status: {picked.status}</p>}
-              {refFor(picked) && <Link href={refFor(picked)!} className="inline-block text-xs text-volt hover:underline">Open →</Link>}
-              <p className="pt-2 text-[11px] text-ink-500">Connected edges: {edges.filter((e) => e.source === picked.id || e.target === picked.id).length}</p>
+              {picked.status && <p className="text-xs text-ink-300">{tr("Status:")} {picked.status}</p>}
+              {refFor(picked) && <Link href={refFor(picked)!} className="inline-block text-xs text-volt hover:underline">{tr("Open →")}</Link>}
+              <p className="pt-2 text-[11px] text-ink-500">{tr("Connected edges:")} {edges.filter((e) => e.source === picked.id || e.target === picked.id).length}</p>
             </div>
           )}
         </Card>

@@ -6,7 +6,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContaine
 import { DemoScenario } from "@/components/DemoScenario";
 import { Card, cn, EmptyState, ErrorBox, PageHeader, SEV_HEX, SeverityBadge, SimBadge, Spinner, Stat, StatusDot, timeAgo, useApi } from "@/components/ui";
 import { apiGet } from "@/lib/api";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, tr } from "@/lib/i18n";
 
 const STATUS_BANNER: Record<string, [string, string]> = {
   critical: ["Critical — action needed", "border-red-200 bg-red-50 text-crit"],
@@ -21,7 +21,7 @@ export default function CommandCenter() {
   const { t } = useI18n();
   const { data: d, error, loading, reload } = useApi(() => apiGet("/api/dashboard"), [], 10000);
 
-  if (loading && !d) return <Spinner label="Loading command center…" />;
+  if (loading && !d) return <Spinner label={tr("Loading command center…")} />;
   if (error && !d) return <ErrorBox error={error} onRetry={() => reload()} />;
   if (!d) return null;
   const [label, cls] = STATUS_BANNER[d.security_status];
@@ -29,42 +29,42 @@ export default function CommandCenter() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("nav_command")} subtitle="Overview of what has been checked, open incidents and devices" icon={LayoutDashboard}
-        actions={d.contains_demo_data && <SimBadge label="Includes demo / simulated data" />} />
+      <PageHeader title={t("nav_command")} subtitle={tr("Overview of what has been checked, open incidents and devices")} icon={LayoutDashboard}
+        actions={d.contains_demo_data && <SimBadge label={tr("Includes demo / simulated data")} />} />
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         <div className={cn("flex flex-wrap items-center gap-4 rounded-xl border p-5", cls)}>
           <ShieldCheck className="h-9 w-9" />
           <div>
             <div className="text-sm text-ink-300">{t("security_status")}</div>
-            <div className="text-2xl font-semibold">{label}</div>
+            <div className="text-2xl font-semibold">{tr(label)}</div>
             <p className="mt-0.5 text-sm text-ink-200">{d.security_status_text}</p>
           </div>
-          <span className="ms-auto self-end text-xs text-ink-400">Updated {timeAgo(d.generated_at)}</span>
+          <span className="ms-auto self-end text-xs text-ink-400">{tr("Updated")} {timeAgo(d.generated_at)}</span>
         </div>
         <div className="flex flex-col justify-center gap-3 rounded-xl border border-ink-700 bg-ink-900 p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
-          <div className="text-base font-semibold text-ink-100">Got something suspicious?</div>
+          <div className="text-base font-semibold text-ink-100">{tr("Got something suspicious?")}</div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/scam-analyzer" className="inline-flex items-center gap-2 rounded-lg bg-volt px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800"><ShieldAlert className="h-4 w-4" /> Check a message or link</Link>
-            <Link href="/email-security" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><Mail className="h-4 w-4" /> Check an email</Link>
-            <Link href="/forensics" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><FileSearch className="h-4 w-4" /> Check a file</Link>
+            <Link href="/scam-analyzer" className="inline-flex items-center gap-2 rounded-lg bg-volt px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800"><ShieldAlert className="h-4 w-4" /> {tr("Check a message or link")}</Link>
+            <Link href="/email-security" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><Mail className="h-4 w-4" /> {tr("Check an email")}</Link>
+            <Link href="/forensics" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><FileSearch className="h-4 w-4" /> {tr("Check a file")}</Link>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Emails checked" value={tot.emails_analyzed} icon={Mail} />
-        <Stat label="Suspicious emails" value={tot.suspicious_emails} icon={MailWarning} tone={tot.suspicious_emails ? "warn" : "default"} />
-        <Stat label="Critical threats" value={tot.critical_threats} icon={AlertTriangle} tone={tot.critical_threats ? "crit" : "default"} />
-        <Stat label="Files checked" value={tot.files_analyzed} icon={FileSearch} />
-        <Stat label="Active incidents" value={tot.active_incidents} icon={Siren} tone={tot.active_incidents ? "crit" : "safe"} />
-        <Stat label="Endpoints" value={tot.endpoints} icon={Cpu} hint={`${tot.endpoints_at_risk} at risk`} tone={tot.endpoints_at_risk ? "warn" : "default"} />
-        <Stat label="Quarantined" value={tot.quarantined_emails} icon={ShieldBan} tone="volt" />
-        <Stat label="Blocked items" value={tot.blocked_indicators} icon={ShieldBan} />
+        <Stat label={tr("Emails checked")} value={tot.emails_analyzed} icon={Mail} />
+        <Stat label={tr("Suspicious emails")} value={tot.suspicious_emails} icon={MailWarning} tone={tot.suspicious_emails ? "warn" : "default"} />
+        <Stat label={tr("Critical threats")} value={tot.critical_threats} icon={AlertTriangle} tone={tot.critical_threats ? "crit" : "default"} />
+        <Stat label={tr("Files checked")} value={tot.files_analyzed} icon={FileSearch} />
+        <Stat label={tr("Active incidents")} value={tot.active_incidents} icon={Siren} tone={tot.active_incidents ? "crit" : "safe"} />
+        <Stat label={tr("Endpoints")} value={tot.endpoints} icon={Cpu} hint={`${tot.endpoints_at_risk} at risk`} tone={tot.endpoints_at_risk ? "warn" : "default"} />
+        <Stat label={tr("Quarantined")} value={tot.quarantined_emails} icon={ShieldBan} tone="volt" />
+        <Stat label={tr("Blocked items")} value={tot.blocked_indicators} icon={ShieldBan} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Card title="Threat activity — last 14 days" subtitle="Analyses by severity" className="xl:col-span-2">
+        <Card title={tr("Threat activity — last 14 days")} subtitle={tr("Analyses by severity")} className="xl:col-span-2">
           <div className="h-56">
             <ResponsiveContainer>
               <AreaChart data={d.activity}>
@@ -79,7 +79,7 @@ export default function CommandCenter() {
             </ResponsiveContainer>
           </div>
         </Card>
-        <Card title="Severity distribution" subtitle="All analyses">
+        <Card title={tr("Severity distribution")} subtitle={tr("All analyses")}>
           <div className="h-56">
             <ResponsiveContainer>
               <BarChart data={d.severity_distribution}>
@@ -95,14 +95,14 @@ export default function CommandCenter() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Card title="Recent analysis history" className="xl:col-span-2" action={<Link href="/scam-analyzer" className="text-xs text-volt hover:underline">Analyze new →</Link>}>
+        <Card title={tr("Recent analysis history")} className="xl:col-span-2" action={<Link href="/scam-analyzer" className="text-xs text-volt hover:underline">{tr("Analyze new →")}</Link>}>
           {d.recent_analyses.length === 0 ? (
-            <EmptyState title="No analyses yet" icon={Activity}>Submit an email, message, URL or file — or run the demo scenario.</EmptyState>
+            <EmptyState title={tr("No analyses yet")} icon={Activity}>{tr("Submit an email, message, URL or file — or run the demo scenario.")}</EmptyState>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs font-medium text-ink-400">
-                  <tr><th className="py-2 pe-3 text-start">Item</th><th className="pe-3 text-start">Type</th><th className="pe-3 text-start">Verdict</th><th className="pe-3 text-start">Score</th><th className="text-start">When</th></tr>
+                  <tr><th className="py-2 pe-3 text-start">{tr("Item")}</th><th className="pe-3 text-start">{tr("Type")}</th><th className="pe-3 text-start">{tr("Verdict")}</th><th className="pe-3 text-start">{tr("Score")}</th><th className="text-start">{tr("When")}</th></tr>
                 </thead>
                 <tbody className="divide-y divide-ink-800">
                   {d.recent_analyses.map((a: any) => (
@@ -119,8 +119,8 @@ export default function CommandCenter() {
             </div>
           )}
         </Card>
-        <Card title="Security recommendations">
-          {d.recommendations.length === 0 ? <p className="text-sm text-ink-400">No outstanding recommendations.</p> : (
+        <Card title={tr("Security recommendations")}>
+          {d.recommendations.length === 0 ? <p className="text-sm text-ink-400">{tr("No outstanding recommendations.")}</p> : (
             <ul className="space-y-2">
               {d.recommendations.map((r: any, i: number) => (
                 <li key={i}>
@@ -137,13 +137,13 @@ export default function CommandCenter() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Card title="Active & recent incidents" action={<Link href="/incidents" className="text-xs text-volt hover:underline">All incidents →</Link>}>
-          {d.recent_incidents.length === 0 ? <EmptyState title="No incidents" icon={Siren} /> : (
+        <Card title={tr("Active & recent incidents")} action={<Link href="/incidents" className="text-xs text-volt hover:underline">{tr("All incidents →")}</Link>}>
+          {d.recent_incidents.length === 0 ? <EmptyState title={tr("No incidents")} icon={Siren} /> : (
             <ul className="space-y-2">
               {d.recent_incidents.map((i: any) => (
                 <li key={i.id}>
                   <Link href={`/incidents/${i.id}`} className="block rounded-lg border border-ink-700 bg-ink-850/60 p-2.5 hover:border-ink-500">
-                    <div className="flex items-center gap-2"><SeverityBadge s={i.severity} /><StatusDot s={i.status} />{i.correlated && <span className="text-[10px] font-semibold uppercase text-volt">correlated</span>}</div>
+                    <div className="flex items-center gap-2"><SeverityBadge s={i.severity} /><StatusDot s={i.status} />{i.correlated && <span className="text-[10px] font-semibold uppercase text-volt">{tr("correlated")}</span>}</div>
                     <p className="mt-1 truncate text-sm text-ink-100">{i.title}</p>
                     <p className="text-[11px] text-ink-400">{i.id} · {i.source} · {timeAgo(i.created_at)}</p>
                   </Link>
@@ -152,9 +152,9 @@ export default function CommandCenter() {
             </ul>
           )}
         </Card>
-        <Card title="Endpoint activity" action={<Link href="/endpoints" className="text-xs text-volt hover:underline">Endpoints →</Link>}>
+        <Card title={tr("Endpoint activity")} action={<Link href="/endpoints" className="text-xs text-volt hover:underline">{tr("Endpoints →")}</Link>}>
           <div className="mb-3 flex flex-wrap gap-2">{d.endpoint_status.map((s: any) => <span key={s.status} className="rounded-md bg-ink-850 px-2 py-1 ring-1 ring-ink-700"><StatusDot s={s.status} /> <b className="ms-1 font-mono text-xs">{s.count}</b></span>)}</div>
-          {d.recent_endpoint_events.length === 0 ? <p className="text-sm text-ink-400">No endpoint events received.</p> : (
+          {d.recent_endpoint_events.length === 0 ? <p className="text-sm text-ink-400">{tr("No endpoint events received.")}</p> : (
             <ul className="space-y-1.5">
               {d.recent_endpoint_events.slice(0, 6).map((e: any) => (
                 <li key={e.id} className="flex items-center gap-2 text-xs">

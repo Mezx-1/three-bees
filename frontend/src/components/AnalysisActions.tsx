@@ -1,5 +1,6 @@
 "use client";
 
+import { tr } from "@/lib/i18n";
 import { Download, FileJson, Flag, MailCheck, MailWarning, ShieldBan, Siren, Trash2, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -41,19 +42,19 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
       {a.kind === "email" && (
         <>
           {a.status !== "quarantined" ? (
-            <Button variant="warn" loading={busy === "quarantine"} onClick={() => emailAction("quarantine")}><ShieldBan className="h-4 w-4" /> Quarantine</Button>
+            <Button variant="warn" loading={busy === "quarantine"} onClick={() => emailAction("quarantine")}><ShieldBan className="h-4 w-4" /> {tr("Quarantine")}</Button>
           ) : (
-            <Button loading={busy === "release"} onClick={() => emailAction("release")}><Undo2 className="h-4 w-4" /> Release</Button>
+            <Button loading={busy === "release"} onClick={() => emailAction("release")}><Undo2 className="h-4 w-4" /> {tr("Release")}</Button>
           )}
           {a.status !== "suspicious" && a.status !== "quarantined" && (
-            <Button loading={busy === "mark_suspicious"} onClick={() => emailAction("mark_suspicious")}><MailWarning className="h-4 w-4" /> Mark suspicious</Button>
+            <Button loading={busy === "mark_suspicious"} onClick={() => emailAction("mark_suspicious")}><MailWarning className="h-4 w-4" /> {tr("Mark suspicious")}</Button>
           )}
           <Button loading={busy === "mark_safe"} onClick={() => {
-            const note = a.risk_score >= 80 ? window.prompt("Critical-risk email: enter your review note to mark it safe") : undefined;
+            const note = a.risk_score >= 80 ? window.prompt(tr("Critical-risk email: enter your review note to mark it safe")) : undefined;
             if (a.risk_score >= 80 && !note) return;
             emailAction("mark_safe", note || undefined);
-          }}><MailCheck className="h-4 w-4" /> Mark safe</Button>
-          <Button loading={busy === "report"} onClick={() => emailAction("report")}><Flag className="h-4 w-4" /> Report to IT</Button>
+          }}><MailCheck className="h-4 w-4" /> {tr("Mark safe")}</Button>
+          <Button loading={busy === "report"} onClick={() => emailAction("report")}><Flag className="h-4 w-4" /> {tr("Report to IT")}</Button>
         </>
       )}
       {!a.incident_id && a.kind !== "email" && (
@@ -61,24 +62,24 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
           const inc = await apiSend("/api/incidents", "POST", { title: `${a.classification}: ${a.title}`.slice(0, 390), severity: a.severity === "info" ? "low" : a.severity, analysis_id: a.id, summary: a.report?.findings.slice(0, 5).map((f) => f.title).join("; ") });
           onChange({ ...a, incident_id: inc.id });
           toast("ok", `Incident ${inc.id} created.`);
-        })}><Siren className="h-4 w-4" /> Create incident</Button>
+        })}><Siren className="h-4 w-4" /> {tr("Create incident")}</Button>
       )}
       {maliciousDomains.map((d) => (
         <Button key={d} variant="danger" loading={busy === `b-${d}`} onClick={() => act(`b-${d}`, async () => {
           const r = await apiSend("/api/blocklist", "POST", { type: "domain", value: d, reason: `From analysis ${a.id}` });
           toast("ok", r.message);
-        })}><ShieldBan className="h-4 w-4" /> Block {d}</Button>
+        })}><ShieldBan className="h-4 w-4" /> {tr("Block")} {d}</Button>
       ))}
-      <Button variant="ghost" loading={busy === "html"} onClick={() => act("html", () => download(`/api/analyses/${a.id}/export?format=html`, `${a.id}.html`))}><Download className="h-4 w-4" /> Report</Button>
-      <Button variant="ghost" loading={busy === "json"} onClick={() => act("json", () => download(`/api/analyses/${a.id}/export?format=json`, `${a.id}.json`))}><FileJson className="h-4 w-4" /> JSON</Button>
+      <Button variant="ghost" loading={busy === "html"} onClick={() => act("html", () => download(`/api/analyses/${a.id}/export?format=html`, `${a.id}.html`))}><Download className="h-4 w-4" /> {tr("Report")}</Button>
+      <Button variant="ghost" loading={busy === "json"} onClick={() => act("json", () => download(`/api/analyses/${a.id}/export?format=json`, `${a.id}.json`))}><FileJson className="h-4 w-4" /> {tr("JSON")}</Button>
       <Button variant="ghost" className="text-crit" loading={busy === "del"} onClick={() => {
-        if (!window.confirm("Delete this local WOLVE record? This does not affect any external mailbox.")) return;
+        if (!window.confirm(tr("Delete this local WOLVE record? This does not affect any external mailbox."))) return;
         act("del", async () => {
           const r = await apiSend(`/api/analyses/${a.id}`, "DELETE");
           toast("ok", r.message);
           router.push("/");
         });
-      }}><Trash2 className="h-4 w-4" /> Delete record</Button>
+      }}><Trash2 className="h-4 w-4" /> {tr("Delete record")}</Button>
     </>
   );
 }

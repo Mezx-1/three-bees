@@ -7,7 +7,7 @@ import { AnalysisActions } from "@/components/AnalysisActions";
 import { ReportView } from "@/components/ReportView";
 import { broadcastRefresh, Button, Card, ErrorBox, inputCls, Label, PageHeader, ScanBar, SeverityBadge, timeAgo, useApi } from "@/components/ui";
 import { apiGet, apiSend, apiUpload } from "@/lib/api";
-import { useI18n } from "@/lib/i18n";
+import { tr, trf, useI18n } from "@/lib/i18n";
 import type { Analysis } from "@/lib/types";
 
 const CHANNELS = [
@@ -71,31 +71,31 @@ export default function ScamAnalyzer() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("nav_scam")} subtitle="Not sure if something is a scam? Paste it here or attach a screenshot, recording or file." icon={ShieldAlert} />
+      <PageHeader title={t("nav_scam")} subtitle={tr("Not sure if something is a scam? Paste it here or attach a screenshot, recording or file.")} icon={ShieldAlert} />
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <Card>
           <form onSubmit={submit} className="space-y-4" noValidate>
             <div>
-              <Label htmlFor="content">What did you receive?</Label>
+              <Label htmlFor="content">{tr("What did you receive?")}</Label>
               <textarea id="content" dir="auto" className={inputCls + " min-h-40 text-[15px]"} value={text} onChange={(e) => setText(e.target.value)}
-                placeholder={file ? "Optional: add context, or what was said in the recording…" : "Paste a message, email, link, phone number or IP address…"} />
+                placeholder={file ? tr("Optional: add context, or what was said in the recording…") : tr("Paste a message, email, link, phone number or IP address…")} />
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               {file ? (
                 <span className="inline-flex items-center gap-2 rounded-lg bg-ink-800 px-3 py-2 text-sm text-ink-200">
-                  <Paperclip className="h-4 w-4 text-ink-400" /> {file.name} <span className="text-ink-400">({(file.size / 1024).toFixed(0)} KB)</span>
-                  <button type="button" aria-label="Remove file" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ""; }} className="rounded p-0.5 hover:bg-ink-700"><X className="h-4 w-4" /></button>
+                  <Paperclip className="h-4 w-4 text-ink-400" /> {file.name} <span className="text-ink-400">({(file.size / 1024).toFixed(0)} {tr("KB)")}</span>
+                  <button type="button" aria-label={tr("Remove file")} onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ""; }} className="rounded p-0.5 hover:bg-ink-700"><X className="h-4 w-4" /></button>
                 </span>
               ) : (
-                <Button type="button" onClick={() => fileRef.current?.click()}><Paperclip className="h-4 w-4" /> Attach screenshot, recording or file</Button>
+                <Button type="button" onClick={() => fileRef.current?.click()}><Paperclip className="h-4 w-4" /> {tr("Attach screenshot, recording or file")}</Button>
               )}
               <input ref={fileRef} type="file" className="hidden" onChange={(e) => pickFile(e.target.files?.[0])} />
               {!file && (
                 <label className="flex items-center gap-2 text-sm text-ink-400">
-                  Where did it come from?
+                  {tr("Where did it come from?")}
                   <select value={channel} onChange={(e) => setChannel(e.target.value)} className={inputCls + " !w-auto !py-1.5"}>
-                    {CHANNELS.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
+                    {CHANNELS.map((c) => <option key={c.v} value={c.v}>{tr(c.l)}</option>)}
                   </select>
                 </label>
               )}
@@ -103,19 +103,19 @@ export default function ScamAnalyzer() {
 
             {err && <ErrorBox error={err} />}
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit" variant="primary" className="px-6 py-2.5 text-base" loading={busy}>{busy ? "Checking…" : "Check it"}</Button>
-              <span className="text-xs text-ink-400">Nothing you submit is opened or run. Files up to {MAX_MB} MB.</span>
+              <Button type="submit" variant="primary" className="px-6 py-2.5 text-base" loading={busy}>{busy ? tr("Checking…") : tr("Check it")}</Button>
+              <span className="text-xs text-ink-400">{trf("Nothing you submit is opened or run. Files up to {n} MB.", { n: MAX_MB })}</span>
             </div>
             {busy && <ScanBar />}
           </form>
         </Card>
-        <Card title="Try an example" subtitle="Fictional scam messages">
+        <Card title={tr("Try an example")} subtitle={tr("Fictional scam messages")}>
           <ul className="space-y-2">
             {samples.map((s) => (
               <li key={s.key}>
                 <button onClick={() => { setFile(null); setChannel(s.channel); setText(s.text); setResult(null); setErr(null); }}
                   className="w-full rounded-lg border border-ink-700 p-3 text-start text-sm hover:border-volt hover:bg-blue-50/40">
-                  <span className="mb-1 block text-xs font-medium capitalize text-volt">{s.channel === "call" ? "Phone call" : s.channel}</span>
+                  <span className="mb-1 block text-xs font-medium capitalize text-volt">{s.channel === "call" ? tr("Phone call") : s.channel}</span>
                   <span dir="auto" className="line-clamp-2 text-ink-300">{s.text}</span>
                 </button>
               </li>
@@ -126,8 +126,8 @@ export default function ScamAnalyzer() {
 
       <div ref={resultRef}>{result && <ReportView a={result} actions={<AnalysisActions a={result} onChange={setResult} />} />}</div>
 
-      <Card title="Recently checked">
-        {history.error ? <ErrorBox error={history.error} /> : (history.data?.length ?? 0) === 0 ? <p className="text-sm text-ink-400">Nothing checked yet.</p> : (
+      <Card title={tr("Recently checked")}>
+        {history.error ? <ErrorBox error={history.error} /> : (history.data?.length ?? 0) === 0 ? <p className="text-sm text-ink-400">{tr("Nothing checked yet.")}</p> : (
           <ul className="divide-y divide-ink-700">
             {history.data!.map((a) => (
               <li key={a.id}>

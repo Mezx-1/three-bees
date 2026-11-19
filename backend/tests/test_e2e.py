@@ -23,6 +23,7 @@ EMPLOYEE = {"X-WOLVE-User": "sara.ahmed"}
 @pytest.fixture(scope="module")
 def c():
     with TestClient(app) as client:
+        assert client.post("/api/demo/reset", headers=ADMIN).status_code == 200  # isolate from other test modules
         yield client
 
 
@@ -128,10 +129,56 @@ def test_incident_lifecycle_and_audit(c):
 def test_export_and_settings(c):
     a = c.get("/api/analyses?kind=email", headers=ANALYST).json()[0]
     r = c.get(f"/api/analyses/{a['id']}/export", headers=ANALYST)
-    assert r.status_code == 200 and "WOLVE AI" in r.text
+    assert r.status_code == 200 and "WOLVE" in r.text and 'dir="ltr"' in r.text
     assert c.put("/api/settings", json={"ai_enabled": False}, headers=ANALYST).status_code == 403
     assert c.put("/api/settings", json={"auto_incident_threshold": 70}, headers=ADMIN).json()["auto_incident_threshold"] == 70
     assert c.get("/api/system/status").json()["integrations"]["microsoft_365"]["connected"] is False
+
+
+def test_live_agent_monitoring(c):
+    r = c.post("/api/agent/register", json={"hostname": "TEST-LAPTOP", "os": "Windows 11", "owner_email": "tester@alnoorlogistics.ae",
+                                            "consent": True, "system_info": {}}, headers=ADMIN)
+    assert r.status_code == 200, r.text
+    dev, tok = r.json()["device_id"], {"X-Device-Token": r.json()["token"]}
+    assert c.post("/api/agent/register", json={"hostname": "X", "consent": False}, headers=ADMIN).status_code == 422
+    c.post("/api/blocklist", json={"type": "ip", "value": "198.51.100.66", "reason": "test"}, headers=ANALYST)
+    batch = {"connections": [
+        {"process_name": "chrome.exe", "pid": 100, "remote_ip": "142.250.180.14", "remote_port": 443, "direction": "outbound", "status": "ESTABLISHED"},
+        {"process_name": "powershell.exe", "pid": 200, "remote_ip": "198.51.100.66", "remote_port": 4444, "direction": "outbound", "status": "ESTABLISHED"},
+        {"process_name": "svchost.exe", "pid": 300, "remote_ip": "192.168.1.20", "remote_port": 50000, "direction": "outbound", "status": "ESTABLISHED"},
+    ], "listening": [{"protocol": "tcp", "port": 445, "process_name": "System"}]}
+    r = c.post("/api/agent/connections", json=batch, headers=tok).json()
+    assert r["new"] == 3 and r["flagged"] == 1 and r["events"] == 1
+    r2 = c.post("/api/agent/connections", json=batch, headers=tok).json()
+    assert r2["new"] == 0 and r2["events"] == 0, "same connection must not raise duplicate events"
+    data = c.get(f"/api/endpoints/{dev}/connections", headers=ANALYST).json()
+    bad = next(x for x in data["connections"] if x["remote_ip"] == "198.51.100.66")
+    assert bad["risk_score"] >= 60 and any(f["title"] == "Connection to a blocked IP" for f in bad["flags"])
+    lan = next(x for x in data["connections"] if x["remote_ip"] == "192.168.1.20")
+    assert lan["origin"]["scope"] == "private"
+    assert data["summary"]["active_connections"] == 3 and data["listening"][0]["port"] == 445
+    # benign process starts are dropped, suspicious ones kept
+    ev = c.post("/api/agent/events", json=[
+        {"event_type": "process", "title": "Process started: notepad.exe", "details": {"process_name": "notepad.exe", "parent_process": "explorer.exe"}},
+        {"event_type": "process", "title": "Process started: powershell.exe", "details": {"process_name": "powershell.exe", "parent_process": "winword.exe", "command_line": "powershell -enc AAAA"}},
+    ], headers=tok).json()
+    assert ev["ingested"] == 1 and ev["skipped_benign"] == 1
+    # posture weakness -> event once
+    p = {"firewall": {"domain": "on", "private": "off", "public": "on"}, "defender": {"realtime": True, "antivirus": True, "signature_age_days": 1}}
+    assert c.post("/api/agent/posture", json=p, headers=tok).json()["findings"] == 1
+    c.post("/api/agent/posture", json=p, headers=tok)
+    d = c.get(f"/api/endpoints/{dev}", headers=ANALYST).json()
+    assert sum(1 for e in d["events"] if e["event_type"] == "posture") == 1
+    assert d["online"] is True and d["status"] in ("at_risk", "compromised")
+    # response command round-trip
+    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66"}, headers=EMPLOYEE).status_code == 403
+    q = c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66"}, headers=ANALYST).json()
+    cmds = c.get("/api/agent/commands", headers=tok).json()["commands"]
+    assert cmds and cmds[0]["id"] == q["id"]
+    assert c.get("/api/agent/commands", headers=tok).json()["commands"] == []
+    c.post(f"/api/agent/commands/{q['id']}/result", json={"status": "refused", "result": "not allowed"}, headers=tok)
+    assert c.get(f"/api/endpoints/{dev}/commands", headers=ANALYST).json()[0]["status"] == "refused"
+    assert c.post("/api/agent/connections", json=batch, headers={"X-Device-Token": "bad"}).status_code == 401
 
 
 def test_zz_demo_reset(c):

@@ -6,7 +6,7 @@ Endpoint agents authenticate with a per-device token (`X-Device-Token`)."""
 from __future__ import annotations
 
 import time
-from datetime import timezone
+from datetime import datetime, timezone
 from collections import defaultdict, deque
 
 from fastapi import Depends, Header, HTTPException, Request
@@ -89,7 +89,15 @@ def ser_incident(i: Incident, full: bool = False) -> dict:
 def ser_device(dv: Device) -> dict:
     return {"id": dv.id, "hostname": dv.hostname, "os": dv.os, "owner_email": dv.owner_email, "ip_address": dv.ip_address,
             "agent_version": dv.agent_version, "source": dv.source, "status": dv.status, "risk_score": dv.risk_score,
-            "last_seen": iso(dv.last_seen), "system_info": dv.system_info, "created_at": iso(dv.created_at)}
+            "last_seen": iso(dv.last_seen), "system_info": dv.system_info, "created_at": iso(dv.created_at),
+            "online": _online(dv)}
+
+
+def _online(dv: Device) -> bool:
+    if dv.source != "agent" or not dv.last_seen:
+        return False
+    ls = dv.last_seen if dv.last_seen.tzinfo else dv.last_seen.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - ls).total_seconds() < 90
 
 
 def ser_event(e: EndpointEvent) -> dict:

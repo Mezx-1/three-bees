@@ -3,7 +3,7 @@
 import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Globe2, Link2, Mail, Paperclip, ScanText } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useI18n } from "@/lib/i18n";
+import { tr, trf, useI18n } from "@/lib/i18n";
 import type { Analysis, Finding } from "@/lib/types";
 import { Button, Card, cn, fmtTime, Pill, ScoreRing, SeverityBadge, SourceBadge, Tabs } from "./ui";
 
@@ -14,7 +14,7 @@ function FindingRow({ f }: { f: Finding }) {
         <SeverityBadge s={f.severity} />
         <SourceBadge s={f.source} />
         <span className="text-sm font-medium text-ink-100">{f.title}</span>
-        {f.weight > 0 && <span className="ms-auto font-mono text-[11px] text-ink-400" title="Contribution weight to the risk score">+{f.weight}</span>}
+        {f.weight > 0 && <span className="ms-auto font-mono text-[11px] text-ink-400" title={tr("Contribution weight to the risk score")}>+{f.weight}</span>}
       </div>
       <p className="mt-1.5 text-xs leading-relaxed text-ink-300">{f.detail}</p>
       {f.evidence && <code className="mt-1.5 block break-all rounded bg-ink-950/70 px-2 py-1 font-mono text-[11px] text-volt/90">{f.evidence}</code>}
@@ -32,7 +32,7 @@ function KV({ rows }: { rows: [string, React.ReactNode][] }) {
     <dl className="grid grid-cols-[minmax(110px,auto)_1fr] gap-x-4 gap-y-1.5 text-xs">
       {rows.filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => (
         <div key={k} className="contents">
-          <dt className="text-ink-400">{k}</dt>
+          <dt className="text-ink-400">{tr(k)}</dt>
           <dd className="break-all font-mono text-ink-100">{v}</dd>
         </div>
       ))}
@@ -60,7 +60,7 @@ function EmailDetails({ r }: { r: any }) {
   const auth = em.authentication || {};
   return (
     <div className="space-y-3">
-      <Collapse title="Headers & sender" icon={Mail} defaultOpen>
+      <Collapse title={tr("Headers & sender")} icon={Mail} defaultOpen>
         <KV rows={[
           ["From", em.from_name ? `${em.from_name} <${em.from_address}>` : em.from_address],
           ["Reply-To", em.reply_to], ["Return-Path", em.return_path], ["To", (em.to || []).join(", ")], ["Subject", em.subject],
@@ -75,13 +75,13 @@ function EmailDetails({ r }: { r: any }) {
           ))}
         </div>
         {em.received_chain?.length > 0 && (
-          <details className="mt-3 text-xs text-ink-300"><summary className="cursor-pointer text-ink-400">Received chain</summary>
+          <details className="mt-3 text-xs text-ink-300"><summary className="cursor-pointer text-ink-400">{tr("Received chain")}</summary>
             <ol className="mt-1 list-decimal space-y-1 ps-5 font-mono text-[11px]">{em.received_chain.map((x: string, i: number) => <li key={i} className="break-all">{x}</li>)}</ol>
           </details>
         )}
       </Collapse>
       {r.attachments?.length > 0 && (
-        <Collapse title={`Attachments & embedded images (${r.attachments.length})`} icon={Paperclip} defaultOpen>
+        <Collapse title={`${tr("Attachments & embedded images")} (${r.attachments.length})`} icon={Paperclip} defaultOpen>
           <ul className="space-y-2">
             {r.attachments.map((a: any, i: number) => (
               <li key={i} className="rounded-lg border border-ink-700 bg-ink-850/60 p-3">
@@ -91,19 +91,19 @@ function EmailDetails({ r }: { r: any }) {
                 </div>
                 <KV rows={[["Declared MIME", a.declared_mime], ["Real type", a.info.detected_type], ["Size", `${a.info.size} bytes`], ["SHA-256", a.info.hashes.sha256]]} />
                 {a.info.archive?.entries?.length > 0 && (
-                  <div className="mt-2 text-xs"><span className="text-ink-400">Archive contents:</span>
+                  <div className="mt-2 text-xs"><span className="text-ink-400">{tr("Archive contents:")}</span>
                     <ul className="mt-1 space-y-0.5 font-mono text-[11px]">{a.info.archive.entries.map((e: any) => <li key={e.name} className={e.flag ? "text-crit" : "text-ink-200"}>{e.name} ({e.size} B){e.flag ? ` — ${e.flag}` : ""}</li>)}</ul>
                   </div>
                 )}
-                {a.info.qr?.codes?.length > 0 && <p className="mt-2 break-all text-xs"><span className="text-ink-400">QR code →</span> <span className="font-mono text-warn">{a.info.qr.codes.join(", ")}</span></p>}
-                {a.info.ocr?.text && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">OCR ({a.info.ocr.engine}): </span>{a.info.ocr.text}</pre>}
+                {a.info.qr?.codes?.length > 0 && <p className="mt-2 break-all text-xs"><span className="text-ink-400">{tr("QR code →")}</span> <span className="font-mono text-warn">{a.info.qr.codes.join(", ")}</span></p>}
+                {a.info.ocr?.text && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">{tr("OCR (")}{a.info.ocr.engine}): </span>{a.info.ocr.text}</pre>}
               </li>
             ))}
           </ul>
         </Collapse>
       )}
       {r.body_preview && (
-        <Collapse title="Message body (rendered as text — links disabled)" icon={ScanText}>
+        <Collapse title={tr("Message body (rendered as text — links disabled)")} icon={ScanText}>
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap text-xs text-ink-200">{r.body_preview}</pre>
         </Collapse>
       )}
@@ -114,7 +114,7 @@ function EmailDetails({ r }: { r: any }) {
 function UrlList({ urls }: { urls: any[] }) {
   if (!urls?.length) return null;
   return (
-    <Collapse title={`Links analysed (${urls.length})`} icon={Link2} defaultOpen>
+    <Collapse title={`${tr("Links analysed")} (${urls.length})`} icon={Link2} defaultOpen>
       <ul className="space-y-2">
         {urls.map((u, i) => (
           <li key={i} className="rounded-lg border border-ink-700 bg-ink-850/60 p-2.5">
@@ -123,7 +123,7 @@ function UrlList({ urls }: { urls: any[] }) {
               <span className="break-all font-mono text-xs text-ink-100">{u.url}</span>
             </div>
             {u.findings?.length > 0 && <p className="mt-1 text-[11px] text-ink-400">{u.findings.map((f: Finding) => f.title).join(" · ")}</p>}
-            {u.intel?.dns && <p className="mt-1 text-[11px] text-ink-400">DNS: {u.intel.dns.nxdomain ? "NXDOMAIN" : Object.entries(u.intel.dns.records || {}).map(([k, v]: any) => `${k} ${v.length}`).join(", ") || u.intel.dns.error || "no records"} · <span className="text-ink-500">{u.intel.dns.source} @ {fmtTime(u.intel.dns.queried_at)}</span></p>}
+            {u.intel?.dns && <p className="mt-1 text-[11px] text-ink-400">{tr("DNS:")} {u.intel.dns.nxdomain ? "NXDOMAIN" : Object.entries(u.intel.dns.records || {}).map(([k, v]: any) => `${k} ${v.length}`).join(", ") || u.intel.dns.error || "no records"} · <span className="text-ink-500">{u.intel.dns.source} @ {fmtTime(u.intel.dns.queried_at)}</span></p>}
           </li>
         ))}
       </ul>
@@ -136,31 +136,31 @@ function FileDetails({ r }: { r: any }) {
   if (!f) return null;
   return (
     <div className="space-y-3">
-      <Collapse title="File identity" icon={FileWarning} defaultOpen>
+      <Collapse title={tr("File identity")} icon={FileWarning} defaultOpen>
         <KV rows={[["Filename", f.filename], ["Extension", `.${f.extension || "(none)"}`], ["Real type (signature)", f.detected_type], ["Detected MIME", f.detected_mime],
           ["Declared MIME", f.declared_mime], ["Size", `${f.size} bytes`], ["Entropy", `${f.entropy} / 8`], ["MD5", f.hashes.md5], ["SHA-1", f.hashes.sha1], ["SHA-256", f.hashes.sha256]]} />
       </Collapse>
       {f.archive && (
-        <Collapse title={`Archive listing (${f.archive.entry_count ?? 0})`} icon={Paperclip} defaultOpen>
+        <Collapse title={`${tr("Archive listing")} (${f.archive.entry_count ?? 0})`} icon={Paperclip} defaultOpen>
           <ul className="space-y-0.5 font-mono text-[11px]">{(f.archive.entries || []).map((e: any) => <li key={e.name} className={e.flag ? "text-crit" : "text-ink-200"}>{e.name} · {e.size} B{e.flag ? ` — ${e.flag}` : ""}</li>)}</ul>
         </Collapse>
       )}
       {f.image && (
-        <Collapse title="Image forensics" icon={ScanText} defaultOpen>
+        <Collapse title={tr("Image forensics")} icon={ScanText} defaultOpen>
           <KV rows={[["Format", f.image.format], ["Dimensions", f.image.width ? `${f.image.width}×${f.image.height}` : undefined], ["Software", f.image.software],
             ["Appended bytes", f.image.appended_bytes], ["EXIF fields", f.image.exif ? Object.keys(f.image.exif).length : 0], ["QR codes", (f.qr?.codes || []).join(", ") || "none"]]} />
-          {f.ocr && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">OCR ({f.ocr.engine}): </span>{f.ocr.text || f.ocr.note || f.ocr.error || "(no text found)"}</pre>}
-          {r.ai_extracted_text && <pre className="mt-2 whitespace-pre-wrap rounded bg-slate-100 p-2 font-mono text-[11px] text-slate-600"><span className="text-slate-600">AI-read text: </span>{r.ai_extracted_text}</pre>}
+          {f.ocr && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">{tr("OCR (")}{f.ocr.engine}): </span>{f.ocr.text || f.ocr.note || f.ocr.error || "(no text found)"}</pre>}
+          {r.ai_extracted_text && <pre className="mt-2 whitespace-pre-wrap rounded bg-slate-100 p-2 font-mono text-[11px] text-slate-600"><span className="text-slate-600">{tr("AI-read text:")} </span>{r.ai_extracted_text}</pre>}
           {f.image.exif && Object.keys(f.image.exif).length > 0 && (
-            <details className="mt-2 text-xs"><summary className="cursor-pointer text-ink-400">EXIF metadata</summary><KV rows={Object.entries(f.image.exif).slice(0, 40) as any} /></details>
+            <details className="mt-2 text-xs"><summary className="cursor-pointer text-ink-400">{tr("EXIF metadata")}</summary><KV rows={Object.entries(f.image.exif).slice(0, 40) as any} /></details>
           )}
         </Collapse>
       )}
-      {f.pdf && <Collapse title="PDF structure" icon={FileWarning} defaultOpen><KV rows={[["Keywords", JSON.stringify(f.pdf.pdf_keywords)], ["Embedded URIs", (f.pdf.uris || []).join(", ")]]} /></Collapse>}
+      {f.pdf && <Collapse title={tr("PDF structure")} icon={FileWarning} defaultOpen><KV rows={[["Keywords", JSON.stringify(f.pdf.pdf_keywords)], ["Embedded URIs", (f.pdf.uris || []).join(", ")]]} /></Collapse>}
       {r.media && (
-        <Collapse title="Media metadata (ffprobe)" icon={ScanText} defaultOpen>
+        <Collapse title={tr("Media metadata (ffprobe)")} icon={ScanText} defaultOpen>
           <KV rows={[["Format", r.media.format], ["Duration (s)", r.media.duration], ["Streams", (r.media.streams || []).map((s: any) => `${s.type}:${s.codec}`).join(", ")], ["Frames inspected", r.frames_analyzed]]} />
-          {r.frame_ocr_text && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">On-screen text: </span>{r.frame_ocr_text}</pre>}
+          {r.frame_ocr_text && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">{tr("On-screen text:")} </span>{r.frame_ocr_text}</pre>}
         </Collapse>
       )}
     </div>
@@ -173,30 +173,30 @@ function IntelDetails({ r }: { r: any }) {
     const geo = r.intel?.geolocation;
     const rep = r.intel?.reputation;
     blocks.push(
-      <Collapse key="ip" title="IP facts" icon={Globe2} defaultOpen>
+      <Collapse key="ip" title={tr("IP facts")} icon={Globe2} defaultOpen>
         <KV rows={[["Address", r.ip.ip], ["Version", `IPv${r.ip.version}`], ["Public (global)", String(r.ip.is_global)], ["Private", String(r.ip.is_private)],
           ["Documentation range", r.ip.documentation_range ? "yes (RFC 5737)" : undefined]]} />
         {geo && (
           <div className="mt-3 rounded-md bg-ink-850 p-2.5 text-xs">
-            <div className="mb-1 font-semibold text-teal-700">Approximate geolocation — {geo.source} · {fmtTime(geo.queried_at)}</div>
-            {geo.error ? <p className="text-ink-400">Unavailable: {geo.error}</p> : (
+            <div className="mb-1 font-semibold text-teal-700">{tr("Approximate geolocation —")} {geo.source} · {fmtTime(geo.queried_at)}</div>
+            {geo.error ? <p className="text-ink-400">{tr("Unavailable:")} {geo.error}</p> : (
               <KV rows={[["Country", geo.data.country], ["Region / City", `${geo.data.regionName || ""} / ${geo.data.city || ""}`], ["ISP", geo.data.isp], ["Org", geo.data.org], ["ASN", geo.data.as],
                 ["Proxy/VPN", String(geo.data.proxy)], ["Hosting", String(geo.data.hosting)]]} />
             )}
           </div>
         )}
-        {rep && <p className="mt-2 text-xs text-ink-400">Reputation ({rep.source}): {rep.error ? rep.error : `abuse score ${rep.data?.abuseConfidenceScore}/100`}</p>}
+        {rep && <p className="mt-2 text-xs text-ink-400">{tr("Reputation (")}{rep.source}): {rep.error ? rep.error : `${tr("abuse score")} ${rep.data?.abuseConfidenceScore}/100`}</p>}
       </Collapse>,
     );
   }
   if (r.url) {
     blocks.push(
-      <Collapse key="url" title="URL structure" icon={Link2} defaultOpen>
+      <Collapse key="url" title={tr("URL structure")} icon={Link2} defaultOpen>
         <KV rows={[["URL", r.url.url], ["Scheme", r.url.scheme], ["Host", r.url.host], ["Registered domain", r.url.registered_domain], ["TLD", r.url.tld], ["Punycode decoded", r.url.punycode_decoded], ["Path", r.url.path]]} />
         {r.intel?.dns && (
           <div className="mt-3 rounded-md bg-ink-850 p-2.5 text-xs">
-            <div className="mb-1 font-semibold text-teal-700">DNS — {r.intel.dns.source} · {fmtTime(r.intel.dns.queried_at)}</div>
-            {r.intel.dns.nxdomain ? <p className="text-warn">NXDOMAIN — domain does not resolve</p> : r.intel.dns.error ? <p className="text-ink-400">{r.intel.dns.error}</p> :
+            <div className="mb-1 font-semibold text-teal-700">{tr("DNS —")} {r.intel.dns.source} · {fmtTime(r.intel.dns.queried_at)}</div>
+            {r.intel.dns.nxdomain ? <p className="text-warn">{tr("NXDOMAIN — domain does not resolve")}</p> : r.intel.dns.error ? <p className="text-ink-400">{r.intel.dns.error}</p> :
               <KV rows={Object.entries(r.intel.dns.records || {}).map(([k, v]: any) => [k, v.join(", ")]) as any} />}
           </div>
         )}
@@ -205,7 +205,7 @@ function IntelDetails({ r }: { r: any }) {
   }
   if (r.phone) {
     blocks.push(
-      <Collapse key="phone" title="Phone number facts" icon={Globe2} defaultOpen>
+      <Collapse key="phone" title={tr("Phone number facts")} icon={Globe2} defaultOpen>
         <KV rows={[["Normalised", r.phone.normalized], ["Calling code", r.phone.country_code ? `+${r.phone.country_code}` : "—"], ["Range registered to", r.phone.registered_region], ["Format hint", r.phone.line_type_hint]]} />
       </Collapse>,
     );
@@ -237,22 +237,22 @@ function Verdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
       <div className="flex flex-wrap items-start gap-5">
         <ScoreRing score={a.risk_score} severity={a.severity} size={104} />
         <div className="min-w-0 flex-1">
-          <div className={cn("flex items-center gap-2 text-2xl font-semibold", v.text)}><Icon className="h-6 w-6" /> {v.label}</div>
-          <p className="mt-1 text-base text-ink-100">{a.risk_score >= 30 ? r.classification : "Looks normal based on the checks we ran"}</p>
-          <p className="mt-1 text-sm text-ink-300">{v.advice}</p>
+          <div className={cn("flex items-center gap-2 text-2xl font-semibold", v.text)}><Icon className="h-6 w-6" /> {tr(v.label)}</div>
+          <p className="mt-1 text-base text-ink-100">{a.risk_score >= 30 ? r.classification : tr("Looks normal based on the checks we ran")}</p>
+          <p className="mt-1 text-sm text-ink-300">{tr(v.advice)}</p>
           <p className="mt-2 truncate text-xs text-ink-400" title={a.title}>{a.title}</p>
         </div>
       </div>
       {reasons.length > 0 && (
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div>
-            <h3 className="text-sm font-semibold text-ink-100">{a.risk_score >= 30 ? "Why" : "What we noticed (minor)"}</h3>
+            <h3 className="text-sm font-semibold text-ink-100">{a.risk_score >= 30 ? tr("Why") : tr("What we noticed (minor)")}</h3>
             <ul className="mt-1.5 space-y-1 text-sm text-ink-200">
               {reasons.map((f, i) => <li key={i} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />{f.title}</li>)}
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-ink-100">What to do</h3>
+            <h3 className="text-sm font-semibold text-ink-100">{tr("What to do")}</h3>
             <ul className="mt-1.5 space-y-1 text-sm text-ink-200">
               {r.recommended_actions.slice(0, 3).map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" />{x}</li>)}
             </ul>
@@ -277,36 +277,36 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-400">
         <SeverityBadge s={a.severity} />
-        <span>Confidence: {a.confidence}</span>
-        <span className="capitalize">· {a.kind}</span>
-        {a.kind === "email" && <span className="capitalize">· Status: {a.status}</span>}
-        {a.demo && <Pill className="text-violet-700">demo data</Pill>}
+        <span>{tr("Confidence:")} {tr(a.confidence)}</span>
+        <span className="capitalize">· {tr(a.kind)}</span>
+        {a.kind === "email" && <span className="capitalize">· {tr("Status:")} {tr(a.status)}</span>}
+        {a.demo && <Pill className="text-violet-700">{tr("demo data")}</Pill>}
         <span>· {fmtTime(a.created_at)}</span>
-        {a.incident_id && <Link className="text-volt hover:underline" href={`/incidents/${a.incident_id}`}>· Incident {a.incident_id}</Link>}
+        {a.incident_id && <Link className="text-volt hover:underline" href={`/incidents/${a.incident_id}`}>· {tr("Incident")} {a.incident_id}</Link>}
         <Button variant="subtle" className="ms-auto" onClick={() => setShowDetails(!showDetails)} aria-expanded={showDetails}>
           <ChevronDown className={cn("h-4 w-4 transition", showDetails && "rotate-180")} />
-          {showDetails ? "Hide technical details" : `Show technical details (${r.findings.length} checks)`}
+          {showDetails ? tr("Hide technical details") : `Show technical details (${r.findings.length} checks)`}
         </Button>
       </div>
 
       {ai?.assessment && (
-        <Card title={<span className="flex items-center gap-2">Assessment summary <SourceBadge s="ai" /></span>}>
+        <Card title={<span className="flex items-center gap-2">{tr("Assessment summary")} <SourceBadge s="ai" /></span>}>
           <p className="text-sm text-ink-200">{ai.assessment.summary}</p>
-          {ai.assessment.impersonated_entity && <p className="mt-2 text-sm text-ink-300">Pretending to be: <b>{ai.assessment.impersonated_entity}</b></p>}
-          {ai.assessment.manipulation_indicators?.length > 0 && <p className="mt-2 text-xs text-warn">Possible manipulation signs: {ai.assessment.manipulation_indicators.join("; ")}</p>}
-          <p className="mt-2 text-xs text-ink-400">Written by the AI model ({ai.model}). It is an opinion, not proof — the checks below are what the score is built on.</p>
+          {ai.assessment.impersonated_entity && <p className="mt-2 text-sm text-ink-300">{tr("Pretending to be:")} <b>{ai.assessment.impersonated_entity}</b></p>}
+          {ai.assessment.manipulation_indicators?.length > 0 && <p className="mt-2 text-xs text-warn">{tr("Possible manipulation signs:")} {ai.assessment.manipulation_indicators.join("; ")}</p>}
+          <p className="mt-2 text-xs text-ink-400">{trf("Written by the AI model ({model}). It is an opinion, not proof — the checks below are what the score is built on.", { model: ai.model || "" })}</p>
         </Card>
       )}
 
       {showDetails && (
         <div className="fade-up grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <div className="space-y-4">
-            <Card title={`All checks (${r.findings.length})`} action={
+            <Card title={`${tr("All checks")} (${r.findings.length})`} action={
               <Tabs value={tab} onChange={setTab} items={[
-                { value: "all", label: "All" }, { value: "verified", label: `Confirmed ${r.verified_findings.length}` },
-                { value: "heuristic", label: `Patterns ${r.heuristic_findings.length}` },
-                ...(r.ai_findings.length ? [{ value: "ai" as const, label: `AI ${r.ai_findings.length}` }] : [])]} />}>
-              <p className="mb-3 text-xs text-ink-400"><b className="text-ink-300">Confirmed</b> = technical facts checked directly. <b className="text-ink-300">Pattern</b> = common scam signs that can also appear in normal messages.</p>
+                { value: "all", label: tr("All") }, { value: "verified", label: `${tr("Confirmed")} ${r.verified_findings.length}` },
+                { value: "heuristic", label: `${tr("Patterns")} ${r.heuristic_findings.length}` },
+                ...(r.ai_findings.length ? [{ value: "ai" as const, label: `${tr("AI")} ${r.ai_findings.length}` }] : [])]} />}>
+              <p className="mb-3 text-xs text-ink-400">{tr("Confirmed = technical facts checked directly. Pattern = common scam signs that can also appear in normal messages.")}</p>
               <FindingList items={lists[tab]} empty="Nothing in this category." />
             </Card>
             {a.kind === "email" && <EmailDetails r={r} />}
@@ -319,7 +319,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
               <ul className="space-y-2 text-sm">{r.recommended_actions.map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" /><span className="text-ink-200">{x}</span></li>)}</ul>
             </Card>
             {r.social_engineering_techniques.length > 0 && (
-              <Card title="Pressure tactics used">
+              <Card title={tr("Pressure tactics used")}>
                 <div className="flex flex-wrap gap-1.5">{r.social_engineering_techniques.map((x) => <Pill key={x}>{x}</Pill>)}</div>
               </Card>
             )}

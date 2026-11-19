@@ -1,3 +1,5 @@
+import { getLang } from "./i18n";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const USER_KEY = "wolve.user";
@@ -39,7 +41,7 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 function headers(extra?: Record<string, string>) {
-  return { "X-WOLVE-User": getUser(), ...(extra || {}) };
+  return { "X-WOLVE-User": getUser(), "X-WOLVE-Lang": getLang(), ...(extra || {}) };
 }
 
 export async function apiGet<T = any>(path: string): Promise<T> {

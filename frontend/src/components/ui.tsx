@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { AlertTriangle, CheckCircle2, FlaskConical, Info, Loader2, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { locale, tr, trf } from "@/lib/i18n";
 import type { Severity } from "@/lib/types";
 
 export const cn = clsx;
@@ -10,15 +11,15 @@ export const cn = clsx;
 export function timeAgo(iso?: string | null) {
   if (!iso) return "—";
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 45) return "just now";
-  if (s < 3600) return `${Math.round(s / 60)}m ago`;
-  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-  return `${Math.round(s / 86400)}d ago`;
+  if (s < 45) return tr("just now");
+  if (s < 3600) return trf("{n}m ago", { n: Math.round(s / 60) });
+  if (s < 86400) return trf("{n}h ago", { n: Math.round(s / 3600) });
+  return trf("{n}d ago", { n: Math.round(s / 86400) });
 }
 
 export function fmtTime(iso?: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return new Date(iso).toLocaleString(locale(), { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 export const SEV_STYLE: Record<string, string> = {
@@ -70,7 +71,7 @@ export function Button({ variant = "subtle", loading, className, children, disab
 }
 
 export function SeverityBadge({ s, className }: { s: Severity | string; className?: string }) {
-  return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset", SEV_STYLE[s] || SEV_STYLE.info, className)}>{s}</span>;
+  return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset", SEV_STYLE[s] || SEV_STYLE.info, className)}>{tr(s)}</span>;
 }
 
 export function Pill({ children, className, title }: { children: React.ReactNode; className?: string; title?: string }) {
@@ -78,8 +79,9 @@ export function Pill({ children, className, title }: { children: React.ReactNode
 }
 
 export function SimBadge({ label = "Simulated" }: { label?: string }) {
+  label = tr(label);
   return (
-    <Pill className="bg-violet-50 text-violet-700 ring-violet-200" title="Generated for demonstration — not real telemetry">
+    <Pill className="bg-violet-50 text-violet-700 ring-violet-200" title={tr("Generated for demonstration — not real telemetry")}>
       <FlaskConical className="h-3 w-3" /> {label}
     </Pill>
   );
@@ -93,7 +95,7 @@ const SOURCE_STYLE: Record<string, [string, string]> = {
 };
 export function SourceBadge({ s }: { s: string }) {
   const [label, cls] = SOURCE_STYLE[s] || [s, SOURCE_STYLE.heuristic[1]];
-  return <span className={cn("inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset", cls)}>{label}</span>;
+  return <span className={cn("inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset", cls)}>{tr(label)}</span>;
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -105,7 +107,7 @@ export function StatusDot({ s }: { s: string }) {
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium capitalize", STATUS_STYLE[s] || "text-ink-200")}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {s.replace(/_/g, " ")}
+      {tr(s.replace(/_/g, " "))}
     </span>
   );
 }
@@ -115,14 +117,14 @@ export function ScoreRing({ score, severity, size = 116 }: { score: number; seve
   const c = 2 * Math.PI * r;
   const color = SEV_HEX[severity] || SEV_HEX.info;
   return (
-    <div className="relative" style={{ width: size, height: size }} role="img" aria-label={`Risk score ${score} of 100`}>
+    <div className="relative" style={{ width: size, height: size }} role="img" aria-label={trf("Risk score {score} of 100", { score })}>
       <svg viewBox="0 0 110 110" className="h-full w-full -rotate-90">
         <circle cx="55" cy="55" r={r} fill="none" stroke="#eef1f5" strokeWidth="9" />
         <circle cx="55" cy="55" r={r} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * score) / 100} style={{ transition: "stroke-dashoffset 0.9s ease" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-semibold tabular-nums" style={{ color }}>{score}</span>
-        <span className="text-xs text-ink-400">out of 100</span>
+        <span className="text-xs text-ink-400">{tr("out of 100")}</span>
       </div>
     </div>
   );
@@ -131,7 +133,7 @@ export function ScoreRing({ score, severity, size = 116 }: { score: number; seve
 export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex items-center gap-2 text-sm text-ink-300">
-      <Loader2 className="h-4 w-4 animate-spin text-volt" /> {label || "Loading…"}
+      <Loader2 className="h-4 w-4 animate-spin text-volt" /> {label || tr("Loading…")}
     </div>
   );
 }
@@ -154,8 +156,8 @@ export function ErrorBox({ error, onRetry }: { error: string; onRetry?: () => vo
   return (
     <div role="alert" className="flex items-start gap-3 rounded-lg border border-crit/40 bg-crit/10 p-3 text-sm text-rose-700">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-crit" />
-      <div className="flex-1">{error}</div>
-      {onRetry && <Button variant="ghost" className="!px-2 !py-1 text-xs" onClick={onRetry}>Retry</Button>}
+      <div className="flex-1">{tr(error)}</div>
+      {onRetry && <Button variant="ghost" className="!px-2 !py-1 text-xs" onClick={onRetry}>{tr("Retry")}</Button>}
     </div>
   );
 }
@@ -256,6 +258,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const push = useCallback((kind: Toast["kind"], text: string) => {
     const id = Date.now() + Math.random();
+    text = tr(text);
     setToasts((t) => [...t, { id, kind, text }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 6500);
   }, []);
@@ -268,7 +271,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             t.kind === "ok" && "border-ink-700 bg-ink-900 text-ink-100", t.kind === "err" && "border-crit/30 bg-ink-900 text-rose-700", t.kind === "info" && "border-ink-700 bg-ink-900 text-ink-100")}>
             {t.kind === "ok" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" /> : t.kind === "err" ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-crit" /> : <Info className="mt-0.5 h-4 w-4 shrink-0 text-volt" />}
             <span className="flex-1">{t.text}</span>
-            <button aria-label="Dismiss" onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}><X className="h-4 w-4 text-ink-400" /></button>
+            <button aria-label={tr("Dismiss")} onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))}><X className="h-4 w-4 text-ink-400" /></button>
           </div>
         ))}
       </div>
