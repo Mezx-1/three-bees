@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pathlib
 import shutil
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -100,6 +101,8 @@ SAMPLES = {
     "legitimate-hr.eml": ("message/rfc822", scenario.make_legit_eml),
     "mailbox-lure.png": ("image/png", scenario.make_lure_image),
     "Invoice_Q4_2026.pdf": ("application/octet-stream", scenario.make_disguised_attachment),
+    "scam-call.wav": ("audio/wav", lambda: (pathlib.Path(scenario.__file__).parent / "sample_scam_call.wav").read_bytes()),
+    "scam-call-claims.wav": ("audio/wav", lambda: (pathlib.Path(scenario.__file__).parent / "sample_scam_call_claims.wav").read_bytes()),
 }
 
 

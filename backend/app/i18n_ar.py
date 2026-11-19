@@ -422,6 +422,13 @@ EXACT: dict[str, str] = {
     "Simulated inventory device for the demo": "جهاز محاكاة في الجرد لأغراض العرض",
     # --- call guard
     "Call Guard": "حارس المكالمات",
+    "Caller gave the wrong UAE time": "المتصل ذكر وقتاً خاطئاً للإمارات",
+    "Caller gave the wrong day": "المتصل ذكر يوماً خاطئاً",
+    "Organisation could not be verified": "تعذّر التحقق من الجهة",
+    "Known UAE organisation": "جهة إماراتية معروفة",
+    "Not found among known UAE organisations": "غير موجودة ضمن الجهات الإماراتية المعروفة",
+    "Claim checks compare what was said with the real UAE time/date and a directory of known UAE organisations. WOLVE cannot tell the two voices apart: ask your question and let the caller answer.":
+        "يقارن التحقق ما قيل بالوقت والتاريخ الفعليين في الإمارات وبدليل الجهات الإماراتية المعروفة. لا يميّز WOLVE بين الصوتين: اطرح سؤالك ودع المتصل يجيب.",
     "Wrong user name or password.": "اسم المستخدم أو كلمة المرور غير صحيحة.",
     "Too many sign-in attempts — wait a minute.": "محاولات دخول كثيرة — انتظر دقيقة.",
     "Please sign in.": "يرجى تسجيل الدخول.",
@@ -608,6 +615,17 @@ TEMPLATES: dict[str, str] = {
     "Linked to {0} high-risk message(s) or call(s) analysed by WOLVE.": "مرتبط بـ {0} رسالة أو مكالمة عالية الخطورة حلّلها WOLVE.",
     "SMS from {0}: {1}": "رسالة من {0}: {1}",
     "Call from {0}": "مكالمة من {0}",
+    "The caller said “{0}”, but the time in the UAE is {1}, about {2} hour(s) different. Someone really calling from the UAE would know the local time — this suggests the caller is abroad.":
+        "قال المتصل «{0}»، لكن الوقت في الإمارات {1}، بفارق نحو {2} ساعة. من يتصل فعلاً من الإمارات يعرف الوقت المحلي — وهذا يشير إلى أن المتصل خارج الدولة.",
+    "The caller said today is {0}, but in the UAE today is {1}.": "قال المتصل إن اليوم {0}، لكن اليوم في الإمارات {1}.",
+    "Claims to be {0} but calls from a foreign number": "يدّعي أنه من {0} لكنه يتصل من رقم أجنبي",
+    "{0} is a UAE organisation, but the call comes from a number registered to {1}. UAE government bodies, banks and telecoms call from UAE numbers.":
+        "{0} جهة إماراتية، لكن المكالمة من رقم مسجّل لدى {1}. الجهات الحكومية والبنوك وشركات الاتصالات في الإمارات تتصل من أرقام إماراتية.",
+    "The caller says they are from “{0}”, which is not in WOLVE's directory of known UAE organisations. It may be a small company, a mishearing, or an invented name — ask for the official number and call back yourself.":
+        "يقول المتصل إنه من «{0}»، وهي غير موجودة في دليل WOLVE للجهات الإماراتية المعروفة. قد تكون شركة صغيرة أو خطأ في السماع أو اسماً مختلقاً — اطلب الرقم الرسمي واتصل بنفسك.",
+    "said {0} · actual {1} GST": "قال {0} · الفعلي {1} بتوقيت الإمارات",
+    "said {0} · actual {1}": "قال {0} · الفعلي {1}",
+    "{0} (UAE, UTC+4)": "{0} (الإمارات، UTC+4)",
     "Outbound HTTP connection to {0}": "اتصال HTTP صادر إلى {0}",
     "wscript.exe outbound to {0}": "wscript.exe يتصل للخارج بـ {0}",
     "wscript.exe executed {0}": "wscript.exe شغّل الملف {0}",
@@ -694,7 +712,7 @@ def translate(s: str, depth: int = 0) -> str:
 
 DISPLAY_KEYS = {"title", "detail", "summary", "message", "result", "classification", "threat_categories", "recommended_actions",
                 "limitations", "score_note", "social_engineering_techniques", "recommended_response", "text", "security_status_text",
-                "reason", "error", "label", "note", "evidence", "reasons", "advice", "observed", "inferred", "label_text"}
+                "reason", "error", "label", "note", "evidence", "reasons", "advice", "actual", "said", "observed", "inferred", "label_text"}
 
 
 def translate_obj(obj, key: str | None = None):
@@ -705,3 +723,32 @@ def translate_obj(obj, key: str | None = None):
     if isinstance(obj, str) and key in DISPLAY_KEYS:
         return translate(obj)
     return obj
+
+
+# Organisation names from the claim-check directory (first Arabic alias) and calling-code regions.
+def _extend() -> None:
+    from .services.claims import ORGANISATIONS
+    from .services.network_intel import CALLING_CODES
+
+    for canon, aliases in ORGANISATIONS:
+        ar = next((a for a in aliases if any("؀" <= ch <= "ۿ" for ch in a)), None)
+        if ar and canon not in EXACT:
+            EXACT[canon] = ar
+    regions = {
+        "United Arab Emirates": "الإمارات العربية المتحدة", "Saudi Arabia": "السعودية", "Qatar": "قطر", "Kuwait": "الكويت", "Bahrain": "البحرين",
+        "Oman": "عُمان", "Egypt": "مصر", "Jordan": "الأردن", "Lebanon": "لبنان", "Syria": "سوريا", "Iraq": "العراق", "Iran": "إيران", "Turkey": "تركيا",
+        "Pakistan": "باكستان", "India": "الهند", "Bangladesh": "بنغلاديش", "Sri Lanka": "سريلانكا", "Nepal": "نيبال", "Philippines": "الفلبين",
+        "Indonesia": "إندونيسيا", "Malaysia": "ماليزيا", "China": "الصين", "Hong Kong": "هونغ كونغ", "Russia/Kazakhstan": "روسيا/كازاخستان",
+        "United Kingdom": "المملكة المتحدة", "USA/Canada (NANP)": "أمريكا/كندا", "France": "فرنسا", "Germany": "ألمانيا", "Nigeria": "نيجيريا",
+        "Ghana": "غانا", "Kenya": "كينيا", "South Africa": "جنوب أفريقيا", "Morocco": "المغرب", "Algeria": "الجزائر", "Tunisia": "تونس",
+        "Sudan": "السودان", "Somalia": "الصومال", "Ethiopia": "إثيوبيا", "Vietnam": "فيتنام", "Cambodia": "كمبوديا", "Myanmar": "ميانمار",
+        "Laos": "لاوس", "International Networks (satellite/IoT)": "شبكات دولية (أقمار صناعية/إنترنت الأشياء)",
+        "International Networks": "شبكات دولية", "Global Mobile Satellite": "شبكة اتصالات فضائية عالمية", "another country": "دولة أخرى",
+    }
+    for v in CALLING_CODES.values():
+        if v in regions:
+            EXACT.setdefault(v, regions[v])
+    EXACT.setdefault("another country", "دولة أخرى")
+
+
+_extend()

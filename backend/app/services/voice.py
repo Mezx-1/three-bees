@@ -21,7 +21,7 @@ from .risk import Finding
 
 log = logging.getLogger("wolve.voice")
 SR = 16000
-STT_MODEL = os.getenv("WOLVE_STT_MODEL", "base")
+STT_MODEL = os.getenv("WOLVE_STT_MODEL", "small")  # small: much better Arabic, ~4 s per 8 s chunk on a laptop CPU
 
 
 def decode_audio(data: bytes, suffix: str = ".webm") -> np.ndarray:

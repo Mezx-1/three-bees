@@ -428,6 +428,7 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
     limitations = [
         "WOLVE cannot intercept phone calls. It only analyses audio captured by this computer's microphone with consent, or recordings you upload.",
         "A number's country code shows where the number range is registered — not where the caller physically is. Caller ID can be spoofed.",
+        "Claim checks compare what was said with the real UAE time/date and a directory of known UAE organisations. WOLVE cannot tell the two voices apart: ask your question and let the caller answer.",
     ]
     extra: dict = {"call": {"transcript": transcript, "stt": stt or {}, "features": features or {}}}
     inds: list = []
@@ -445,6 +446,13 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
     else:
         limitations.append("No caller number provided (hidden/unknown caller).")
     if transcript.strip():
+        from .claims import check_claims
+
+        caller = extra["call"].get("caller") or {}
+        cc = caller.get("country_code")
+        claim_f, claims = check_claims(transcript, caller.get("registered_region"), (cc == "971") if cc else None)
+        findings += claim_f
+        extra["call"]["claims"] = claims
         tf, art = ta.analyze_text(transcript, "call")
         for f in tf:
             if f.category == "content" and "vishing" not in f.tags:

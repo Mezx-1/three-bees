@@ -12,6 +12,31 @@ import type { Analysis } from "@/lib/types";
 
 const CHUNK_MS = 8000;
 
+const CLAIM_LABEL: Record<string, string> = { time: "Time", day: "Day", organisation: "Organisation" };
+
+function ClaimsPanel({ claims }: { claims: any[] }) {
+  return (
+    <div className="rounded-xl border border-ink-700 bg-white p-4">
+      <div className="mb-2 flex items-center gap-2 font-semibold text-ink-100"><ShieldCheck className="h-4 w-4 text-volt" />{tr("Verified facts")}</div>
+      {claims.length === 0 ? (
+        <p className="text-sm text-ink-400">{tr("No checkable claims yet. Ask: “What time is it there now?” or “Which company are you from?”")}</p>
+      ) : (
+        <ul className="space-y-2 text-sm">
+          {claims.map((c, i) => (
+            <li key={i} className={cn("flex items-start gap-2 rounded-lg p-2", c.ok ? "bg-green-50" : "bg-red-50")}>
+              <span className={cn("mt-0.5 font-bold", c.ok ? "text-safe" : "text-crit")}>{c.ok ? "✓" : "✗"}</span>
+              <div>
+                <div className="text-ink-100"><b>{tr(CLAIM_LABEL[c.type] || c.type)}:</b> <span dir="auto">«{c.said}»</span></div>
+                <div className={cn("text-xs", c.ok ? "text-ink-400" : "text-crit")}>{c.ok ? tr("Consistent") : tr("Contradicted")} — {c.actual}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function CallGuard() {
   const [mode, setMode] = useState<"live" | "upload">("live");
   const [consent, setConsent] = useState(false);
@@ -171,6 +196,11 @@ export default function CallGuard() {
             <li>• {tr("Tone: speaking speed, pauses, pitch and loudness changes — weak signals only.")}</li>
             <li>• {tr("Number: where the number is registered and whether it is a known scam number. Caller ID can be faked.")}</li>
             <li>• {tr("Audio is never saved or sent to the cloud.")}</li>
+            <li className="pt-2 font-medium text-ink-100">{tr("Questions that expose scammers:")}</li>
+            <li>• «{tr("What time is it where you are now?")}»</li>
+            <li>• «{tr("What day is it today?")}»</li>
+            <li>• «{tr("Which company are you from, and what is its official number?")}»</li>
+            <li className="text-xs text-ink-400">{tr("WOLVE can't tell voices apart — ask, then stay quiet while the caller answers.")}</li>
           </ul>
           <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
             <Pill className={st?.speech_to_text?.available ? "text-safe" : "text-crit"}>{tr("Speech-to-text")}: {st?.speech_to_text?.available ? st.speech_to_text.engine : tr("not installed")}</Pill>
@@ -187,7 +217,8 @@ export default function CallGuard() {
             <ul className="mt-2 space-y-1 text-sm text-ink-200">{result.report!.findings.filter((f) => f.weight > 0).slice(0, 4).map((f, i) => <li key={i}>• {f.title}</li>)}</ul>
             {result.risk_score >= 60 && <p className="mt-2 text-sm font-medium text-crit">{tr("Advice: do not share any code, password or card number. Hang up and call the official number yourself.")}</p>}
           </div>
-          <div className="text-sm">
+          <div className="space-y-3 text-sm">
+            <ClaimsPanel claims={result.report?.call?.claims || []} />
             <div className="mb-1 font-medium text-ink-100">{tr("Live transcript")}</div>
             <div dir="auto" className="max-h-40 overflow-y-auto rounded-lg bg-white/70 p-2 text-ink-200">{lines.join(" ") || "…"}</div>
           </div>
@@ -196,6 +227,7 @@ export default function CallGuard() {
 
       {result && !live && (
         <>
+          <ClaimsPanel claims={result.report?.call?.claims || []} />
           {(caller || Object.keys(feats).length > 0) && (
             <Card title={tr("Caller and voice")}>
               <div className="grid gap-4 md:grid-cols-2 text-sm">

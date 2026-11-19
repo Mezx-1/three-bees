@@ -28,3 +28,4 @@ DerivedData/
 xcuserdata/
 backend/demo-credentials.txt
 deploy/.env
+dist/
