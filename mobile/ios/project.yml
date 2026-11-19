@@ -1,0 +1,101 @@
+# XcodeGen spec — on the Mac:  brew install xcodegen && cd mobile/ios && xcodegen && open WolveShield.xcodeproj
+name: WolveShield
+options:
+  bundleIdPrefix: ae.wolve
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: ar
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""          # <- put your Apple Team ID here (Xcode → Settings → Accounts)
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  WolveShield:
+    type: application
+    platform: iOS
+    sources: [App, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1"
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: WOLVE
+        CFBundleDevelopmentRegion: ar
+        CFBundleLocalizations: [ar, en]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Development only: lets the app reach the WOLVE server over plain HTTP on your local network.
+        # For production, serve WOLVE over HTTPS and remove this.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSLocalNetworkUsageDescription: "WOLVE يتصل بخادم WOLVE على شبكتك المحلية لمزامنة قوائم الحماية."
+    entitlements:
+      path: App/WolveShield.entitlements
+      properties:
+        com.apple.security.application-groups: [group.ae.wolve.shield]
+    dependencies:
+      - target: MessageFilter
+      - target: CallDirectory
+
+  MessageFilter:
+    type: app-extension
+    platform: iOS
+    sources: [MessageFilter, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield.MessageFilter
+    info:
+      path: MessageFilter/Info.plist
+      properties:
+        CFBundleDisplayName: WOLVE
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.identitylookup.message-filter
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).MessageFilterExtension
+          NSExtensionAttributes: {}
+    entitlements:
+      path: MessageFilter/MessageFilter.entitlements
+      properties:
+        com.apple.security.application-groups: [group.ae.wolve.shield]
+
+  CallDirectory:
+    type: app-extension
+    platform: iOS
+    sources: [CallDirectory, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield.CallDirectory
+    info:
+      path: CallDirectory/Info.plist
+      properties:
+        CFBundleDisplayName: WOLVE
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.callkit.call-directory
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
+    entitlements:
+      path: CallDirectory/CallDirectory.entitlements
+      properties:
+        com.apple.security.application-groups: [group.ae.wolve.shield]
+
+  WolveShieldTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  WolveShield:
+    build:
+      targets:
+        WolveShield: all
+    test:
+      targets: [WolveShieldTests]

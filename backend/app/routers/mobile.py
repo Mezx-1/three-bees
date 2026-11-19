@@ -135,3 +135,50 @@ def call_directory(db: Session = Depends(get_db), who: str = Depends(mobile_call
     return {"entries": sorted(entries.values(), key=lambda e: e["number"]),
             "prefix_warnings": [{"prefix": "+882", "label": "⚠️ WOLVE: satellite number"}, {"prefix": "+883", "label": "⚠️ WOLVE: satellite number"},
                                 {"prefix": "+881", "label": "⚠️ WOLVE: satellite number"}]}
+
+
+# ---- phone pairing & on-device filter rules --------------------------------------------------
+
+class PhoneRegisterIn(BaseModel):
+    device_name: str = Field(min_length=1, max_length=100)
+    owner_email: str | None = Field(default=None, max_length=200)
+    consent: bool = False
+
+
+@router.post("/register")
+def register_phone(body: PhoneRegisterIn, db: Session = Depends(get_db), x_wolve_user: str | None = Header(default=None)):
+    """Pair a phone. The signed-in WOLVE user (header) pairs their own phone and must consent."""
+    from ..models import Device, utcnow
+    from ..services.store import audit
+    import secrets
+
+    user = db.scalars(select(User).where(User.username == (x_wolve_user or ""))).first()
+    if not user:
+        raise HTTPException(401, "Unknown user")
+    if not body.consent:
+        raise HTTPException(422, "Consent is required to protect this phone.")
+    d = Device(hostname=body.device_name, os="iOS", owner_email=body.owner_email or user.email, source="phone",
+               agent_version="ios-0.1", last_seen=utcnow(), token=secrets.token_urlsafe(24),
+               system_info={"collection": "Only messages from unknown senders are checked on the phone; nothing is uploaded unless you check it manually."})
+    db.add(d)
+    db.flush()
+    audit(db, user.username, "phone.register", d.id, {"name": body.device_name, "consent": True})
+    db.commit()
+    return {"device_id": d.id, "token": d.token}
+
+
+@router.get("/filter-config")
+def filter_config(db: Session = Depends(get_db), who: str = Depends(mobile_caller)):
+    """Rules for the phone's offline SMS filter, kept in sync with the server."""
+    from ..services.url_analyzer import OFFICIAL_DOMAINS, SHORTENERS, SUSPICIOUS_TLDS
+
+    blocked = db.scalars(select(BlockedIndicator)).all()
+    return {
+        "version": 1,
+        "blocked_domains": sorted(b.value for b in blocked if b.type == "domain"),
+        "blocked_phones": sorted(b.value for b in blocked if b.type == "phone"),
+        "suspicious_tlds": sorted(SUSPICIOUS_TLDS),
+        "shorteners": sorted(SHORTENERS),
+        "official_domains": OFFICIAL_DOMAINS,
+        "junk_threshold": JUNK_THRESHOLD,
+    }

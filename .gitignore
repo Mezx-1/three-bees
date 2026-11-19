@@ -22,3 +22,7 @@ frontend/.env*.local
 .DS_Store
 Thumbs.db
 agent/.venv/
+mobile/ios/*.xcodeproj/
+mobile/ios/build/
+DerivedData/
+xcuserdata/

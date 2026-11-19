@@ -1,6 +1,6 @@
 # WOLVE phone protection — architecture
 
-The server side is built and tested (`/api/mobile/*`). The web page **Phone Protection** simulates the phone apps using the real API. The native apps themselves are **not built yet**.
+The server side is built and tested (`/api/mobile/*`). The **iPhone app** source is in `mobile/ios` (SwiftUI app + SMS Filter + Call Directory extensions, XcodeGen project). It was written on Windows and has **not been compiled yet** — build it on a Mac following `mobile/ios/README.md`. The Android app is not built. The web page **Phone Protection** simulates the phone apps using the real API.
 
 ## What each platform allows
 | Goal | iPhone (iOS) | Android |

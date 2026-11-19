@@ -254,3 +254,14 @@ def test_mobile_protection(c):
     d = c.get("/api/mobile/call-directory", headers=EMPLOYEE).json()
     assert any(e["number"] == "+447399367678" and e["block"] for e in d["entries"])
     assert c.get("/api/mobile/caller-check?number=123").status_code == 401
+
+
+def test_phone_pairing_and_filter_config(c):
+    assert c.post("/api/mobile/register", json={"device_name": "iPhone", "consent": False}, headers=EMPLOYEE).status_code == 422
+    r = c.post("/api/mobile/register", json={"device_name": "Sara's iPhone", "consent": True}, headers=EMPLOYEE).json()
+    tok = {"X-Device-Token": r["token"]}
+    c.post("/api/blocklist", json={"type": "domain", "value": "ticka.top"}, headers=ANALYST)
+    cfg = c.get("/api/mobile/filter-config", headers=tok).json()
+    assert "ticka.top" in cfg["blocked_domains"] and "top" in cfg["suspicious_tlds"] and "salik" in cfg["official_domains"]
+    chk = c.get("/api/mobile/caller-check?number=%2B8821234567", headers=tok)
+    assert chk.status_code == 200
