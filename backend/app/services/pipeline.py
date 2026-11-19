@@ -22,9 +22,10 @@ class Context:
     blocked_domains: set[str] = field(default_factory=set)
     blocked_urls: set[str] = field(default_factory=set)
     blocked_ips: set[str] = field(default_factory=set)
+    blocked_phones: set[str] = field(default_factory=set)
     known_bad_hashes: dict[str, str] = field(default_factory=dict)
     ai_enabled: bool = True
-    external_lookups: bool = True
+    external_lookups: bool = False
 
 
 @dataclass
@@ -150,6 +151,11 @@ def run_message(text: str, ctx: Context, channel: str = "message", title: str | 
         except ValueError:
             pass
     extra["phones"] = phones
+    brand_link = any(f.title.startswith(("Brand name", "Look-alike", "Imitates")) for r in extra.get("urls", []) for f in [Finding(**x) for x in r["findings"]])
+    if brand_link and "payment" in artefacts["matched_patterns"]:
+        findings.append(Finding("Payment request with a link that imitates a known brand",
+                                "The message asks you to pay and sends you to a website pretending to be an official service — the pattern of fake toll, fine and parcel-fee scams.",
+                                "content", "high", 30, "heuristic", ["phishing", "payment_fraud"]))
     if channel in ("call", "voice") and findings:
         for f in findings:
             if f.category == "content" and "vishing" not in f.tags:
@@ -410,3 +416,55 @@ def run_email(raw: bytes | str, ctx: Context) -> AnalysisResult:
     title = subject or "(no subject)"
     recipient = (meta.get("to") or [None])[0]
     return AnalysisResult("email", title, report, inds, recipient=recipient)
+
+
+# ---------------------------------------------------------------- phone calls
+
+def run_call(transcript: str, caller_number: str | None, features: dict | None, stt: dict | None, ctx: Context) -> AnalysisResult:
+    """Score a phone call from its transcript, the caller's number and voice-tone measurements."""
+    from .voice import tone_findings
+
+    findings: list[Finding] = []
+    limitations = [
+        "WOLVE cannot intercept phone calls. It only analyses audio captured by this computer's microphone with consent, or recordings you upload.",
+        "A number's country code shows where the number range is registered — not where the caller physically is. Caller ID can be spoofed.",
+    ]
+    extra: dict = {"call": {"transcript": transcript, "stt": stt or {}, "features": features or {}}}
+    inds: list = []
+    if caller_number and caller_number.strip():
+        try:
+            pf, pinfo, _ = ni.analyze_phone(caller_number)
+            findings += pf
+            extra["call"]["caller"] = pinfo
+            inds.append(("phone", pinfo["normalized"], "caller", False))
+            if pinfo["normalized"] in ctx.blocked_phones:
+                findings.append(Finding("Caller number is on the WOLVE blocklist", "An analyst previously blocked this number as a scam number.",
+                                        "phone", "critical", 70, "verified", ["vishing"], evidence=pinfo["normalized"]))
+        except ValueError as exc:
+            limitations.append(f"Caller number not analysed: {exc}")
+    else:
+        limitations.append("No caller number provided (hidden/unknown caller).")
+    if transcript.strip():
+        tf, art = ta.analyze_text(transcript, "call")
+        for f in tf:
+            if f.category == "content" and "vishing" not in f.tags:
+                f.tags.append("vishing")
+        findings += tf
+        extra["text_analysis"] = art
+    else:
+        limitations.append("No speech was transcribed yet, so the conversation content was not analysed.")
+    if stt and not stt.get("available", True):
+        limitations.append("Speech-to-text is not installed; type what the caller said into the transcript box.")
+    tf, notes = tone_findings(features or {})
+    findings += tf
+    limitations += notes
+    ai_text = (f"Phone call. Caller number: {caller_number or 'unknown'} ({(extra['call'].get('caller') or {}).get('registered_region', 'unknown')}).\n"
+               f"Voice measurements: {features or {}}\nTranscript:\n{transcript}")
+    ai_f, ai_info = _ai_block(ai_text, "call", findings, ctx)
+    findings += ai_f
+    extra["ai"] = ai_info
+    if not ai_info["available"]:
+        limitations.append(f"AI review not used: {ai_info.get('reason') or ai_info.get('error')}")
+    report = build_report(findings, limitations, extra=extra)
+    title = f"Call from {(extra['call'].get('caller') or {}).get('normalized') or caller_number}" if caller_number else "Call (unknown number)"
+    return AnalysisResult("call", title, report, inds)

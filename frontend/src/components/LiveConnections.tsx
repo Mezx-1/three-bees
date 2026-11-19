@@ -3,7 +3,7 @@
 import { ArrowDownLeft, ArrowUpRight, Ban, Globe2, Radio, ShieldCheck, ShieldOff, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { apiGet, apiSend } from "@/lib/api";
-import { getLang, tr } from "@/lib/i18n";
+import { getLang, tr, trf } from "@/lib/i18n";
 import { Button, Card, cn, EmptyState, ErrorBox, fmtTime, inputCls, Pill, ScanBar, SeverityBadge, Tabs, timeAgo, useApi, useToast } from "./ui";
 import { WorldMap } from "./WorldMap";
 
@@ -42,11 +42,12 @@ export function LiveConnections({ deviceId, hostname, online }: { deviceId: stri
     return r;
   }, [data.data, tab, q]);
 
-  const command = async (type: "block_ip" | "unblock_ip", ip: string) => {
-    if (type === "block_ip" && !window.confirm(tr("Block {ip} in Windows Firewall on {host}?").replace("{ip}", ip).replace("{host}", hostname))) return;
+  const command = async (type: "block_ip" | "unblock_ip" | "list_rules", ip = "") => {
+    if (type === "block_ip" && !window.confirm(trf("Block {ip} in Windows Firewall on {host}?\n\nDirection: inbound AND outbound (rule name WOLVE-block-{ip}).\nImpact: every program on {host} will lose access to this address — if it belongs to a shared service (CDN, cloud, Microsoft/Google), websites or apps may stop working.\nOnly WOLVE-named rules are changed; you can undo it with Unblock.", { ip, host: hostname }))) return;
+    if (type === "unblock_ip" && !window.confirm(trf("Remove the WOLVE firewall rule for {ip} on {host}?", { ip, host: hostname }))) return;
     setBusy(type + ip);
     try {
-      const r = await apiSend(`/api/endpoints/${deviceId}/commands`, "POST", { type, ip });
+      const r = await apiSend(`/api/endpoints/${deviceId}/commands`, "POST", { type, ip: ip || undefined, confirm: type !== "list_rules" });
       toast("ok", tr(r.message));
       cmds.reload(true);
     } catch (e: any) {
@@ -76,6 +77,10 @@ export function LiveConnections({ deviceId, hostname, online }: { deviceId: stri
         </span>
       </div>
 
+      {!data.data.external_lookups && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-ink-200">{tr("Location lookups are OFF (privacy default). Public IPs are shown without country or company. An administrator can turn them on in Settings.")}</div>
+      )}
+      {data.data.collection_error && <ErrorBox error={data.data.collection_error} />}
       <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
         <Card title={<span className="flex items-center gap-2"><Globe2 className="h-4 w-4 text-volt" /> {tr("Where this device is connecting")}</span>}
           subtitle={tr("Approximate location of the remote network (not of a person). Source: ip-api.com")}>
@@ -168,17 +173,29 @@ export function LiveConnections({ deviceId, hostname, online }: { deviceId: stri
         </Card>
         <Card title={<span className="flex items-center gap-2"><ShieldOff className="h-4 w-4 text-crit" /> {tr("Response actions on this device")}</span>}
           subtitle={tr("Blocking runs only if the agent was started with --allow-response.")}>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Button className="text-xs" loading={busy === "list_rules"} onClick={() => { setBusy("list_rules"); command("list_rules"); }}>{tr("Show WOLVE firewall rules")}</Button>
+            {data.data.wolve_firewall_rules && (
+              <span className="text-xs text-ink-400">{data.data.wolve_firewall_rules.length === 0 ? tr("No WOLVE rules on this device.") : `${data.data.wolve_firewall_rules.length} ${tr("WOLVE rules")}`} · {fmtTime(data.data.wolve_firewall_rules_at)}</span>
+            )}
+          </div>
+          {data.data.wolve_firewall_rules?.length > 0 && (
+            <ul className="mb-3 space-y-1 text-xs" dir="ltr">
+              {data.data.wolve_firewall_rules.map((r: any, i: number) => <li key={i} className="flex items-center gap-2 font-mono"><span>{r.name}</span><Pill>{r.direction}</Pill><Pill>{r.action}</Pill>
+                <Button variant="ghost" className="ms-auto h-6 !px-2 text-xs" onClick={() => command("unblock_ip", String(r.name).replace("WOLVE-block-", ""))}>{tr("Unblock")}</Button></li>)}
+            </ul>
+          )}
           {(cmds.data || []).length === 0 ? <p className="text-sm text-ink-400">{tr("No actions yet. Use Block on a connection above.")}</p> : (
             <ul className="space-y-2 text-sm">
               {cmds.data!.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-ink-700 p-2.5">
-                  <span className="font-medium">{c.type === "block_ip" ? tr("Block") : tr("Unblock")} <span className="font-mono" dir="ltr">{c.params.ip}</span></span>
+                  <span className="font-medium">{c.type === "block_ip" ? tr("Block") : c.type === "unblock_ip" ? tr("Unblock") : tr("List rules")} {c.params.ip && <span className="font-mono" dir="ltr">{c.params.ip}</span>}</span>
                   <Pill className={c.status === "done" ? "text-safe" : c.status === "refused" || c.status === "failed" ? "text-crit" : ""}>{tr(c.status)}</Pill>
                   <span className="text-xs text-ink-400">{c.created_by} · {fmtTime(c.created_at)}</span>
                   {c.type === "block_ip" && c.status === "done" && (
                     <Button variant="ghost" className="ms-auto h-7 !px-2 text-xs" loading={busy === "unblock_ip" + c.params.ip} onClick={() => command("unblock_ip", c.params.ip)}><Undo2 className="h-3.5 w-3.5" /> {tr("Unblock")}</Button>
                   )}
-                  {c.result && <p className="w-full text-xs text-ink-400">{tr(c.result)}</p>}
+                  {c.result && c.type !== "list_rules" && <p className="w-full text-xs text-ink-400">{tr(c.result)}</p>}
                 </li>
               ))}
             </ul>

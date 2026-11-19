@@ -126,6 +126,18 @@ def test_incident_lifecycle_and_audit(c):
     assert {"incident.create", "incident.update", "email.quarantine", "incident.escalate"} <= actions
 
 
+def test_external_lookups_need_consent(c):
+    st = c.get("/api/settings", headers=ADMIN).json()
+    assert st["external_lookups"] is False, "external lookups must be off by default"
+    assert c.put("/api/settings", json={"external_lookups": True}, headers=ADMIN).status_code == 422
+    on = c.put("/api/settings", json={"external_lookups": True, "consent_acknowledged": True}, headers=ADMIN).json()
+    assert on["external_lookups"] is True and on["external_lookups_consent"]["by"] == "aisha.admin"
+    off = c.put("/api/settings", json={"external_lookups": False}, headers=ADMIN).json()
+    assert off["external_lookups"] is False and off["external_lookups_consent"] is None
+    providers = c.get("/api/system/status").json()["external_providers"]
+    assert any(p["name"] == "ip-api.com" and "Public IP" in p["sends"] for p in providers)
+
+
 def test_export_and_settings(c):
     a = c.get("/api/analyses?kind=email", headers=ANALYST).json()[0]
     r = c.get(f"/api/analyses/{a['id']}/export", headers=ANALYST)
@@ -171,8 +183,12 @@ def test_live_agent_monitoring(c):
     assert sum(1 for e in d["events"] if e["event_type"] == "posture") == 1
     assert d["online"] is True and d["status"] in ("at_risk", "compromised")
     # response command round-trip
-    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66"}, headers=EMPLOYEE).status_code == 403
-    q = c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66"}, headers=ANALYST).json()
+    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66", "confirm": True}, headers=EMPLOYEE).status_code == 403
+    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66"}, headers=ANALYST).status_code == 422  # unconfirmed
+    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "192.168.1.1", "confirm": True}, headers=ANALYST).status_code == 422
+    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "198.51.100.66", "confirm": True}, headers=ANALYST).status_code == 422  # documentation range
+    q = c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "8.8.4.4", "confirm": True}, headers=ANALYST).json()
+    assert c.post(f"/api/endpoints/{dev}/commands", json={"type": "block_ip", "ip": "8.8.4.4", "confirm": True}, headers=ANALYST).json()["duplicate"]
     cmds = c.get("/api/agent/commands", headers=tok).json()["commands"]
     assert cmds and cmds[0]["id"] == q["id"]
     assert c.get("/api/agent/commands", headers=tok).json()["commands"] == []
@@ -192,3 +208,49 @@ def test_zz_demo_reset(c):
     # everything still works after reset
     a = c.post("/api/demo/scenario/email", headers=ANALYST).json()
     assert a["risk_score"] >= 80 and a["incident_id"]
+
+
+def test_call_guard(c):
+    import pathlib
+
+    wav = (pathlib.Path(__file__).resolve().parents[1] / "app" / "demo" / "sample_scam_call.wav").read_bytes()
+    assert c.post("/api/calls/analyze", data={"caller_number": "+8821234567"}, files={"audio": ("call.wav", wav, "audio/wav")}, headers=EMPLOYEE).status_code == 422  # no consent
+    r = c.post("/api/calls/analyze", data={"caller_number": "+8821234567", "consent": "true"}, files={"audio": ("call.wav", wav, "audio/wav")}, headers=EMPLOYEE)
+    assert r.status_code == 200, r.text
+    a = r.json()
+    assert a["kind"] == "call" and a["risk_score"] >= 80 and a["incident_id"]
+    call = a["report"]["call"]
+    if call["stt"].get("available"):
+        assert "verification code" in call["transcript"].lower()
+    assert call["caller"]["registered_region"].startswith("International Networks")
+    assert any("not where the caller physically is" in l for l in a["report"]["limitations"])
+    # live session: two chunks accumulate into one analysis
+    sid = c.post("/api/calls/session", headers=EMPLOYEE).json()["session_id"]
+    first = c.post("/api/calls/analyze", data={"consent": "true", "session_id": sid, "caller_number": "+971501234567", "transcript": "Hello, this is your bank."}, headers=EMPLOYEE).json()
+    second = c.post("/api/calls/analyze", data={"consent": "true", "session_id": sid, "caller_number": "+971501234567", "transcript": "Please tell me the OTP code now, it is urgent."}, headers=EMPLOYEE).json()
+    assert first["id"] == second["id"] and second["risk_score"] > first["risk_score"]
+    # blocked scam number
+    c.post("/api/blocklist", json={"type": "phone", "value": "+971 50 999 8888", "reason": "reported scam"}, headers=ANALYST)
+    b = c.post("/api/calls/analyze", data={"consent": "true", "caller_number": "0509998888", "transcript": "hello"}, headers=EMPLOYEE).json()
+    assert any(f["title"] == "Caller number is on the WOLVE blocklist" for f in b["report"]["findings"])
+
+
+def test_mobile_protection(c):
+    salik = ("[Salik] FINAL REMINDER: a toll balance of AED 4.00 is PENDING. Settle before 11:59 PM TODAY to avoid an AED 50.00 fine "
+             "and RESTRICTIONS on vehicle registration. To settle, visit: https://salik.ae.ticka.top")
+    r = c.post("/api/mobile/sms/classify", json={"sender": "simkukjin@hanmail.net", "body": salik}, headers=EMPLOYEE).json()
+    assert r["action"] == "junk" and r["stored"] and "Text message sent from an email address" in r["reasons"]
+    ok = c.post("/api/mobile/sms/classify", json={"sender": "AD-SALIK", "body": "Your Salik account was recharged with AED 50. Thank you."}, headers=EMPLOYEE).json()
+    assert ok["action"] == "allow" and ok["stored"] is False, "legitimate messages must not be stored"
+    missed = c.post("/api/mobile/sms/classify", json={"sender": "+491775111338", "body": "You MISSED 1 Call(s) from +491775111338, last call: 22 Sep 2026 at 03:44 PM."}, headers=EMPLOYEE).json()
+    assert missed["risk_score"] >= 50
+    sat = c.get("/api/mobile/caller-check?number=%2B8821234567", headers=EMPLOYEE).json()
+    assert sat["warn"] and sat["level"] in ("caution", "danger")
+    local = c.get("/api/mobile/caller-check?number=0501112233", headers=EMPLOYEE).json()
+    assert local["warn"] is False
+    c.post("/api/blocklist", json={"type": "phone", "value": "+44 7399 367678"}, headers=ANALYST)
+    blocked = c.get("/api/mobile/caller-check?number=%2B447399367678", headers=EMPLOYEE).json()
+    assert blocked["level"] == "danger" and blocked["label"]
+    d = c.get("/api/mobile/call-directory", headers=EMPLOYEE).json()
+    assert any(e["number"] == "+447399367678" and e["block"] for e in d["entries"])
+    assert c.get("/api/mobile/caller-check?number=123").status_code == 401

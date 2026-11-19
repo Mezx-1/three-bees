@@ -14,3 +14,5 @@ rapidocr==3.10.0
 onnxruntime==1.32.0
 pytest==9.2.0
 psutil==7.2.2
+# Offline speech-to-text for Call Guard (downloads the 'base' model ~145 MB on first use)
+faster-whisper==1.2.1

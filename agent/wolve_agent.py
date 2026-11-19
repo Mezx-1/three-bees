@@ -182,13 +182,41 @@ class ProcessWatcher:
         return events
 
 
-def _run(cmd: list[str], timeout: int = 20) -> str:
+def _exec(cmd: list[str], timeout: int = 20) -> tuple[int, str]:
+    """Run a fixed command (argument list, never a shell). Returns (exit code, output)."""
     try:
         flags = 0x08000000 if IS_WINDOWS else 0  # CREATE_NO_WINDOW
-        out = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, creationflags=flags)
-        return (out.stdout or "") + (out.stderr or "")
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, creationflags=flags, shell=False)
+        return out.returncode, (out.stdout or "") + (out.stderr or "")
     except Exception as exc:
-        return f"ERROR {exc}"
+        return -1, f"ERROR {exc.__class__.__name__}: {exc}"
+
+
+def _run(cmd: list[str], timeout: int = 20) -> str:
+    return _exec(cmd, timeout)[1]
+
+
+def is_admin() -> bool:
+    if not IS_WINDOWS:
+        return hasattr(os, "geteuid") and os.geteuid() == 0
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except Exception:
+        return False
+
+
+def _ps_json(script: str, timeout: int = 30):
+    """Run a fixed, read-only PowerShell query and parse its JSON output (locale-independent)."""
+    rc, out = _exec(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], timeout)
+    if rc != 0 or not out.strip():
+        return None, out.strip()[:300]
+    try:
+        start = min(i for i in (out.find("{"), out.find("[")) if i != -1)
+        return json.loads(out[start:]), ""
+    except Exception:
+        return None, out.strip()[:300]
 
 
 def collect_posture() -> dict:
@@ -196,51 +224,98 @@ def collect_posture() -> dict:
     if not IS_WINDOWS:
         posture["note"] = "Firewall/Defender checks are implemented for Windows only."
         return posture
-    fw = _run(["netsh", "advfirewall", "show", "allprofiles", "state"])
-    profiles = {}
-    current = None
-    for line in fw.splitlines():
-        m = re.match(r"^(Domain|Private|Public) Profile Settings", line.strip())
-        if m:
-            current = m.group(1).lower()
-        elif current and line.strip().lower().startswith("state"):
-            profiles[current] = "on" if "on" in line.lower().split()[-1] else "off"
-    posture["firewall"] = profiles or {"error": "could not read firewall state"}
-    ps = _run(["powershell", "-NoProfile", "-NonInteractive", "-Command",
-               "Get-MpComputerStatus | Select-Object AMServiceEnabled,AntivirusEnabled,RealTimeProtectionEnabled,AntivirusSignatureAge,QuickScanAge | ConvertTo-Json"], timeout=30)
-    try:
-        d = json.loads(ps[ps.index("{"):ps.rindex("}") + 1])
+    # Get-NetFirewallProfile returns structured data, so this works on Arabic/English/any-language Windows.
+    fw, err = _ps_json("Get-NetFirewallProfile | Select-Object Name,@{n='Enabled';e={[bool]$_.Enabled}} | ConvertTo-Json")
+    if fw is not None:
+        rows = fw if isinstance(fw, list) else [fw]
+        posture["firewall"] = {str(r.get("Name", "?")).lower(): ("on" if r.get("Enabled") else "off") for r in rows}
+    else:
+        posture["firewall"] = {"error": "Could not read Windows Firewall state" + (f": {err}" if err else "")}
+    d, err = _ps_json("Get-MpComputerStatus | Select-Object AMServiceEnabled,AntivirusEnabled,RealTimeProtectionEnabled,"
+                      "AntivirusSignatureAge,QuickScanAge | ConvertTo-Json")
+    if isinstance(d, dict):
         posture["defender"] = {"service": d.get("AMServiceEnabled"), "antivirus": d.get("AntivirusEnabled"),
                                "realtime": d.get("RealTimeProtectionEnabled"), "signature_age_days": d.get("AntivirusSignatureAge"),
                                "last_quick_scan_days": d.get("QuickScanAge")}
-    except Exception:
-        posture["defender"] = {"error": "Defender status unavailable (third-party antivirus or no permission)"}
+    else:
+        posture["defender"] = {"error": "Defender status unavailable (another antivirus is active, Defender is not installed, or permission was denied)"}
+    posture["agent_is_admin"] = is_admin()
     return posture
 
 
 # ------------------------------------------------------------------ response actions
 
+def list_wolve_rules() -> tuple[list[dict] | None, str]:
+    """Read-only: only rules whose name starts with the WOLVE prefix."""
+    data, err = _ps_json(f"Get-NetFirewallRule -DisplayName '{FW_RULE_PREFIX}*' -ErrorAction SilentlyContinue | "
+                         "Select-Object DisplayName,@{n='Direction';e={[string]$_.Direction}},@{n='Action';e={[string]$_.Action}},"
+                         "@{n='Enabled';e={[string]$_.Enabled}} | ConvertTo-Json")
+    if data is None:
+        return ([] if not err else None), err
+    rows = data if isinstance(data, list) else [data]
+    return [{"name": r.get("DisplayName"), "direction": r.get("Direction"), "action": r.get("Action"), "enabled": r.get("Enabled")} for r in rows], ""
+
+
+def _rule_exists(name: str, direction: str) -> bool:
+    rc, _ = _exec(["netsh", "advfirewall", "firewall", "show", "rule", f"name={name}", f"dir={direction}"])
+    return rc == 0
+
+
+def validate_block_target(ip: str) -> str | None:
+    """Returns an error message if the address must not be blocked."""
+    try:
+        o = ipaddress.ip_address(ip)
+    except ValueError:
+        return f"Invalid IP '{ip}'"
+    if o.is_loopback or o.is_unspecified or o.is_multicast or o.is_link_local or o.is_reserved:
+        return f"Refusing to block special-purpose address {ip}."
+    if o.is_private:
+        return f"Refusing to block private/local address {ip}: it could cut this device off from its own network or the WOLVE server."
+    return None
+
+
 def execute(cmd: dict, allow: bool) -> tuple[str, str]:
+    """Run a response command from the server. Only touches firewall rules named WOLVE-block-<ip>."""
     ctype, params = cmd.get("type"), cmd.get("params") or {}
+    if ctype == "list_rules":  # read-only, allowed without --allow-response
+        if not IS_WINDOWS:
+            return "failed", "Firewall inspection is implemented for Windows only."
+        rules, err = list_wolve_rules()
+        if rules is None:
+            return "failed", f"Could not read firewall rules: {err}"
+        return "done", json.dumps(rules)
+    if ctype not in ("block_ip", "unblock_ip"):
+        return "failed", f"Unknown command '{ctype}'"
     if not allow:
         return "refused", "Agent was not started with --allow-response; no change made on the device."
     if not IS_WINDOWS:
         return "failed", "Firewall actions are implemented for Windows only."
+    if not is_admin():
+        return "refused", "Agent is not running as administrator, so it cannot change Windows Firewall. No change made."
     ip = str(params.get("ip", ""))
-    try:
-        ipaddress.ip_address(ip)
-    except ValueError:
-        return "failed", f"Invalid IP '{ip}'"
+    problem = validate_block_target(ip)
+    if problem:
+        return "refused", problem
     name = FW_RULE_PREFIX + ip
     if ctype == "block_ip":
-        outs = [_run(["netsh", "advfirewall", "firewall", "add", "rule", f"name={name}", f"dir={d}", "action=block", f"remoteip={ip}"]) for d in ("out", "in")]
-        ok = all("Ok." in o for o in outs)
-        return ("done" if ok else "failed"), ("Blocked in Windows Firewall (in+out)." if ok else " | ".join(o.strip() for o in outs)[:500])
-    if ctype == "unblock_ip":
-        out = _run(["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"])
-        ok = "Ok." in out or "Deleted" in out
-        return ("done" if ok else "failed"), ("Firewall rule removed." if ok else out.strip()[:500])
-    return "failed", f"Unknown command '{ctype}'"
+        created = []
+        for d in ("out", "in"):
+            if _rule_exists(name, d):
+                continue  # duplicate handling: never add the same rule twice
+            rc, out = _exec(["netsh", "advfirewall", "firewall", "add", "rule", f"name={name}", f"dir={d}", "action=block", f"remoteip={ip}"])
+            if rc != 0:
+                for done_dir in created:  # roll back so no half-applied block is left behind
+                    _exec(["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}", f"dir={done_dir}"])
+                return "failed", f"Could not create the {d}bound rule (exit {rc}): {out.strip()[:300]}. No WOLVE rule left in place."
+            created.append(d)
+        if not created:
+            return "done", f"{ip} was already blocked by WOLVE rules (inbound and outbound); nothing changed."
+        return "done", f"Blocked {ip} in Windows Firewall ({' + '.join(x + 'bound' for x in created)}), rule name '{name}'."
+    # unblock
+    if not (_rule_exists(name, "in") or _rule_exists(name, "out")):
+        return "done", f"No WOLVE rule exists for {ip}; nothing to remove."
+    rc, out = _exec(["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"])
+    return ("done", f"Removed WOLVE firewall rule '{name}'.") if rc == 0 else ("failed", f"Could not remove rule (exit {rc}): {out.strip()[:300]}")
 
 
 # ------------------------------------------------------------------ main loop
@@ -250,12 +325,20 @@ def monitor(srv: Server, interval: int, allow_response: bool) -> None:
         sys.exit("[wolve-agent] psutil is required: pip install psutil")
     watcher = ProcessWatcher()
     last_posture = 0.0
+    if allow_response and not is_admin():
+        log("WARNING: --allow-response given but the agent is not running as administrator; firewall commands will be refused.")
     log(f"monitoring every {interval}s · response actions {'ENABLED' if allow_response else 'disabled'} · Ctrl+C to stop")
     while True:
         try:
             srv.call("/api/agent/heartbeat", system_info())
-            conns, listening = collect_connections()
-            res = srv.call("/api/agent/connections", {"connections": conns, "listening": listening})
+            try:
+                conns, listening = collect_connections()
+                collection_error = None
+            except (psutil.AccessDenied, PermissionError) as exc:
+                conns, listening = [], []
+                collection_error = f"Permission denied reading network connections ({exc.__class__.__name__}); run the agent as administrator."
+                log(collection_error)
+            res = srv.call("/api/agent/connections", {"connections": conns, "listening": listening, "collection_error": collection_error})
             if res:
                 flagged = res.get("flagged", 0)
                 log(f"{len(conns)} connections, {len(listening)} listening ports · {res.get('new', 0)} new · {flagged} flagged")

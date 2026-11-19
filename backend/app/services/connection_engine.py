@@ -19,7 +19,7 @@ from .risk import Finding, combine
 SCRIPT_HOSTS = {"wscript.exe", "cscript.exe", "powershell.exe", "pwsh.exe", "cmd.exe", "mshta.exe", "rundll32.exe",
                 "regsvr32.exe", "certutil.exe", "bitsadmin.exe"}
 C2_PORTS = {4444, 1337, 6667, 8081, 9001, 31337, 5555, 2222}
-COMMON_INBOUND = {80, 443, 22, 3389, 445, 139, 135, 5040, 7680}
+SENSITIVE_INBOUND = {3389: "Remote Desktop (RDP)", 22: "SSH", 445: "Windows file sharing (SMB)", 139: "NetBIOS", 5985: "WinRM", 5986: "WinRM", 5900: "VNC", 23: "Telnet"}
 GEO_FIELDS = "status,message,country,countryCode,regionName,city,lat,lon,isp,org,as,asname,proxy,hosting,mobile,query"
 CACHE_TTL = timedelta(hours=24)
 
@@ -55,11 +55,18 @@ def enrich_ips(db: Session, ips: set[str], external: bool) -> dict[str, dict]:
     if need and external:
         for i in range(0, min(len(need), 300), 100):
             chunk = need[i:i + 100]
+            failure = None
             try:
                 r = httpx.post(f"http://ip-api.com/batch?fields={GEO_FIELDS}", json=chunk, timeout=6.0)
-                results = r.json() if r.status_code == 200 else []
-            except Exception:
-                results = []
+                if r.status_code == 200:
+                    results = r.json()
+                else:
+                    results, failure = [], f"provider returned HTTP {r.status_code}" + (" (rate limited)" if r.status_code == 429 else "")
+            except Exception as exc:
+                results, failure = [], f"provider unreachable ({exc.__class__.__name__})"
+            if failure:
+                for ip in chunk:
+                    out[ip] = {"scope": "public", "label": "Origin lookup failed", "error": failure, "source": "ip-api.com"}
             for ip, res in zip(chunk, results):
                 if not isinstance(res, dict) or res.get("status") != "success":
                     continue
@@ -72,6 +79,7 @@ def enrich_ips(db: Session, ips: set[str], external: bool) -> dict[str, dict]:
                 out[ip] = {**data, "scope": "public", "source": "ip-api.com", "fetched_at": now.isoformat()}
     for ip in need:
         out.setdefault(ip, {"scope": "public", "label": "Origin unknown" + ("" if external else " (external lookups off)")})
+    # Only public addresses are ever sent to the provider; private/LAN addresses are labelled locally.
     return out
 
 
@@ -99,13 +107,22 @@ def score_connection(c: dict, origin: dict, blocked_ips: set[str], malicious_ips
     if origin.get("proxy"):
         f.append(Finding("Remote side is a proxy/VPN/Tor exit", "The network owner is flagged as an anonymising service.",
                          "network", "medium", 15, "intel", ["suspicious_infrastructure"], evidence=f"{origin.get('source')} · {origin.get('isp')}"))
-    if c.get("direction") == "inbound" and public and c.get("local_port") not in COMMON_INBOUND:
-        f.append(Finding("Inbound connection from the internet", f"{rip} connected in to local port {c.get('local_port')} ({proc or 'unknown program'}).",
-                         "network", "medium", 16, "verified", ["suspicious_infrastructure"], evidence=f"{rip} → :{c.get('local_port')}"))
+    if c.get("direction") == "inbound" and public:
+        lport = c.get("local_port")
+        if lport in SENSITIVE_INBOUND:
+            f.append(Finding("Remote-access service reached from the internet",
+                             f"A public address ({rip}) has an open connection to {SENSITIVE_INBOUND[lport]} on port {lport}. "
+                             "This is not proof of an intrusion, but these services should not be exposed to the internet.",
+                             "network", "high", 32, "verified", ["suspicious_infrastructure"], evidence=f"{rip} → :{lport}"))
+        else:
+            f.append(Finding("Inbound connection from a public address",
+                             f"{rip} is connected to local port {lport} ({proc or 'unknown program'}). Normal for servers, games and P2P apps; review if unexpected.",
+                             "network", "info", 4, "verified", [], evidence=f"{rip} → :{lport}"))
     return f
 
 
-def ingest_connections(db: Session, device: Device, conns: list[dict], listening: list[dict], external: bool, actor: str) -> dict:
+def ingest_connections(db: Session, device: Device, conns: list[dict], listening: list[dict], external: bool, actor: str,
+                       collection_error: str | None = None) -> dict:
     from .endpoint_engine import ingest_event
 
     now = utcnow()
@@ -153,6 +170,8 @@ def ingest_connections(db: Session, device: Device, conns: list[dict], listening
                       "source": "live agent telemetry"},
                      simulated=False, actor=actor)
     info = dict(device.system_info or {})
+    info["collection_error"] = collection_error
+    info["external_lookups"] = external
     info["listening_ports"] = listening[:200]
     info["connections_updated_at"] = now.isoformat()
     device.system_info = info

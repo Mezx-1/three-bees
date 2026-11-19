@@ -15,7 +15,7 @@ function Cap({ ok, label, note }: { ok: boolean | null; label: string; note?: st
   return (
     <li className="flex items-start gap-2 text-xs">
       {ok === true ? <Check className="h-4 w-4 shrink-0 text-safe" /> : ok === false ? <X className="h-4 w-4 shrink-0 text-crit" /> : <Minus className="h-4 w-4 shrink-0 text-ink-400" />}
-      <span><span className="text-ink-100">{label}</span>{note && <span className="block text-ink-400">{note}</span>}</span>
+      <span><span className="text-ink-100">{tr(label)}</span>{note && <span className="block text-ink-400">{tr(note)}</span>}</span>
     </li>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
+import { Activity, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -13,6 +13,8 @@ const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[
   { section: "section_detect", items: [
     { href: "/", key: "nav_command", icon: LayoutDashboard },
     { href: "/scam-analyzer", key: "nav_scam", icon: ShieldAlert },
+    { href: "/call-guard", key: "nav_calls", icon: PhoneCall },
+    { href: "/phone", key: "nav_phone", icon: Smartphone },
     { href: "/email-security", key: "nav_email", icon: Mail },
     { href: "/forensics", key: "nav_forensics", icon: FileSearch },
     { href: "/endpoints", key: "nav_endpoints", icon: Cpu },

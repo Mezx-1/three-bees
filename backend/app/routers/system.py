@@ -12,10 +12,10 @@ from ..config import settings
 from ..db import Base, engine, get_db
 from ..deps import current_user, require, ser_analysis, ser_device, ser_event
 from ..demo import scenario
-from ..models import Device, User
+from ..models import Device, User, utcnow
 from ..services import ai, ocr, pipeline
 from ..services.endpoint_engine import ingest_event
-from ..services.store import audit, build_context, get_setting, save_result, set_setting
+from ..services.store import EXTERNAL_PROVIDERS, audit, build_context, external_lookups_enabled, get_setting, save_result, set_setting
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -32,7 +32,9 @@ def system_status(db: Session = Depends(get_db)):
         "ocr": {"engine": ocr.ocr_engine()},
         "qr": {"engine": "OpenCV QRCodeDetector"},
         "media": {"ffmpeg": bool(shutil.which("ffmpeg")), "ffprobe": bool(shutil.which("ffprobe")), "speech_to_text": False},
-        "external_lookups": bool(get_setting(db, "external_lookups")),
+        "external_lookups": external_lookups_enabled(db),
+        "external_lookups_consent": get_setting(db, "external_lookups_consent"),
+        "external_providers": EXTERNAL_PROVIDERS,
         "providers": {
             "dns": {"configured": True, "note": "System resolver via dnspython (when external lookups are on)"},
             "geolocation": {"configured": True, "note": "ip-api.com free tier (when external lookups are on)"},
@@ -57,24 +59,38 @@ def users(db: Session = Depends(get_db)):
 class SettingsIn(BaseModel):
     ai_enabled: bool | None = None
     external_lookups: bool | None = None
+    consent_acknowledged: bool | None = None
     auto_incident_threshold: int | None = None
 
 
 @router.get("/settings")
 def get_settings(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    return {k: get_setting(db, k) for k in ("ai_enabled", "external_lookups", "auto_incident_threshold")}
+    return _settings_view(db)
+
+
+def _settings_view(db: Session) -> dict:
+    out = {k: get_setting(db, k) for k in ("ai_enabled", "auto_incident_threshold", "external_lookups_consent")}
+    out["external_lookups"] = external_lookups_enabled(db)
+    return out
 
 
 @router.put("/settings")
 def put_settings(body: SettingsIn, db: Session = Depends(get_db), user: User = Depends(require("admin"))):
     changes = body.model_dump(exclude_none=True)
+    ack = changes.pop("consent_acknowledged", None)
+    if changes.get("external_lookups") is True:
+        if not ack:
+            raise HTTPException(422, "Turning on external lookups requires explicit consent: public IP addresses and domains will be sent to ip-api.com and your DNS resolver.")
+        set_setting(db, "external_lookups_consent", {"by": user.username, "at": utcnow().isoformat()})
+    elif changes.get("external_lookups") is False:
+        set_setting(db, "external_lookups_consent", None)
     if "auto_incident_threshold" in changes and not (30 <= changes["auto_incident_threshold"] <= 95):
         raise HTTPException(422, "Threshold must be between 30 and 95")
     for k, v in changes.items():
         set_setting(db, k, v)
     audit(db, user.username, "settings.update", "settings", changes)
     db.commit()
-    return {k: get_setting(db, k) for k in ("ai_enabled", "external_lookups", "auto_incident_threshold")}
+    return _settings_view(db)
 
 
 # ---------------------------------------------------------------- demo

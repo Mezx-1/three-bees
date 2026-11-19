@@ -43,7 +43,7 @@ class Settings:
     ai_enabled_default: bool = _bool("WOLVE_AI_ENABLED", True)
 
     # External lookups (DNS, geolocation). These contact third-party services.
-    external_lookups_default: bool = _bool("WOLVE_EXTERNAL_LOOKUPS", True)
+    external_lookups_default: bool = _bool("WOLVE_EXTERNAL_LOOKUPS", False)  # privacy: off unless consented
 
     # Optional threat-intel providers. Absent key => provider reported as "not configured".
     virustotal_api_key: str | None = os.getenv("VIRUSTOTAL_API_KEY") or None

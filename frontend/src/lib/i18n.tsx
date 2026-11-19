@@ -36,6 +36,8 @@ const dict = {
   brand_tag: "Think like a wolf. Detect before the attack.",
   nav_command: "Command Center",
   nav_scam: "Scam Analyzer",
+  nav_calls: "Call Guard",
+  nav_phone: "Phone Protection",
   nav_email: "Email Security",
   nav_forensics: "File & Image Forensics",
   nav_endpoints: "Endpoint Protection",

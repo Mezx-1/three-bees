@@ -1,6 +1,6 @@
 "use client";
 
-import { tr } from "@/lib/i18n";
+import { tr, trf } from "@/lib/i18n";
 import { UploadCloud, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "./ui";
@@ -45,12 +45,12 @@ export function FileDrop({ file, onFile, accept, hint, maxMb = 25 }: { file: Fil
         ) : (
           <>
             <p className="text-sm text-ink-200">{tr("Drop a file here or")} <span className="text-volt">{tr("browse")}</span></p>
-            <p className="text-xs text-ink-400">{hint || `Max ${maxMb} MB. Files are inspected statically and never executed.`}</p>
+            <p className="text-xs text-ink-400">{hint || trf("Max {n} MB. Files are inspected statically and never executed.", { n: maxMb })}</p>
           </>
         )}
         <input ref={ref} type="file" className="hidden" accept={accept} onChange={(e) => take(e.target.files?.[0])} />
       </div>
-      {err && <p className="mt-1 text-xs text-crit">{err}</p>}
+      {err && <p className="mt-1 text-xs text-crit">{tr(err)}</p>}
     </div>
   );
 }

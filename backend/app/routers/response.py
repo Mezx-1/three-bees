@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["response"])
 
 
 class BlockIn(BaseModel):
-    type: str = Field(pattern="^(domain|url|ip|hash)$")
+    type: str = Field(pattern="^(domain|url|ip|hash|phone)$")
     value: str = Field(min_length=3, max_length=1000)
     reason: str = Field(default="", max_length=500)
 
@@ -37,6 +37,13 @@ def _normalize(t: str, v: str) -> str:
         return registered_domain(host)
     if t == "url":
         return normalize_url(v)
+    if t == "phone":
+        from ..services.network_intel import analyze_phone
+
+        try:
+            return analyze_phone(v)[1]["normalized"]
+        except ValueError as exc:
+            raise HTTPException(422, str(exc))
     if t == "hash":
         v = v.lower()
         if len(v) != 64 or any(c not in "0123456789abcdef" for c in v):

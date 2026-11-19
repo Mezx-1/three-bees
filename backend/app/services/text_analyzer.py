@@ -116,6 +116,12 @@ PATTERNS: list[Pattern] = [
          r"عزيزي العميل", r"عميلنا العزيز"],
     ),
     Pattern(
+        "missed_call", "Missed-call / call-back lure",
+        "A 'you missed a call' notice from an unknown sender is a common trick to make you call back a premium-rate or scam number (wangiri).",
+        20, "medium", ["vishing", "payment_fraud"],
+        [r"\bmissed\s+\d*\s*call(\(s\))?s?\b", r"\bcall(\(s\))? from \+\d", r"\blast call\b", r"مكالمة فائتة", r"مكالمات فائتة"],
+    ),
+    Pattern(
         "voice_pretext", "Call-based pretext",
         "Tells the reader to call a number or expect a call to 'resolve' an issue — a vishing setup.",
         14, "medium", ["vishing"],
@@ -177,5 +183,11 @@ def analyze_text(text: str, channel: str = "message") -> tuple[list[Finding], di
         ))
 
     phones = sorted({re.sub(r"[\s-]", "", m.group(0)) for m in PHONE_RE.finditer(text)})
+    if "missed_call" in keys and any(p.startswith(("+", "00")) and not p.lstrip("+0").startswith("971") for p in phones):
+        findings.append(Finding(
+            "Unknown international number wants a call-back",
+            "A missed-call notice pointing to a foreign number is the classic set-up for call-back (wangiri) fraud. Do not call back.",
+            "content", "high", 28, "heuristic", ["vishing", "payment_fraud"], evidence=", ".join(phones[:3]),
+        ))
     emails = sorted({e.lower() for e in EMAIL_RE.findall(text)})
     return findings, {"matched_patterns": matched, "brands_mentioned": brands, "phone_numbers": phones, "emails": emails}

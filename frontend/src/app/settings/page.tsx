@@ -3,9 +3,9 @@
 import { Download, KeyRound, PlugZap, RotateCcw, Settings as Gear, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DemoScenario } from "@/components/DemoScenario";
-import { broadcastRefresh, Button, Card, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, useApi, useToast } from "@/components/ui";
+import { broadcastRefresh, Button, Card, fmtTime, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, useApi, useToast } from "@/components/ui";
 import { API_URL, apiGet, apiSend, getUser, setUser } from "@/lib/api";
-import { useI18n, tr } from "@/lib/i18n";
+import { tr, trf, useI18n } from "@/lib/i18n";
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
@@ -77,8 +77,12 @@ export default function SettingsPage() {
               )}
               <div className="flex items-center justify-between gap-4">
                 <div><div className="text-ink-100">{tr("External lookups")}</div><div className="text-xs text-ink-400">{tr("DNS resolution and IP geolocation (ip-api.com). Sends the looked-up indicator to those services.")}</div></div>
-                <Toggle label={tr("External lookups")} checked={st.data.external_lookups} disabled={!isAdmin || busy === "ext"} onChange={(v) => put("ext", { external_lookups: v })} />
+                <Toggle label={tr("External lookups")} checked={st.data.external_lookups} disabled={!isAdmin || busy === "ext"} onChange={(v) => {
+                  if (v && !window.confirm(tr("Turn on external lookups?\n\nWhat is sent: public IP addresses seen on monitored devices and in analyses go to ip-api.com (over plain HTTP — the free tier has no HTTPS); domains in analysed links go to your DNS server.\nNever sent: private/LAN addresses, message or email contents, files, names.\nWhy: to show the approximate country, city and network owner of connections.\n\nYour name and the time of consent will be recorded."))) return;
+                  put("ext", v ? { external_lookups: true, consent_acknowledged: true } : { external_lookups: false });
+                }} />
               </div>
+              <p className="-mt-2 text-xs text-ink-400">{st.data.external_lookups_consent ? trf("Enabled with consent by {by} on {at}.", { by: st.data.external_lookups_consent.by, at: fmtTime(st.data.external_lookups_consent.at) }) : tr("Off by default for privacy. Nothing is sent to outside services.")}</p>
               <div>
                 <Label htmlFor="th">{tr("Auto-incident threshold (risk score)")}</Label>
                 <div className="flex items-center gap-3">

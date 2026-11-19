@@ -17,13 +17,14 @@ AUTO_INCIDENT_THRESHOLD = 60
 
 SOURCE_BY_KIND = {"email": "Email Security", "message": "Scam Analyzer", "url": "Network Intelligence", "domain": "Network Intelligence",
                   "ip": "Network Intelligence", "phone": "Scam Analyzer", "file": "File Forensics", "image": "File Forensics",
-                  "audio": "Multimedia Forensics", "video": "Multimedia Forensics"}
+                  "audio": "Multimedia Forensics", "video": "Multimedia Forensics", "call": "Call Guard"}
 
 DEFAULT_SETTINGS = {
     "ai_enabled": json.dumps(settings.ai_enabled_default),
     "external_lookups": json.dumps(settings.external_lookups_default),
     "auto_incident_threshold": json.dumps(AUTO_INCIDENT_THRESHOLD),
     "language": json.dumps("en"),
+    "external_lookups_consent": json.dumps(None),
 }
 
 
@@ -45,6 +46,21 @@ def audit(db: Session, actor: str, action: str, target: str = "", details: dict 
     db.add(AuditLog(actor=actor, action=action, target=target[:500], details=details or {}, ip=ip))
 
 
+EXTERNAL_PROVIDERS = [
+    {"name": "ip-api.com", "purpose": "Approximate IP origin (country, city, network owner, proxy/hosting flags)",
+     "sends": "Public IP addresses only — never private/LAN addresses, file contents, emails or user names",
+     "transport": "HTTP (free tier does not offer HTTPS), so the queried IPs can be observed on the network path",
+     "limits": "Free tier: 45 single / 15 batch requests per minute; location is approximate (network operator, not a person)"},
+    {"name": "System DNS resolver", "purpose": "Check that domains in analysed links exist (A/AAAA/MX/NS/TXT records)",
+     "sends": "Domain names found in submitted links", "transport": "Your configured DNS server", "limits": "Results reflect the resolver's view"},
+]
+
+
+def external_lookups_enabled(db: Session) -> bool:
+    """External lookups run only when switched on AND an administrator has recorded consent."""
+    return bool(get_setting(db, "external_lookups")) and bool(get_setting(db, "external_lookups_consent"))
+
+
 def build_context(db: Session) -> Context:
     org = db.scalars(select(Organization)).first()
     blocked = db.scalars(select(BlockedIndicator)).all()
@@ -53,9 +69,10 @@ def build_context(db: Session) -> Context:
         blocked_domains={b.value for b in blocked if b.type == "domain"},
         blocked_urls={b.value for b in blocked if b.type == "url"},
         blocked_ips={b.value for b in blocked if b.type == "ip"},
+        blocked_phones={b.value for b in blocked if b.type == "phone"},
         known_bad_hashes={b.value: b.reason or "blocked by analyst" for b in blocked if b.type == "hash"},
         ai_enabled=bool(get_setting(db, "ai_enabled")),
-        external_lookups=bool(get_setting(db, "external_lookups")),
+        external_lookups=external_lookups_enabled(db),
     )
 
 

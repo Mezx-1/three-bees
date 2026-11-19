@@ -10,13 +10,14 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import current_user, require, ser_device, ser_event
 import ipaddress
+import json
 
 from ..deps import iso
 from ..models import AgentCommand, Connection, Device, EndpointEvent, Incident, ResponseAction, User, utcnow
 from ..services.connection_engine import device_summary, enrich_ips, ingest_connections, posture_findings
 from ..services.endpoint_engine import ingest_event, score_event
 from ..services.risk import combine
-from ..services.store import add_event, audit, get_setting
+from ..services.store import add_event, audit, external_lookups_enabled, get_setting
 
 router = APIRouter(prefix="/api/endpoints", tags=["endpoints"])
 
@@ -200,6 +201,7 @@ class ConnIn(BaseModel):
 class ConnBatch(BaseModel):
     connections: list[ConnIn] = Field(default_factory=list, max_length=1000)
     listening: list[dict] = Field(default_factory=list, max_length=500)
+    collection_error: str | None = Field(default=None, max_length=500)
 
 
 def ser_conn(c: Connection, origin: dict | None = None) -> dict:
@@ -214,7 +216,7 @@ def agent_connections(body: ConnBatch, x_device_token: str | None = Header(defau
     d = _agent_device(db, x_device_token)
     d.last_seen = utcnow()
     res = ingest_connections(db, d, [c.model_dump() for c in body.connections], body.listening,
-                             external=bool(get_setting(db, "external_lookups")), actor=f"agent:{d.hostname}")
+                             external=external_lookups_enabled(db), actor=f"agent:{d.hostname}", collection_error=body.collection_error)
     db.commit()
     return res
 
@@ -247,7 +249,7 @@ def agent_commands(x_device_token: str | None = Header(default=None), db: Sessio
 
 class CmdResult(BaseModel):
     status: str = Field(pattern="^(done|failed|refused)$")
-    result: str = Field(default="", max_length=2000)
+    result: str = Field(default="", max_length=20000)
 
 
 @agent_router.post("/commands/{cid}/result")
@@ -257,6 +259,14 @@ def agent_command_result(cid: int, body: CmdResult, x_device_token: str | None =
     if not c or c.device_id != d.id:
         raise HTTPException(404, "Command not found")
     c.status, c.result, c.completed_at = body.status, body.result, utcnow()
+    if c.type == "list_rules" and body.status == "done":
+        info = dict(d.system_info or {})
+        try:
+            info["wolve_firewall_rules"] = json.loads(body.result)
+        except ValueError:
+            info["wolve_firewall_rules"] = []
+        info["wolve_firewall_rules_at"] = utcnow().isoformat()
+        d.system_info = info
     db.add(ResponseAction(action=f"agent.{c.type}", target_type="device", target_id=d.id, actor=c.created_by, simulated=False,
                           result=f"{body.status}: {body.result} ({c.params})"))
     audit(db, f"agent:{d.hostname}", f"agent.command.{body.status}", str(cid), {"type": c.type, "params": c.params, "result": body.result})
@@ -276,12 +286,16 @@ def device_connections(device_id: str, active: bool = True, db: Session = Depend
     origins = enrich_ips(db, {r.remote_ip for r in rows}, external=False)
     return {"connections": [ser_conn(r, origins.get(r.remote_ip)) for r in rows], "summary": device_summary(db, d),
             "listening": (d.system_info or {}).get("listening_ports", []), "updated_at": (d.system_info or {}).get("connections_updated_at"),
-            "posture": (d.system_info or {}).get("posture"), "posture_findings": (d.system_info or {}).get("posture_findings", [])}
+            "posture": (d.system_info or {}).get("posture"), "posture_findings": (d.system_info or {}).get("posture_findings", []),
+            "collection_error": (d.system_info or {}).get("collection_error"), "external_lookups": external_lookups_enabled(db),
+            "wolve_firewall_rules": (d.system_info or {}).get("wolve_firewall_rules"),
+            "wolve_firewall_rules_at": (d.system_info or {}).get("wolve_firewall_rules_at")}
 
 
 class CommandIn(BaseModel):
-    type: str = Field(pattern="^(block_ip|unblock_ip)$")
-    ip: str
+    type: str = Field(pattern="^(block_ip|unblock_ip|list_rules)$")
+    ip: str | None = None
+    confirm: bool = False  # block/unblock must be explicitly confirmed by the analyst
 
 
 @router.post("/{device_id}/commands")
@@ -291,14 +305,28 @@ def queue_command(device_id: str, body: CommandIn, db: Session = Depends(get_db)
         raise HTTPException(404, "Device not found")
     if d.source != "agent":
         raise HTTPException(422, "This device has no WOLVE agent installed, so it cannot receive commands.")
-    try:
-        ip = str(ipaddress.ip_address(body.ip))
-    except ValueError:
-        raise HTTPException(422, "Invalid IP address")
-    c = AgentCommand(device_id=d.id, type=body.type, params={"ip": ip}, created_by=user.username)
+    params: dict = {}
+    if body.type in ("block_ip", "unblock_ip"):
+        if not body.confirm:
+            raise HTTPException(422, "Firewall changes must be explicitly confirmed.")
+        try:
+            ipo = ipaddress.ip_address((body.ip or "").strip())
+        except ValueError:
+            raise HTTPException(422, "Invalid IP address")
+        if ipo.is_private or ipo.is_loopback or ipo.is_unspecified or ipo.is_multicast or ipo.is_link_local or ipo.is_reserved:
+            raise HTTPException(422, "Refusing to block a private, local or special-purpose address: it could cut the device off from its network or from WOLVE.")
+        params = {"ip": str(ipo), "direction": "inbound+outbound", "rule_name": f"WOLVE-block-{ipo}"}
+    dup = db.scalars(select(AgentCommand).where(AgentCommand.device_id == d.id, AgentCommand.type == body.type,
+                                                AgentCommand.status.in_(["pending", "sent"]))).all()
+    dup = [x for x in dup if x.params.get("ip") == params.get("ip")]
+    if dup:
+        return {"ok": True, "id": dup[0].id, "duplicate": True, "message": "The same command is already waiting for the agent."}
+    c = AgentCommand(device_id=d.id, type=body.type, params=params, created_by=user.username)
     db.add(c)
-    audit(db, user.username, f"endpoint.command.{body.type}", d.id, {"ip": ip})
+    audit(db, user.username, f"endpoint.command.{body.type}", d.id, params)
     db.commit()
+    if body.type == "list_rules":
+        return {"ok": True, "id": c.id, "message": f"Asked the agent on {d.hostname} to list WOLVE firewall rules (read-only)."}
     return {"ok": True, "id": c.id, "message": f"Command queued. The agent on {d.hostname} will run it on its next check-in (only if it was started with --allow-response)."}
 
 

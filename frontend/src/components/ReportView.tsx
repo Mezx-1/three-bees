@@ -277,7 +277,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-400">
         <SeverityBadge s={a.severity} />
-        <span>{tr("Confidence:")} {tr(a.confidence)}</span>
+        <span>{tr("Confidence:")} {tr(`confidence_${a.confidence}`)}</span>
         <span className="capitalize">· {tr(a.kind)}</span>
         {a.kind === "email" && <span className="capitalize">· {tr("Status:")} {tr(a.status)}</span>}
         {a.demo && <Pill className="text-violet-700">{tr("demo data")}</Pill>}
@@ -285,7 +285,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
         {a.incident_id && <Link className="text-volt hover:underline" href={`/incidents/${a.incident_id}`}>· {tr("Incident")} {a.incident_id}</Link>}
         <Button variant="subtle" className="ms-auto" onClick={() => setShowDetails(!showDetails)} aria-expanded={showDetails}>
           <ChevronDown className={cn("h-4 w-4 transition", showDetails && "rotate-180")} />
-          {showDetails ? tr("Hide technical details") : `Show technical details (${r.findings.length} checks)`}
+          {showDetails ? tr("Hide technical details") : trf("Show technical details ({n} checks)", { n: r.findings.length })}
         </Button>
       </div>
 

@@ -1,5 +1,6 @@
 """Arabic coverage: every display string the API returns for the demo flows must be translated."""
 import os
+import pathlib
 import re
 import tempfile
 
@@ -33,7 +34,7 @@ def collect(obj, key=None, out=None):
     out = [] if out is None else out
     if isinstance(obj, dict):
         for k, v in obj.items():
-            if k in ("body_preview", "text_analysis", "email", "ocr", "ocr_text", "info", "intel", "media", "file", "frame_ocr_text", "assessment"):
+            if k in ("transcript", "call", "body_preview", "text_analysis", "email", "ocr", "ocr_text", "info", "intel", "media", "file", "frame_ocr_text", "assessment"):
                 continue
             collect(v, k, out)
     elif isinstance(obj, list):
@@ -65,6 +66,10 @@ def test_reports_are_arabic(c):
     payloads.append(c.post("/api/demo/scenario/endpoint", headers=AR).json())
     for inc in c.get("/api/incidents", headers=AR).json():
         payloads.append(c.get(f"/api/incidents/{inc['id']}", headers=AR).json())
+    wav = (pathlib.Path(__file__).resolve().parents[1] / "app" / "demo" / "sample_scam_call.wav").read_bytes()
+    payloads.append(c.post("/api/calls/analyze", data={"consent": "true", "caller_number": "+8821234567"}, files={"audio": ("c.wav", wav, "audio/wav")}, headers=AR).json())
+    payloads.append(c.post("/api/calls/analyze", data={"consent": "true", "transcript": "hello"}, headers=AR).json())
+    payloads.append(c.post("/api/calls/analyze", data={"transcript": "x"}, headers=AR).json())
     payloads.append(c.get("/api/dashboard", headers=AR).json())
     payloads.append(c.post(f"/api/emails/{payloads[0]['id']}/action", json={"action": "quarantine"}, headers=AR).json())
     payloads.append(c.post("/api/blocklist", json={"type": "domain", "value": "phish-test.top"}, headers=AR).json())
