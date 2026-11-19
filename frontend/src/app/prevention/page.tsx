@@ -50,7 +50,7 @@ export default function Prevention() {
           {inds.error ? <ErrorBox error={inds.error} /> : !inds.data ? <ScanBar /> : inds.data.length === 0 ? <EmptyState title="No indicators" /> : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-[11px] uppercase tracking-wider text-ink-400"><tr><th className="py-2 pe-3 text-start">Type</th><th className="pe-3 text-start">Value</th><th className="pe-3 text-start">Sightings</th><th className="pe-3 text-start">State</th><th className="text-end">Actions</th></tr></thead>
+                <thead className="text-xs font-medium text-ink-400"><tr><th className="py-2 pe-3 text-start">Type</th><th className="pe-3 text-start">Value</th><th className="pe-3 text-start">Sightings</th><th className="pe-3 text-start">State</th><th className="text-end">Actions</th></tr></thead>
                 <tbody className="divide-y divide-ink-800">
                   {inds.data.map((i) => (
                     <tr key={`${i.type}:${i.value}`}>
@@ -59,7 +59,7 @@ export default function Prevention() {
                       <td className="pe-3 font-mono text-xs">{i.sightings}</td>
                       <td className="pe-3 text-xs">
                         {i.malicious ? <span className="text-crit">malicious</span> : <span className="text-ink-300">not flagged</span>}
-                        {i.reviewed && <span className="ms-2 text-safe">reviewed</span>}{i.blocked && <span className="ms-2 text-violet-300">blocked</span>}
+                        {i.reviewed && <span className="ms-2 text-safe">reviewed</span>}{i.blocked && <span className="ms-2 text-violet-700">blocked</span>}
                       </td>
                       <td className="whitespace-nowrap text-end">
                         <Button variant="ghost" className="h-7 !px-2 text-xs" loading={busy === `m-${i.value}`} onClick={() => act(`m-${i.value}`, () => apiSend("/api/indicators/review", "POST", { type: i.type, value: i.value, verdict: "malicious" }))}><XCircle className="h-3.5 w-3.5 text-crit" /> Malicious</Button>
@@ -123,7 +123,7 @@ export default function Prevention() {
           {audit.error ? <ErrorBox error={audit.error} /> : !audit.data ? <ScanBar /> : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="text-[11px] uppercase tracking-wider text-ink-400"><tr><th className="py-2 pe-3 text-start">Time</th><th className="pe-3 text-start">Actor</th><th className="pe-3 text-start">Action</th><th className="pe-3 text-start">Target</th><th className="text-start">Details</th></tr></thead>
+                <thead className="text-xs font-medium text-ink-400"><tr><th className="py-2 pe-3 text-start">Time</th><th className="pe-3 text-start">Actor</th><th className="pe-3 text-start">Action</th><th className="pe-3 text-start">Target</th><th className="text-start">Details</th></tr></thead>
                 <tbody className="divide-y divide-ink-800 font-mono">
                   {audit.data.map((l) => (
                     <tr key={l.id}><td className="whitespace-nowrap py-1.5 pe-3 text-ink-400">{fmtTime(l.created_at)}</td><td className="pe-3 text-ink-200">{l.actor}</td><td className="pe-3 text-volt">{l.action}</td><td className="max-w-[200px] truncate pe-3">{l.target}</td><td className="max-w-[360px] truncate text-ink-400" title={JSON.stringify(l.details)}>{JSON.stringify(l.details)}</td></tr>

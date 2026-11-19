@@ -64,10 +64,6 @@ def dashboard(db: Session = Depends(get_db), user: User = Depends(current_user))
         Indicator.value.not_in(select(BlockedIndicator.value)))) or 0
     if mal_unblocked:
         recs.append({"level": "high", "text": f"{mal_unblocked} malicious domain/IP indicator(s) are not on the blocklist.", "link": "/prevention"})
-    if not settings.anthropic_api_key:
-        recs.append({"level": "info", "text": "AI analysis is offline (no ANTHROPIC_API_KEY). Deterministic engine is active.", "link": "/settings"})
-    if not settings.virustotal_api_key and not settings.abuseipdb_api_key:
-        recs.append({"level": "info", "text": "No threat-reputation providers configured; reputation results are not available.", "link": "/settings"})
 
     return {
         "security_status": status, "security_status_text": status_text,

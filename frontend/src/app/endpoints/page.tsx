@@ -73,7 +73,7 @@ export default function Endpoints() {
       <PageHeader title={t("nav_endpoints")} subtitle="Device inventory, endpoint telemetry ingestion and endpoint risk" icon={Cpu}
         actions={<Button onClick={() => setShowAdd(!showAdd)}><Plus className="h-4 w-4" /> Register device</Button>} />
 
-      <div className="rounded-lg border border-violet-400/30 bg-violet-500/5 px-3 py-2 text-xs text-violet-200">
+      <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
         Seeded devices are <b>simulated inventory</b> for the demo. Real devices appear only when the consent-based WOLVE agent registers. WOLVE does not record screens, calls, keystrokes or passwords.
       </div>
 
@@ -122,7 +122,7 @@ export default function Endpoints() {
                 <div className="flex flex-wrap items-center gap-3 text-sm"><StatusDot s={d.status} /><span className="text-ink-300">Risk <b className="font-mono">{d.risk_score}</b>/100</span>{SOURCE_LABEL[d.source]}<span className="text-xs text-ink-400">Owner: {d.owner_email || "—"}</span></div>
                 {d.status === "isolation_recommended" && <p className="mt-2 text-xs text-high">Isolation recommended. WOLVE does not control the network in the MVP — isolate via EDR/NAC.</p>}
                 <div className="mt-4">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-ink-400"><Zap className="h-3.5 w-3.5 text-violet-300" /> Inject simulated event</div>
+                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-ink-400"><Zap className="h-3.5 w-3.5 text-violet-700" /> Inject simulated event</div>
                   <div className="flex flex-wrap gap-2">
                     {PRESETS.map((p) => (
                       <Button key={p.key} className="text-xs" loading={busy === p.key} onClick={() => act(p.key, async () => {

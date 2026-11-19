@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertTriangle, ArrowUpRight, Cpu, FileSearch, LayoutDashboard, Mail, MailWarning, ShieldBan, ShieldCheck, Siren } from "lucide-react";
+import { Activity, AlertTriangle, ArrowUpRight, Cpu, FileSearch, LayoutDashboard, Mail, MailWarning, ShieldAlert, ShieldBan, ShieldCheck, Siren } from "lucide-react";
 import Link from "next/link";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DemoScenario } from "@/components/DemoScenario";
@@ -9,13 +9,13 @@ import { apiGet } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 const STATUS_BANNER: Record<string, [string, string]> = {
-  critical: ["CRITICAL", "from-crit/25 border-crit/50 text-crit"],
-  elevated: ["ELEVATED", "from-high/20 border-high/50 text-high"],
-  guarded: ["GUARDED", "from-warn/15 border-warn/40 text-warn"],
-  normal: ["NORMAL", "from-safe/15 border-safe/40 text-safe"],
+  critical: ["Critical — action needed", "border-red-200 bg-red-50 text-crit"],
+  elevated: ["Elevated", "border-orange-200 bg-orange-50 text-high"],
+  guarded: ["Guarded", "border-amber-200 bg-amber-50 text-warn"],
+  normal: ["All clear", "border-green-200 bg-green-50 text-safe"],
 };
 
-const tooltipStyle = { background: "#0b1220", border: "1px solid #1f2e4d", borderRadius: 8, fontSize: 12, color: "#e3e9f5" };
+const tooltipStyle = { background: "#ffffff", border: "1px solid #e2e7ee", borderRadius: 8, fontSize: 12, color: "#101828" };
 
 export default function CommandCenter() {
   const { t } = useI18n();
@@ -29,28 +29,38 @@ export default function CommandCenter() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("nav_command")} subtitle="Live view of analyses, incidents and endpoints across the organisation" icon={LayoutDashboard}
+      <PageHeader title={t("nav_command")} subtitle="Overview of what has been checked, open incidents and devices" icon={LayoutDashboard}
         actions={d.contains_demo_data && <SimBadge label="Includes demo / simulated data" />} />
 
-      <div className={cn("flex flex-wrap items-center gap-4 rounded-xl border bg-gradient-to-r to-transparent p-4", cls)}>
-        <ShieldCheck className="h-8 w-8" />
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-300">{t("security_status")}</div>
-          <div className="text-2xl font-bold tracking-wider">{label}</div>
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+        <div className={cn("flex flex-wrap items-center gap-4 rounded-xl border p-5", cls)}>
+          <ShieldCheck className="h-9 w-9" />
+          <div>
+            <div className="text-sm text-ink-300">{t("security_status")}</div>
+            <div className="text-2xl font-semibold">{label}</div>
+            <p className="mt-0.5 text-sm text-ink-200">{d.security_status_text}</p>
+          </div>
+          <span className="ms-auto self-end text-xs text-ink-400">Updated {timeAgo(d.generated_at)}</span>
         </div>
-        <p className="text-sm text-ink-200">{d.security_status_text}</p>
-        <span className="ms-auto text-[11px] text-ink-400">Updated {timeAgo(d.generated_at)} · auto-refresh 10s</span>
+        <div className="flex flex-col justify-center gap-3 rounded-xl border border-ink-700 bg-ink-900 p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
+          <div className="text-base font-semibold text-ink-100">Got something suspicious?</div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/scam-analyzer" className="inline-flex items-center gap-2 rounded-lg bg-volt px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800"><ShieldAlert className="h-4 w-4" /> Check a message or link</Link>
+            <Link href="/email-security" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><Mail className="h-4 w-4" /> Check an email</Link>
+            <Link href="/forensics" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><FileSearch className="h-4 w-4" /> Check a file</Link>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
-        <Stat label="Emails analysed" value={tot.emails_analyzed} icon={Mail} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Stat label="Emails checked" value={tot.emails_analyzed} icon={Mail} />
         <Stat label="Suspicious emails" value={tot.suspicious_emails} icon={MailWarning} tone={tot.suspicious_emails ? "warn" : "default"} />
         <Stat label="Critical threats" value={tot.critical_threats} icon={AlertTriangle} tone={tot.critical_threats ? "crit" : "default"} />
-        <Stat label="Files analysed" value={tot.files_analyzed} icon={FileSearch} />
+        <Stat label="Files checked" value={tot.files_analyzed} icon={FileSearch} />
         <Stat label="Active incidents" value={tot.active_incidents} icon={Siren} tone={tot.active_incidents ? "crit" : "safe"} />
         <Stat label="Endpoints" value={tot.endpoints} icon={Cpu} hint={`${tot.endpoints_at_risk} at risk`} tone={tot.endpoints_at_risk ? "warn" : "default"} />
         <Stat label="Quarantined" value={tot.quarantined_emails} icon={ShieldBan} tone="volt" />
-        <Stat label="Blocked IOCs" value={tot.blocked_indicators} icon={ShieldBan} />
+        <Stat label="Blocked items" value={tot.blocked_indicators} icon={ShieldBan} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -58,9 +68,9 @@ export default function CommandCenter() {
           <div className="h-56">
             <ResponsiveContainer>
               <AreaChart data={d.activity}>
-                <CartesianGrid stroke="#16223a" vertical={false} />
-                <XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} stroke="#5b6f95" fontSize={11} />
-                <YAxis allowDecimals={false} stroke="#5b6f95" fontSize={11} width={28} />
+                <CartesianGrid stroke="#eef1f5" vertical={false} />
+                <XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} stroke="#98a2b3" fontSize={11} />
+                <YAxis allowDecimals={false} stroke="#98a2b3" fontSize={11} width={28} />
                 <Tooltip contentStyle={tooltipStyle} />
                 {(["low", "medium", "high", "critical"] as const).map((s) => (
                   <Area key={s} type="monotone" dataKey={s} stackId="1" stroke={SEV_HEX[s]} fill={SEV_HEX[s]} fillOpacity={0.25} />
@@ -73,10 +83,10 @@ export default function CommandCenter() {
           <div className="h-56">
             <ResponsiveContainer>
               <BarChart data={d.severity_distribution}>
-                <CartesianGrid stroke="#16223a" vertical={false} />
-                <XAxis dataKey="severity" stroke="#5b6f95" fontSize={11} />
-                <YAxis allowDecimals={false} stroke="#5b6f95" fontSize={11} width={28} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#16223a" }} />
+                <CartesianGrid stroke="#eef1f5" vertical={false} />
+                <XAxis dataKey="severity" stroke="#98a2b3" fontSize={11} />
+                <YAxis allowDecimals={false} stroke="#98a2b3" fontSize={11} width={28} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#eef1f5" }} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>{d.severity_distribution.map((x: any) => <Cell key={x.severity} fill={SEV_HEX[x.severity]} />)}</Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -91,7 +101,7 @@ export default function CommandCenter() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-left text-[11px] uppercase tracking-wider text-ink-400">
+                <thead className="text-left text-xs font-medium text-ink-400">
                   <tr><th className="py-2 pe-3 text-start">Item</th><th className="pe-3 text-start">Type</th><th className="pe-3 text-start">Verdict</th><th className="pe-3 text-start">Score</th><th className="text-start">When</th></tr>
                 </thead>
                 <tbody className="divide-y divide-ink-800">
@@ -115,7 +125,7 @@ export default function CommandCenter() {
               {d.recommendations.map((r: any, i: number) => (
                 <li key={i}>
                   <Link href={r.link} className="flex items-start gap-2 rounded-lg border border-ink-700 bg-ink-850/60 p-2.5 text-sm hover:border-ink-500">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: r.level === "info" ? "#5b6f95" : SEV_HEX[r.level] }} />
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: r.level === "info" ? "#98a2b3" : SEV_HEX[r.level] }} />
                     <span className="flex-1 text-ink-200">{r.text}</span>
                     <ArrowUpRight className="h-4 w-4 shrink-0 text-ink-400" />
                   </Link>

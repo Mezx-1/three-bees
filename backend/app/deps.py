@@ -6,6 +6,7 @@ Endpoint agents authenticate with a per-device token (`X-Device-Token`)."""
 from __future__ import annotations
 
 import time
+from datetime import timezone
 from collections import defaultdict, deque
 
 from fastapi import Depends, Header, HTTPException, Request
@@ -52,7 +53,13 @@ def rate_limit(request: Request) -> None:
 
 
 def iso(dt):
-    return dt.isoformat() if dt else None
+    """ISO-8601 with an explicit UTC offset. SQLite returns naive datetimes (stored as UTC);
+    without the offset browsers would read them as local time (e.g. 4h off in the UAE)."""
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
 
 
 def ser_analysis(a: Analysis, full: bool = False) -> dict:

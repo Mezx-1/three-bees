@@ -60,7 +60,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-5">
-      <Link href="/incidents" className="inline-flex items-center gap-1 text-sm text-ink-300 hover:text-white"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /> Incidents</Link>
+      <Link href="/incidents" className="inline-flex items-center gap-1 text-sm text-ink-300 hover:text-ink-100"><ArrowLeft className="h-4 w-4 rtl:rotate-180" /> Incidents</Link>
       <Card>
         <div className="flex flex-wrap items-start gap-4">
           <div className="min-w-0 flex-1">
@@ -69,7 +69,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
               {inc.correlated && <Pill className="text-volt"><GitMerge className="h-3 w-3" /> correlated</Pill>}
               {inc.escalated && <Pill className="text-crit">escalated</Pill>}{inc.demo && <SimBadge label="demo" />}
             </div>
-            <h1 className="mt-2 text-lg font-semibold text-white">{inc.title}</h1>
+            <h1 className="mt-2 text-lg font-semibold text-ink-100">{inc.title}</h1>
             <p className="mt-1 text-xs text-ink-400">Source: {inc.source} · Risk {inc.risk_score}/100 · Created {fmtTime(inc.created_at)} · Updated {fmtTime(inc.updated_at)}</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -86,8 +86,8 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
               {inc.timeline.map((e: any) => (
                 <li key={e.id} className="relative">
                   <span className={cn("absolute -start-[25px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-ink-900", EVENT_COLOR[e.type] || "bg-ink-400")} />
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-400"><span className="font-semibold uppercase tracking-wider">{e.type}</span><span>{fmtTime(e.created_at)}</span><span>· {e.actor}</span></div>
-                  <p className={cn("mt-0.5 text-sm", e.type === "correlation" ? "text-sky-200" : e.type === "escalation" ? "text-rose-200" : "text-ink-200")}>{e.message}</p>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-400"><span className="font-semibold">{e.type}</span><span>{fmtTime(e.created_at)}</span><span>· {e.actor}</span></div>
+                  <p className={cn("mt-0.5 text-sm", e.type === "correlation" ? "text-sky-700" : e.type === "escalation" ? "text-rose-700" : "text-ink-200")}>{e.message}</p>
                 </li>
               ))}
             </ol>
@@ -108,7 +108,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
           <Card title={`Related indicators (${inc.indicators.length})`}>
             <div className="flex flex-wrap gap-1.5">
               {inc.indicators.map((i: any) => (
-                <span key={i.id} className={cn("rounded px-2 py-1 font-mono text-[11px] ring-1", i.malicious ? "bg-crit/10 text-rose-200 ring-crit/40" : "bg-ink-850 text-ink-200 ring-ink-600")} title={i.role}>
+                <span key={i.id} className={cn("rounded px-2 py-1 font-mono text-[11px] ring-1", i.malicious ? "bg-crit/10 text-rose-700 ring-crit/40" : "bg-ink-850 text-ink-200 ring-ink-600")} title={i.role}>
                   <span className="text-ink-400">{i.type}:</span> {i.value.length > 60 ? i.value.slice(0, 60) + "…" : i.value}
                 </span>
               ))}
@@ -142,7 +142,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
             </div>
           </Card>
           {inc.ai_explanation ? (
-            <Card title={<span className="flex items-center gap-2"><Bot className="h-4 w-4 text-fuchsia-300" /> AI explanation</span>}><p className="text-sm text-ink-200">{inc.ai_explanation}</p><p className="mt-2 text-[11px] text-ink-500">Model-generated; verify against evidence.</p></Card>
+            <Card title={<span className="flex items-center gap-2"><Bot className="h-4 w-4 text-slate-600" /> AI explanation</span>}><p className="text-sm text-ink-200">{inc.ai_explanation}</p><p className="mt-2 text-[11px] text-ink-500">Model-generated; verify against evidence.</p></Card>
           ) : (
             <Card title="Summary"><p className="text-sm text-ink-300">{inc.summary || "—"}</p><p className="mt-2 text-[11px] text-ink-500">AI explanation unavailable — summary built from deterministic findings.</p></Card>
           )}

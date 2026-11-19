@@ -1,24 +1,29 @@
 @import "tailwindcss";
 
+/*
+  Light theme. The `ink` scale runs from page background (950) to primary text (100):
+  950 page · 900 card · 850 input/inset · 800 hover · 700 border · 600 strong border/track
+  500 placeholder · 400 muted text · 300 secondary text · 200 body text · 100 headings
+*/
 @theme {
-  --color-ink-950: #05080f;
-  --color-ink-900: #080d18;
-  --color-ink-850: #0b1220;
-  --color-ink-800: #0f1829;
-  --color-ink-700: #16223a;
-  --color-ink-600: #1f2e4d;
-  --color-ink-500: #2c3d61;
-  --color-ink-400: #5b6f95;
-  --color-ink-300: #8b9cc0;
-  --color-ink-200: #b9c5de;
-  --color-ink-100: #e3e9f5;
-  --color-volt: #22d3ee;
-  --color-volt-dim: #0e7490;
-  --color-azure: #3b82f6;
-  --color-crit: #f43f5e;
-  --color-high: #fb923c;
-  --color-warn: #f59e0b;
-  --color-safe: #22c55e;
+  --color-ink-950: #f4f6f8;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f8fafc;
+  --color-ink-800: #eef1f5;
+  --color-ink-700: #e2e7ee;
+  --color-ink-600: #d0d7e1;
+  --color-ink-500: #98a2b3;
+  --color-ink-400: #667085;
+  --color-ink-300: #475467;
+  --color-ink-200: #344054;
+  --color-ink-100: #101828;
+  --color-volt: #1d4ed8;
+  --color-volt-dim: #1e40af;
+  --color-azure: #2563eb;
+  --color-crit: #d92d20;
+  --color-high: #e04f16;
+  --color-warn: #b54708;
+  --color-safe: #067647;
   --font-sans: var(--font-plex), var(--font-plex-ar), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-jb), ui-monospace, monospace;
 }
@@ -26,18 +31,11 @@
 html,
 body {
   background: var(--color-ink-950);
-  color: var(--color-ink-100);
-}
-
-body {
-  background-image:
-    radial-gradient(1200px 600px at 85% -10%, rgba(34, 211, 238, 0.07), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(59, 130, 246, 0.06), transparent 60%);
-  background-attachment: fixed;
+  color: var(--color-ink-200);
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.35);
+  background: rgba(29, 78, 216, 0.18);
 }
 
 * {
@@ -45,21 +43,7 @@ body {
   scrollbar-color: var(--color-ink-600) transparent;
 }
 
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(91, 111, 149, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(91, 111, 149, 0.07) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55); }
-  70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
-}
-.pulse-crit { animation: pulse-ring 1.8s infinite; }
-
-@keyframes scan {
+@keyframes indeterminate {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(250%); }
 }
@@ -68,22 +52,28 @@ body {
   position: absolute;
   inset: 0;
   width: 40%;
-  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.5), transparent);
-  animation: scan 1.4s ease-in-out infinite;
+  background: var(--color-volt);
+  opacity: 0.55;
+  animation: indeterminate 1.3s ease-in-out infinite;
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
 }
-.fade-up { animation: fade-up 0.35s ease-out both; }
+.fade-up { animation: fade-up 0.25s ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .pulse-crit, .scan-bar::after, .fade-up { animation: none; }
+  .scan-bar::after, .fade-up { animation: none; }
 }
 
-/* React Flow dark tweaks */
-.react-flow__controls button { background: var(--color-ink-800); border-color: var(--color-ink-600); fill: var(--color-ink-200); }
-.react-flow__controls button:hover { background: var(--color-ink-700); }
 .react-flow__attribution { display: none; }
-.react-flow__edge-textbg { fill: var(--color-ink-900); }
+.react-flow__edge-textbg { fill: #ffffff; }
+.react-flow__controls { box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12); }
+.react-flow__controls .react-flow__controls-button {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e7ee !important;
+  fill: #344054 !important;
+  color: #344054 !important;
+}
+.react-flow__controls .react-flow__controls-button:hover { background: #eef1f5 !important; }

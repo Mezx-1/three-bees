@@ -160,7 +160,7 @@ def run_message(text: str, ctx: Context, channel: str = "message", title: str | 
     findings += ai_f
     extra["ai"] = ai_info
     if not ai_info["available"]:
-        limitations.append(f"AI analysis unavailable: {ai_info.get('reason') or ai_info.get('error')}")
+        limitations.append(f"AI review not used: {ai_info.get('reason') or ai_info.get('error')}")
     report = build_report(findings, limitations, extra=extra)
     label = {"sms": "SMS", "whatsapp": "WhatsApp", "chat": "Chat", "call": "Call transcript", "email": "Email text"}.get(channel, "Message")
     return AnalysisResult("message", title or f"{label}: {text.strip()[:80]}", report, inds)
@@ -300,7 +300,7 @@ def run_file(data: bytes, filename: str, declared_mime: str | None, ctx: Context
         extra["ai_extracted_text"] = ai_info["assessment"]["extracted_text"]
     extra["ai"] = ai_info
     if not ai_info["available"]:
-        limitations.append(f"AI analysis unavailable: {ai_info.get('reason') or ai_info.get('error')}")
+        limitations.append(f"AI review not used: {ai_info.get('reason') or ai_info.get('error')}")
     report = build_report(findings, limitations, extra=extra)
     malicious = report["risk_score"] >= 60
     inds[0] = ("hash", info["hashes"]["sha256"], "file", malicious)
@@ -401,7 +401,7 @@ def run_email(raw: bytes | str, ctx: Context) -> AnalysisResult:
     findings += ai_f
     extra["ai"] = ai_info
     if not ai_info["available"]:
-        limitations.append(f"AI analysis unavailable: {ai_info.get('reason') or ai_info.get('error')}")
+        limitations.append(f"AI review not used: {ai_info.get('reason') or ai_info.get('error')}")
     limitations.append("Email was analysed from submitted content; WOLVE is not connected to a live mailbox, so actions apply to the WOLVE record only.")
 
     report = build_report(findings, limitations, extra=extra)

@@ -142,6 +142,9 @@ def build_report(
 def recommend(tags: list[str] | set[str], severity: str) -> list[str]:
     tags = set(tags)
     recs: list[str] = []
+    if severity == "low":
+        # Weak signals only — don't tell people to block or reset things for a low-risk result.
+        return ["No strong threat indicators found. Stay cautious with unexpected requests for money, credentials or codes."]
     if severity in ("high", "critical"):
         recs.append("Do not click links, open attachments, scan QR codes or reply until IT security reviews this item.")
     if "credential_theft" in tags or "phishing" in tags:

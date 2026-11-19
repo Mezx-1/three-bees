@@ -66,7 +66,7 @@ export function DemoScenario() {
   ];
 
   return (
-    <Card title={<span className="flex items-center gap-2"><FlaskConical className="h-4 w-4 text-violet-300" /> Demo attack scenario</span>}
+    <Card title={<span className="flex items-center gap-2"><FlaskConical className="h-4 w-4 text-violet-700" /> Demo attack scenario</span>}
       subtitle="Safe, repeatable: harmless test files, documentation-range IPs, simulated endpoint events" action={<SimBadge label="Controlled demo" />}>
       <ol className="space-y-3">
         {items.map((it, i) => {

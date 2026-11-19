@@ -10,34 +10,34 @@ import { apiGet } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 const TYPE_META: Record<string, { icon: any; color: string; col: number; label: string }> = {
-  incident: { icon: Siren, color: "#f43f5e", col: 0, label: "Incident" },
-  email: { icon: Mail, color: "#3b82f6", col: 1, label: "Email" },
-  message: { icon: Mail, color: "#3b82f6", col: 1, label: "Message" },
-  file: { icon: FileCode2, color: "#3b82f6", col: 1, label: "File" },
-  image: { icon: FileCode2, color: "#3b82f6", col: 1, label: "Image" },
-  url: { icon: Link2, color: "#f59e0b", col: 2, label: "URL" },
-  domain: { icon: Globe2, color: "#f59e0b", col: 2, label: "Domain" },
-  ip: { icon: NetIcon, color: "#f59e0b", col: 2, label: "IP" },
-  hash: { icon: Hash, color: "#a78bfa", col: 2, label: "File hash" },
-  filename: { icon: Fingerprint, color: "#a78bfa", col: 2, label: "Filename" },
-  phone: { icon: Phone, color: "#f59e0b", col: 2, label: "Phone" },
-  endpoint_event: { icon: Bug, color: "#fb923c", col: 3, label: "Endpoint event" },
-  device: { icon: Cpu, color: "#22d3ee", col: 4, label: "Device" },
+  incident: { icon: Siren, color: "#d92d20", col: 0, label: "Incident" },
+  email: { icon: Mail, color: "#2563eb", col: 1, label: "Email" },
+  message: { icon: Mail, color: "#2563eb", col: 1, label: "Message" },
+  file: { icon: FileCode2, color: "#2563eb", col: 1, label: "File" },
+  image: { icon: FileCode2, color: "#2563eb", col: 1, label: "Image" },
+  url: { icon: Link2, color: "#b54708", col: 2, label: "URL" },
+  domain: { icon: Globe2, color: "#b54708", col: 2, label: "Domain" },
+  ip: { icon: NetIcon, color: "#b54708", col: 2, label: "IP" },
+  hash: { icon: Hash, color: "#6941c6", col: 2, label: "File hash" },
+  filename: { icon: Fingerprint, color: "#6941c6", col: 2, label: "Filename" },
+  phone: { icon: Phone, color: "#b54708", col: 2, label: "Phone" },
+  endpoint_event: { icon: Bug, color: "#e04f16", col: 3, label: "Endpoint event" },
+  device: { icon: Cpu, color: "#0e7490", col: 4, label: "Device" },
 };
-const emailMeta = { icon: AtSign, color: "#38bdf8", col: 2, label: "Email address" };
-const personMeta = { icon: User, color: "#22c55e", col: 2, label: "Person" };
+const emailMeta = { icon: AtSign, color: "#0369a1", col: 2, label: "Email address" };
+const personMeta = { icon: User, color: "#067647", col: 2, label: "Person" };
 
 function EntityNode({ data }: NodeProps) {
   const d = data as any;
   const meta = d.meta;
   const Icon = meta.icon;
   return (
-    <div className="rounded-lg border bg-ink-900 px-2.5 py-2 shadow-lg" style={{ borderColor: d.malicious || d.severity === "critical" ? "#f43f5e" : meta.color + "88", minWidth: 170, maxWidth: 220 }}>
+    <div className="rounded-lg border bg-ink-900 px-2.5 py-2 shadow-sm" style={{ borderColor: d.malicious || d.severity === "critical" ? "#d92d20" : meta.color + "88", minWidth: 170, maxWidth: 220 }}>
       <Handle type="target" position={Position.Left} style={{ background: meta.color, width: 6, height: 6 }} />
-      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: meta.color }}>
+      <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
         <Icon className="h-3.5 w-3.5" /> {meta.label}
         {d.malicious && <span className="ms-auto rounded bg-crit/20 px-1 text-[9px] text-crit">malicious</span>}
-        {d.simulated && <span className="ms-auto rounded bg-violet-500/20 px-1 text-[9px] text-violet-300">sim</span>}
+        {d.simulated && <span className="ms-auto rounded bg-violet-100 px-1 text-[9px] text-violet-700">sim</span>}
       </div>
       <div className="mt-0.5 break-all font-mono text-[11px] leading-snug text-ink-100">{d.label}</div>
       {d.severity && <div className="mt-1 h-1 rounded" style={{ background: SEV_HEX[d.severity] }} />}
@@ -84,8 +84,8 @@ export default function GraphPage() {
       return { e, source: flip ? e.target : e.source, target: flip ? e.source : e.target };
     }).map(({ e, source, target }: any) => ({
       id: e.id, source, target, label: e.label, animated: e.kind === "inferred",
-      style: { stroke: e.kind === "inferred" ? "#f59e0b" : "#22d3ee99", strokeWidth: 1.5, strokeDasharray: e.kind === "inferred" ? "6 4" : undefined },
-      labelStyle: { fill: "#8b9cc0", fontSize: 10 }, markerEnd: { type: MarkerType.ArrowClosed, color: e.kind === "inferred" ? "#f59e0b" : "#22d3ee" },
+      style: { stroke: e.kind === "inferred" ? "#b54708" : "#94a3b8", strokeWidth: 1.5, strokeDasharray: e.kind === "inferred" ? "6 4" : undefined },
+      labelStyle: { fill: "#475467", fontSize: 10 }, markerEnd: { type: MarkerType.ArrowClosed, color: e.kind === "inferred" ? "#b54708" : "#0e7490" },
     }));
     return { nodes, edges };
   }, [graph.data]);
@@ -113,11 +113,11 @@ export default function GraphPage() {
         <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded border border-crit" /> Malicious indicator</span>
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
-        <div className="h-[640px] overflow-hidden rounded-xl border border-ink-700 bg-ink-900/80">
+        <div className="h-[640px] overflow-hidden rounded-xl border border-ink-700 bg-ink-900">
           {graph.error ? <div className="p-4"><ErrorBox error={graph.error} onRetry={() => graph.reload()} /></div> : graph.loading && !graph.data ? <div className="p-4"><ScanBar /></div> :
             nodes.length === 0 ? <div className="p-6"><EmptyState title="No incidents to graph yet" icon={NetIcon}>Run the demo scenario or analyse a high-risk email to create an incident.</EmptyState></div> : (
-              <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.2} onNodeClick={(_, n) => setPicked(n.data)} proOptions={{ hideAttribution: true }}>
-                <Background color="#1f2e4d" gap={24} />
+              <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.2} onNodeClick={(_, n) => setPicked(n.data)} proOptions={{ hideAttribution: true }} style={{ background: "#fbfcfd" }}>
+                <Background color="#d0d7e1" bgColor="#fbfcfd" gap={24} />
                 <Controls />
               </ReactFlow>
             )}

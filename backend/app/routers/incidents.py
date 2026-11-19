@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import current_user, require, ser_analysis, ser_event, ser_incident
+from ..deps import current_user, iso, require, ser_analysis, ser_event, ser_incident
 from ..models import Analysis, EndpointEvent, Incident, Indicator, ResponseAction, User
 from ..services.store import add_event, audit
 
@@ -53,7 +53,7 @@ def get_incident(iid: str, db: Session = Depends(get_db), user: User = Depends(c
     actions = db.scalars(select(ResponseAction).where(ResponseAction.target_id.in_([iid, *a_ids])).order_by(ResponseAction.created_at.desc())).all()
     return {**ser_incident(inc, full=True), "analyses": [ser_analysis(a) for a in analyses], "endpoint_events": [ser_event(e) for e in events],
             "indicators": inds, "actions": [{"action": x.action, "actor": x.actor, "result": x.result, "simulated": x.simulated,
-                                             "created_at": x.created_at.isoformat()} for x in actions]}
+                                             "created_at": iso(x.created_at)} for x in actions]}
 
 
 class IncidentIn(BaseModel):

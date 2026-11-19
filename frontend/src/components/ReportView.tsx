@@ -1,11 +1,11 @@
 "use client";
 
-import { AlertOctagon, Bot, CheckCircle2, ChevronDown, FileWarning, Globe2, Link2, ListChecks, Mail, Paperclip, ScanText, ShieldQuestion } from "lucide-react";
+import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Globe2, Link2, Mail, Paperclip, ScanText } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { Analysis, Finding } from "@/lib/types";
-import { Card, cn, fmtTime, Pill, ScoreRing, SeverityBadge, SourceBadge, Tabs } from "./ui";
+import { Button, Card, cn, fmtTime, Pill, ScoreRing, SeverityBadge, SourceBadge, Tabs } from "./ui";
 
 function FindingRow({ f }: { f: Finding }) {
   return (
@@ -150,7 +150,7 @@ function FileDetails({ r }: { r: any }) {
           <KV rows={[["Format", f.image.format], ["Dimensions", f.image.width ? `${f.image.width}×${f.image.height}` : undefined], ["Software", f.image.software],
             ["Appended bytes", f.image.appended_bytes], ["EXIF fields", f.image.exif ? Object.keys(f.image.exif).length : 0], ["QR codes", (f.qr?.codes || []).join(", ") || "none"]]} />
           {f.ocr && <pre className="mt-2 whitespace-pre-wrap rounded bg-ink-950/70 p-2 font-mono text-[11px] text-ink-200"><span className="text-ink-400">OCR ({f.ocr.engine}): </span>{f.ocr.text || f.ocr.note || f.ocr.error || "(no text found)"}</pre>}
-          {r.ai_extracted_text && <pre className="mt-2 whitespace-pre-wrap rounded bg-fuchsia-950/30 p-2 font-mono text-[11px] text-fuchsia-200"><span className="text-fuchsia-400">AI-read text: </span>{r.ai_extracted_text}</pre>}
+          {r.ai_extracted_text && <pre className="mt-2 whitespace-pre-wrap rounded bg-slate-100 p-2 font-mono text-[11px] text-slate-600"><span className="text-slate-600">AI-read text: </span>{r.ai_extracted_text}</pre>}
           {f.image.exif && Object.keys(f.image.exif).length > 0 && (
             <details className="mt-2 text-xs"><summary className="cursor-pointer text-ink-400">EXIF metadata</summary><KV rows={Object.entries(f.image.exif).slice(0, 40) as any} /></details>
           )}
@@ -178,7 +178,7 @@ function IntelDetails({ r }: { r: any }) {
           ["Documentation range", r.ip.documentation_range ? "yes (RFC 5737)" : undefined]]} />
         {geo && (
           <div className="mt-3 rounded-md bg-ink-850 p-2.5 text-xs">
-            <div className="mb-1 font-semibold text-teal-300">Approximate geolocation — {geo.source} · {fmtTime(geo.queried_at)}</div>
+            <div className="mb-1 font-semibold text-teal-700">Approximate geolocation — {geo.source} · {fmtTime(geo.queried_at)}</div>
             {geo.error ? <p className="text-ink-400">Unavailable: {geo.error}</p> : (
               <KV rows={[["Country", geo.data.country], ["Region / City", `${geo.data.regionName || ""} / ${geo.data.city || ""}`], ["ISP", geo.data.isp], ["Org", geo.data.org], ["ASN", geo.data.as],
                 ["Proxy/VPN", String(geo.data.proxy)], ["Hosting", String(geo.data.hosting)]]} />
@@ -195,7 +195,7 @@ function IntelDetails({ r }: { r: any }) {
         <KV rows={[["URL", r.url.url], ["Scheme", r.url.scheme], ["Host", r.url.host], ["Registered domain", r.url.registered_domain], ["TLD", r.url.tld], ["Punycode decoded", r.url.punycode_decoded], ["Path", r.url.path]]} />
         {r.intel?.dns && (
           <div className="mt-3 rounded-md bg-ink-850 p-2.5 text-xs">
-            <div className="mb-1 font-semibold text-teal-300">DNS — {r.intel.dns.source} · {fmtTime(r.intel.dns.queried_at)}</div>
+            <div className="mb-1 font-semibold text-teal-700">DNS — {r.intel.dns.source} · {fmtTime(r.intel.dns.queried_at)}</div>
             {r.intel.dns.nxdomain ? <p className="text-warn">NXDOMAIN — domain does not resolve</p> : r.intel.dns.error ? <p className="text-ink-400">{r.intel.dns.error}</p> :
               <KV rows={Object.entries(r.intel.dns.records || {}).map(([k, v]: any) => [k, v.join(", ")]) as any} />}
           </div>
@@ -213,100 +213,123 @@ function IntelDetails({ r }: { r: any }) {
   return <>{blocks}</>;
 }
 
-export function EmployeeWarning({ a }: { a: Analysis }) {
-  if (!["high", "critical"].includes(a.severity)) return null;
+const VERDICT = {
+  danger: { label: "Dangerous", tone: "border-red-200 bg-red-50", text: "text-crit", icon: AlertOctagon,
+    advice: "Don't click links, scan QR codes, open attachments, reply, send money or share any codes." },
+  suspicious: { label: "Suspicious", tone: "border-amber-200 bg-amber-50", text: "text-warn", icon: AlertOctagon,
+    advice: "Be careful. Check with the sender through a phone number or address you already know." },
+  clear: { label: "No clear threat found", tone: "border-green-200 bg-green-50", text: "text-safe", icon: CheckCircle2,
+    advice: "Nothing strongly suspicious was found — but stay careful with unexpected requests for money, passwords or codes." },
+};
+
+export function verdictOf(score: number) {
+  return score >= 60 ? VERDICT.danger : score >= 30 ? VERDICT.suspicious : VERDICT.clear;
+}
+
+/** Plain-language summary shown first, for employees and analysts alike. */
+function Verdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
+  const r = a.report!;
+  const v = verdictOf(a.risk_score);
+  const reasons = r.findings.filter((f) => f.weight > 0).slice(0, 4);
+  const Icon = v.icon;
   return (
-    <div role="alert" className="flex gap-3 rounded-xl border border-crit/50 bg-gradient-to-r from-crit/20 to-crit/5 p-4">
-      <AlertOctagon className="h-6 w-6 shrink-0 text-crit" />
-      <div>
-        <p className="font-semibold text-white">Warning: this {a.kind === "email" ? "email" : "content"} shows strong signs of {a.classification.toLowerCase()}.</p>
-        <p className="mt-1 text-sm text-rose-100/90">Do not click its links, scan its QR codes, open attachments, reply, send money or share any codes. IT security has been notified{a.incident_id ? ` (incident ${a.incident_id})` : ""}.</p>
+    <section className={cn("rounded-xl border p-5", v.tone)} role={a.risk_score >= 60 ? "alert" : undefined}>
+      <div className="flex flex-wrap items-start gap-5">
+        <ScoreRing score={a.risk_score} severity={a.severity} size={104} />
+        <div className="min-w-0 flex-1">
+          <div className={cn("flex items-center gap-2 text-2xl font-semibold", v.text)}><Icon className="h-6 w-6" /> {v.label}</div>
+          <p className="mt-1 text-base text-ink-100">{a.risk_score >= 30 ? r.classification : "Looks normal based on the checks we ran"}</p>
+          <p className="mt-1 text-sm text-ink-300">{v.advice}</p>
+          <p className="mt-2 truncate text-xs text-ink-400" title={a.title}>{a.title}</p>
+        </div>
       </div>
-    </div>
+      {reasons.length > 0 && (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-semibold text-ink-100">{a.risk_score >= 30 ? "Why" : "What we noticed (minor)"}</h3>
+            <ul className="mt-1.5 space-y-1 text-sm text-ink-200">
+              {reasons.map((f, i) => <li key={i} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />{f.title}</li>)}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-ink-100">What to do</h3>
+            <ul className="mt-1.5 space-y-1 text-sm text-ink-200">
+              {r.recommended_actions.slice(0, 3).map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" />{x}</li>)}
+            </ul>
+          </div>
+        </div>
+      )}
+      {actions && <div className="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">{actions}</div>}
+    </section>
   );
 }
 
 export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
   const { t } = useI18n();
   const r = a.report!;
+  const [showDetails, setShowDetails] = useState(false);
   const [tab, setTab] = useState<"all" | "verified" | "heuristic" | "ai">("all");
-  const intel = r.findings.filter((f) => f.source === "intel");
   const lists = { all: r.findings, verified: [...r.verified_findings], heuristic: r.heuristic_findings, ai: r.ai_findings };
   const ai = r.ai;
   return (
     <div className="fade-up space-y-4">
-      <EmployeeWarning a={a} />
-      <Card>
-        <div className="flex flex-wrap items-center gap-6">
-          <ScoreRing score={a.risk_score} severity={a.severity} />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <SeverityBadge s={a.severity} />
-              <Pill>{a.kind}</Pill>
-              <Pill>{t("confidence")}: {a.confidence}</Pill>
-              {a.demo && <Pill className="text-violet-300">demo data</Pill>}
-              {a.status && a.kind === "email" && <Pill className="capitalize">{a.status}</Pill>}
-            </div>
-            <h2 className="break-words text-lg font-semibold text-white">{r.classification}</h2>
-            <p className="truncate text-sm text-ink-300" title={a.title}>{a.title}</p>
-            {r.threat_categories.length > 1 && <p className="text-xs text-ink-400">Also indicates: {r.threat_categories.slice(1, 6).join(", ")}</p>}
-            <p className="text-xs text-ink-500">{a.id} · {fmtTime(a.created_at)} · submitted by {a.submitted_by}
-              {a.incident_id && <> · <Link className="text-volt hover:underline" href={`/incidents/${a.incident_id}`}>Incident {a.incident_id}</Link></>}</p>
-          </div>
-          {actions && <div className="flex w-full flex-wrap gap-2 md:w-auto md:max-w-xs md:justify-end">{actions}</div>}
-        </div>
-        <p className="mt-3 border-t border-ink-700/60 pt-2 text-[11px] italic text-ink-400">{r.score_note}</p>
-      </Card>
+      <Verdict a={a} actions={actions} />
 
-      <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-4">
-          <Card title={`Evidence (${r.findings.length} findings)`} action={
-            <Tabs value={tab} onChange={setTab} items={[
-              { value: "all", label: "All" }, { value: "verified", label: `Verified ${r.verified_findings.length}` },
-              { value: "heuristic", label: `Heuristic ${r.heuristic_findings.length}` }, { value: "ai", label: `AI ${r.ai_findings.length}` }]} />}>
-            <FindingList items={lists[tab]} empty={tab === "ai" ? "No AI findings (AI unavailable or not used)." : "No findings in this category."} />
-            {intel.length > 0 && tab === "verified" && <p className="mt-2 text-[11px] text-ink-400">Includes external intelligence results, shown with their source.</p>}
-          </Card>
-          {a.kind === "email" && <EmailDetails r={r} />}
-          {["file", "image", "audio", "video"].includes(a.kind) && <FileDetails r={r} />}
-          <UrlList urls={r.urls} />
-          <IntelDetails r={r} />
-        </div>
-        <div className="space-y-4">
-          <Card title={<span className="flex items-center gap-2"><Bot className="h-4 w-4 text-fuchsia-300" /> {t("ai_assessment")}</span>}>
-            {ai?.assessment ? (
-              <div className="space-y-2 text-sm">
-                <p className="text-ink-100">{ai.assessment.summary}</p>
-                {ai.assessment.impersonated_entity && <p className="text-xs text-ink-300">Impersonating: <b>{ai.assessment.impersonated_entity}</b></p>}
-                {ai.assessment.social_engineering_techniques?.length > 0 && (
-                  <div className="flex flex-wrap gap-1">{ai.assessment.social_engineering_techniques.map((x: string) => <Pill key={x}>{x}</Pill>)}</div>
-                )}
-                {ai.assessment.manipulation_indicators?.length > 0 && <p className="text-xs text-warn">Manipulation indicators: {ai.assessment.manipulation_indicators.join("; ")}</p>}
-                <p className="text-[11px] text-ink-500">Model {ai.model} · AI score {ai.assessment.risk_score} · model confidence {ai.assessment.confidence}. AI output is an assessment, not proof.</p>
-              </div>
-            ) : (
-              <div className="flex gap-2 text-sm text-ink-300">
-                <ShieldQuestion className="h-5 w-5 shrink-0 text-ink-400" />
-                <div>
-                  <p className="font-medium text-ink-200">AI analysis unavailable for this item</p>
-                  <p className="mt-1 text-xs text-ink-400">{ai?.error || ai?.reason || "Not used for this analysis type."} The verdict above comes from WOLVE&apos;s deterministic engine only.</p>
-                </div>
-              </div>
-            )}
-          </Card>
-          {r.social_engineering_techniques.length > 0 && (
-            <Card title="Social engineering techniques">
-              <div className="flex flex-wrap gap-1.5">{r.social_engineering_techniques.map((x) => <Pill key={x} className="text-warn">{x}</Pill>)}</div>
-            </Card>
-          )}
-          <Card title={<span className="flex items-center gap-2"><ListChecks className="h-4 w-4 text-safe" /> {t("recommended")}</span>}>
-            <ul className="space-y-2 text-sm">{r.recommended_actions.map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" /><span className="text-ink-200">{x}</span></li>)}</ul>
-          </Card>
-          <Card title={t("limitations")}>
-            <ul className="list-disc space-y-1 ps-4 text-xs text-ink-300">{r.limitations.map((x) => <li key={x}>{x}</li>)}</ul>
-          </Card>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-400">
+        <SeverityBadge s={a.severity} />
+        <span>Confidence: {a.confidence}</span>
+        <span className="capitalize">· {a.kind}</span>
+        {a.kind === "email" && <span className="capitalize">· Status: {a.status}</span>}
+        {a.demo && <Pill className="text-violet-700">demo data</Pill>}
+        <span>· {fmtTime(a.created_at)}</span>
+        {a.incident_id && <Link className="text-volt hover:underline" href={`/incidents/${a.incident_id}`}>· Incident {a.incident_id}</Link>}
+        <Button variant="subtle" className="ms-auto" onClick={() => setShowDetails(!showDetails)} aria-expanded={showDetails}>
+          <ChevronDown className={cn("h-4 w-4 transition", showDetails && "rotate-180")} />
+          {showDetails ? "Hide technical details" : `Show technical details (${r.findings.length} checks)`}
+        </Button>
       </div>
+
+      {ai?.assessment && (
+        <Card title={<span className="flex items-center gap-2">Assessment summary <SourceBadge s="ai" /></span>}>
+          <p className="text-sm text-ink-200">{ai.assessment.summary}</p>
+          {ai.assessment.impersonated_entity && <p className="mt-2 text-sm text-ink-300">Pretending to be: <b>{ai.assessment.impersonated_entity}</b></p>}
+          {ai.assessment.manipulation_indicators?.length > 0 && <p className="mt-2 text-xs text-warn">Possible manipulation signs: {ai.assessment.manipulation_indicators.join("; ")}</p>}
+          <p className="mt-2 text-xs text-ink-400">Written by the AI model ({ai.model}). It is an opinion, not proof — the checks below are what the score is built on.</p>
+        </Card>
+      )}
+
+      {showDetails && (
+        <div className="fade-up grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+          <div className="space-y-4">
+            <Card title={`All checks (${r.findings.length})`} action={
+              <Tabs value={tab} onChange={setTab} items={[
+                { value: "all", label: "All" }, { value: "verified", label: `Confirmed ${r.verified_findings.length}` },
+                { value: "heuristic", label: `Patterns ${r.heuristic_findings.length}` },
+                ...(r.ai_findings.length ? [{ value: "ai" as const, label: `AI ${r.ai_findings.length}` }] : [])]} />}>
+              <p className="mb-3 text-xs text-ink-400"><b className="text-ink-300">Confirmed</b> = technical facts checked directly. <b className="text-ink-300">Pattern</b> = common scam signs that can also appear in normal messages.</p>
+              <FindingList items={lists[tab]} empty="Nothing in this category." />
+            </Card>
+            {a.kind === "email" && <EmailDetails r={r} />}
+            {["file", "image", "audio", "video"].includes(a.kind) && <FileDetails r={r} />}
+            <UrlList urls={r.urls} />
+            <IntelDetails r={r} />
+          </div>
+          <div className="space-y-4">
+            <Card title={t("recommended")}>
+              <ul className="space-y-2 text-sm">{r.recommended_actions.map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" /><span className="text-ink-200">{x}</span></li>)}</ul>
+            </Card>
+            {r.social_engineering_techniques.length > 0 && (
+              <Card title="Pressure tactics used">
+                <div className="flex flex-wrap gap-1.5">{r.social_engineering_techniques.map((x) => <Pill key={x}>{x}</Pill>)}</div>
+              </Card>
+            )}
+            <Card title={t("limitations")}>
+              <ul className="list-disc space-y-1 ps-4 text-xs text-ink-300">{r.limitations.map((x) => <li key={x}>{x}</li>)}</ul>
+              <p className="mt-3 text-xs italic text-ink-400">{r.score_note}</p>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

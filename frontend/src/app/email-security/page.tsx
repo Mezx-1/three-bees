@@ -133,7 +133,7 @@ export default function EmailSecurity() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wider text-ink-400">
+              <thead className="text-xs font-medium text-ink-400">
                 <tr><th className="py-2 pe-3 text-start">Subject</th><th className="pe-3 text-start">From</th><th className="pe-3 text-start">Risk</th><th className="pe-3 text-start">Status</th><th className="pe-3 text-start">Received</th><th className="text-end">Action</th></tr>
               </thead>
               <tbody className="divide-y divide-ink-800">

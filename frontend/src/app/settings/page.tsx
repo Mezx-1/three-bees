@@ -82,7 +82,7 @@ export default function SettingsPage() {
               <div>
                 <Label htmlFor="th">Auto-incident threshold (risk score)</Label>
                 <div className="flex items-center gap-3">
-                  <input id="th" type="range" min={30} max={95} value={threshold} disabled={!isAdmin} onChange={(e) => setThreshold(+e.target.value)} className="flex-1 accent-cyan-400" />
+                  <input id="th" type="range" min={30} max={95} value={threshold} disabled={!isAdmin} onChange={(e) => setThreshold(+e.target.value)} className="flex-1 accent-blue-600" />
                   <span className="w-10 font-mono">{threshold}</span>
                   <Button className="h-8 text-xs" disabled={!isAdmin || threshold === st.data.auto_incident_threshold} loading={busy === "th"} onClick={() => put("th", { auto_incident_threshold: threshold })}>Save</Button>
                 </div>

@@ -73,7 +73,7 @@ export default function Incidents() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wider text-ink-400">
+              <thead className="text-xs font-medium text-ink-400">
                 <tr><th className="py-2 pe-3 text-start">ID</th><th className="pe-3 text-start">Title</th><th className="pe-3 text-start">Severity</th><th className="pe-3 text-start">Status</th><th className="pe-3 text-start">Source</th><th className="pe-3 text-start">Assignee</th><th className="text-start">Created</th></tr>
               </thead>
               <tbody className="divide-y divide-ink-800">

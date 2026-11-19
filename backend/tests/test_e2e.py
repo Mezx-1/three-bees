@@ -45,7 +45,7 @@ def test_full_demo_scenario(c):
     assert any("text in image" in t for t in titles), "OCR text from the lure image should be analysed"
     assert any(u["host"] == "verify.alnoor-logistics-portal.top" for u in rep["urls"])
     assert rep["ai"]["available"] is False  # transparent fallback
-    assert any("AI analysis unavailable" in l for l in rep["limitations"])
+    assert any("AI review not used" in l for l in rep["limitations"])
     inc_id = a["incident_id"]
 
     # 9-10: employee can't quarantine; analyst can
@@ -132,3 +132,16 @@ def test_export_and_settings(c):
     assert c.put("/api/settings", json={"ai_enabled": False}, headers=ANALYST).status_code == 403
     assert c.put("/api/settings", json={"auto_incident_threshold": 70}, headers=ADMIN).json()["auto_incident_threshold"] == 70
     assert c.get("/api/system/status").json()["integrations"]["microsoft_365"]["connected"] is False
+
+
+def test_zz_demo_reset(c):
+    """Runs last: admin-only reset wipes data and reseeds the baseline organisation."""
+    assert c.post("/api/demo/reset", headers=ANALYST).status_code == 403
+    r = c.post("/api/demo/reset", headers=ADMIN)
+    assert r.status_code == 200, r.text
+    d = c.get("/api/dashboard", headers=ADMIN).json()
+    assert d["totals"]["total_analyses"] == 0 and d["totals"]["active_incidents"] == 0
+    assert d["totals"]["endpoints"] == 4 and d["security_status"] == "normal"
+    # everything still works after reset
+    a = c.post("/api/demo/scenario/email", headers=ANALYST).json()
+    assert a["risk_score"] >= 80 and a["incident_id"]

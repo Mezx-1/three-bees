@@ -53,7 +53,7 @@ Rules:
 
 def ai_status(enabled_setting: bool) -> dict:
     if not settings.anthropic_api_key:
-        return {"available": False, "reason": "No ANTHROPIC_API_KEY configured — running deterministic analysis only.", "model": None}
+        return {"available": False, "reason": "not configured (no API key). Results come from WOLVE's built-in checks.", "model": None}
     if not enabled_setting:
         return {"available": False, "reason": "AI analysis disabled in Settings.", "model": settings.ai_model}
     return {"available": True, "reason": None, "model": settings.ai_model}
