@@ -180,6 +180,14 @@ Full script and backup plan: [docs/DEMO.md](docs/DEMO.md), [docs/LIVE_DEMO.md](d
   - Docker deployment;
   - real firewall blocking (dry-run and rollback are tested).
 
+## Team
+
+| Name |
+|---|
+| محمد بلال الاحمد |
+| سيف مصطفى درويش |
+| حمزة عبد الباسط |
+
 ## Repository layout
 ```
 backend/   FastAPI app, analyzers, risk engine, tests
