@@ -137,6 +137,9 @@ EXACT: dict[str, str] = {
     "Authority + payment + pressure combination": "جمع بين السلطة والدفع والضغط",
     "The message combines an authority figure, a payment request and pressure/secrecy — the core pattern of CEO fraud / BEC.":
         "تجمع الرسالة بين شخص ذي سلطة وطلب دفع وضغط/سرّية — وهو النمط الأساسي لاحتيال انتحال صفة المدير.",
+    "Authority figure asking for a code": "جهة رسمية تطلب رمز التحقق",
+    "Someone claiming to be the police, a bank or an official department asks for a one-time code. Real officials never do this.":
+        "شخص يدّعي أنه من الشرطة أو البنك أو جهة رسمية يطلب رمز تحقق لمرة واحدة. الجهات الحقيقية لا تطلب ذلك أبداً.",
     "Pressure combined with credential request": "ضغط مقترن بطلب بيانات الدخول",
     "Urgency or threats paired with a login/password request strongly matches credential-phishing kits.":
         "الاستعجال أو التهديد مع طلب تسجيل الدخول/كلمة المرور يطابق بقوة أدوات تصيّد بيانات الدخول.",

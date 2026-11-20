@@ -144,7 +144,7 @@ Copy `backend/.env.example` to `backend/.env`.
 ### Tests
 ```bash
 cd backend
-python -m pytest tests -q        # 39 tests: end-to-end scenario, auth, agent safety, Arabic reports, claim checks
+python -m pytest tests -q        # 42 tests: end-to-end scenario, auth, agent safety, Arabic reports, claim checks, Arabic dialect
 cd ../frontend
 npx tsc --noEmit && npm run lint
 ```

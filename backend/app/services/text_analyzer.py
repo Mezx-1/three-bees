@@ -30,7 +30,10 @@ PATTERNS: list[Pattern] = [
         [r"\burgent(ly)?\b", r"\bimmediately\b", r"\bwithin (24|48|12|2|1) ?(hours?|hrs?|minutes?)\b", r"\bact now\b",
          r"\bas soon as possible\b", r"\basap\b", r"\blast (chance|warning|notice)\b", r"\bexpires? (today|soon|in)\b",
          r"\bfinal (notice|reminder|warning)\b", r"\btoday only\b", r"\bdeadline\b",
-         r"عاجل", r"فورا|فوراً", r"خلال \d+ ساعة", r"آخر فرصة", r"تنبيه نهائي"],
+         r"عاجل", r"فورا|فوراً", r"خلال \d+ ساعة", r"آخر فرصة", r"تنبيه نهائي",
+         # spoken / dialect forms (call transcripts)
+         r"خلال (ساعة|ساعتين|نص ساعة|دقائق|دقايق|\d+ (دقيقة|دقائق|دقايق|ساعات))", r"لا (تسكر|تسكّر|تقفل|تغلق|تنهي) (الخط|المكالمة)",
+         r"بسرعة (عشان|قبل|لأن|لان)", r"ضروري (الحين|اليوم|هلق|هلأ|حالا|حالاً)", r"قبل ما (ينقفل|يتقفل|يتوقف|ينحظر|يتجمد|ينسحب)"],
     ),
     Pattern(
         "threat", "Threat of negative consequences",
@@ -39,7 +42,10 @@ PATTERNS: list[Pattern] = [
         [r"\b(account|mailbox|card|service)s? (will be|has been|is) (suspended|blocked|locked|closed|deactivated|terminated)\b",
          r"\b(suspend|block|lock|deactivat|terminat)(ed|ion)? (your|the) (account|card|mailbox)\b",
          r"\blegal action\b", r"\b(arrest|warrant|fine|penalty|court)\b", r"\bpermanently (deleted|closed|blocked)\b",
-         r"سيتم (إيقاف|تعليق|حظر|إغلاق)", r"غرامة", r"إجراء قانوني", r"أمر (قبض|اعتقال)"],
+         r"سيتم (إيقاف|تعليق|حظر|إغلاق)", r"غرامة", r"إجراء قانوني", r"أمر (قبض|اعتقال)",
+         r"(ينقفل|يتقفل|بيتقفل|يتسكر|ينحظر|يتجمد|يتوقف|يتعلق|ينسحب) (حسابك|بطاقتك|البطاقة|الحساب|رصيدك)",
+         r"(نوقف|نقفل|نجمد|نحظر|يوقفون|يقفلون) (البطاقة|بطاقتك|حسابك|الحساب)", r"(إيقاف|ايقاف|تجميد|قفل|حظر) (حسابك|بطاقتك|البطاقة|الحساب)",
+         r"عملية مشبوهة", r"حسابك (مخترق|انخترق|تم اختراقه)"],
     ),
     Pattern(
         "otp", "Request for one-time password (OTP) / verification code",
@@ -47,7 +53,10 @@ PATTERNS: list[Pattern] = [
         42, "high", ["otp_theft", "credential_theft"],
         [r"\b(otp|one[- ]time (password|code|pin))\b", r"\bverification code\b", r"\b(share|send|provide|tell|give|enter|confirm)\b.{0,40}\b(code|pin)\b",
          r"\b6[- ]digit code\b", r"\bsecurity code\b", r"\bcvv\b",
-         r"رمز التحقق", r"الرمز السري", r"كلمة المرور المؤقتة", r"رمز (OTP|التفعيل)"],
+         r"رمز التحقق", r"الرمز السري", r"كلمة المرور المؤقتة", r"رمز (OTP|التفعيل)",
+         r"(عطني|عطيني|اعطني|أعطني|اعطيني|ابعتلي|ابعثلي|ارسلي|ارسل لي|أرسل لي|قولي|قول لي|اقرالي|اقرا لي|اقرأ لي|خبرني|تعطيني|تقرالي)\s+(ال)?(رمز|كود|كوود|الرمز|الكود)",
+         r"(الرمز|الكود|الرقم|الأرقام|الارقام) (اللي|الي|الذي) (وصلك|راح يوصلك|بيوصلك|بيجيك|جاك|وصل لك)", r"(رمز|كود) (على|في|ع) (جوالك|تلفونك|موبايلك|هاتفك)",
+         r"كود (التحقق|التفعيل|السري)"],
     ),
     Pattern(
         "credentials", "Request for credentials / login",
@@ -56,7 +65,8 @@ PATTERNS: list[Pattern] = [
         [r"\b(enter|confirm|verify|update|validate|re-?enter)\b.{0,30}\b(password|credentials|login|username|account details)\b",
          r"\b(log ?in|sign ?in) (here|now|below|to (verify|confirm|restore))\b", r"\bverify your (account|identity|mailbox)\b",
          r"\b(re)?activate your account\b", r"\bpassword (expires|expired|reset required)\b",
-         r"كلمة المرور", r"تحديث (بياناتك|البيانات)", r"تأكيد (حسابك|هويتك)", r"تسجيل الدخول"],
+         r"كلمة المرور", r"تحديث (بياناتك|البيانات)", r"تأكيد (حسابك|هويتك)", r"تسجيل الدخول",
+         r"رقم (البطاقة|بطاقتك)", r"(الأرقام|الارقام|الرقم) (اللي )?(ورا|خلف|على ظهر) (البطاقة|بطاقتك)", r"الباسوورد|الباسورد|الرقم السري"],
     ),
     Pattern(
         "payment", "Payment / money transfer request",
@@ -65,7 +75,8 @@ PATTERNS: list[Pattern] = [
         [r"\b(wire|bank) transfer\b", r"\btransfer (the )?(funds|money|amount|payment)\b", r"\b(new|updated|changed) (bank|account) (details|number)\b",
          r"\biban\b", r"\bgift ?cards?\b", r"\b(bitcoin|crypto|usdt|btc)\b", r"\bpay (now|immediately|the fee|a fee)\b",
          r"\b(outstanding|unpaid|overdue) (invoice|payment|fine|balance)\b", r"\b(aed|dhs?|usd|\$)\s?\d[\d,\.]*\b",
-         r"تحويل (مبلغ|الأموال|بنكي)", r"رقم الآيبان|الآيبان", r"دفع (الرسوم|المبلغ)", r"درهم"],
+         r"تحويل (مبلغ|الأموال|بنكي)", r"رقم الآيبان|الآيبان", r"دفع (الرسوم|المبلغ)", r"درهم",
+         r"(حول|حوّل|تحول|تحوّل) (لي|المبلغ|الفلوس|فلوس)", r"(ادفع|تدفع|دفع) (رسوم|غرامة|المبلغ|الرسوم|الغرامة)", r"بطاقات? (ايتونز|آيتونز|جوجل بلاي|هدايا)"],
     ),
     Pattern(
         "secrecy", "Secrecy / bypass of normal process",
@@ -83,7 +94,8 @@ PATTERNS: list[Pattern] = [
         [r"\b(ceo|cfo|managing director|chairman|director general)\b", r"\b(police|ministry|government|customs|court|prosecution)\b",
          r"\b(it (support|department|helpdesk|team)|helpdesk|system administrator|security team)\b",
          r"\b(bank|central bank) (security|team|department|officer)\b",
-         r"الشرطة", r"وزارة", r"النيابة", r"المدير التنفيذي", r"البنك المركزي", r"الدعم الفني"],
+         r"الشرطة", r"وزارة", r"النيابة", r"المدير التنفيذي", r"البنك المركزي", r"الدعم الفني",
+         r"شرطة", r"قسم (الحماية|الأمن|الامن|الاحتيال|مكافحة)", r"من (البنك|بنك)", r"(الملازم|ملازم|النقيب|نقيب|الرائد|رائد|المقدم|العقيد|ضابط)"],
     ),
     Pattern(
         "reward", "Too-good-to-be-true reward",
@@ -174,6 +186,12 @@ def analyze_text(text: str, channel: str = "message") -> tuple[list[Finding], di
             "Authority + payment + pressure combination",
             "The message combines an authority figure, a payment request and pressure/secrecy — the core pattern of CEO fraud / BEC.",
             "content", "high", 30, "heuristic", ["bec", "payment_fraud"],
+        ))
+    if {"authority", "otp"} <= keys:
+        findings.append(Finding(
+            "Authority figure asking for a code",
+            "Someone claiming to be the police, a bank or an official department asks for a one-time code. Real officials never do this.",
+            "content", "high", 30, "heuristic", ["otp_theft", "impersonation", "vishing"],
         ))
     if {"threat", "credentials"} <= keys or {"urgency", "credentials"} <= keys:
         findings.append(Finding(
