@@ -1,5 +1,7 @@
 # Three Bees (3B) — Scam & Cyber-Threat Shield
 
+[![CI](https://github.com/Mezx-1/three-bees/actions/workflows/ci.yml/badge.svg)](https://github.com/Mezx-1/three-bees/actions/workflows/ci.yml)
+
 > **Detect the scam. Prove it with facts. Stop it before it spreads.**
 > Abu Dhabi Police Hackathon · MVP
 
