@@ -146,4 +146,4 @@ def threat_graph(incident_id: str | None = None, db: Session = Depends(get_db), 
             edge(iid, eid, "observed link" if shares else "inferred link", "observed" if shares else "inferred")
     return {"nodes": list(nodes.values()), "edges": list(edges.values()),
             "legend": {"observed": "Relationship directly present in submitted evidence or endpoint telemetry",
-                       "inferred": "Relationship inferred by WOLVE (e.g. same person, no shared artefact)"}}
+                       "inferred": "Relationship inferred by 3B (e.g. same person, no shared artefact)"}}

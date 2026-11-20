@@ -28,7 +28,7 @@ DEVICES = [
 ]
 
 
-CRED_FILE = pathlib.Path(os.getenv("WOLVE_CREDENTIALS_FILE", str(pathlib.Path(__file__).resolve().parent.parent / "demo-credentials.txt")))
+CRED_FILE = pathlib.Path(os.getenv("THREEB_CREDENTIALS_FILE", str(pathlib.Path(__file__).resolve().parent.parent / "demo-credentials.txt")))
 
 
 def _migrate() -> None:
@@ -52,7 +52,7 @@ def ensure_passwords() -> None:
             lines.append(f"{u.username}\t{u.role}\t{pw}")
         db.commit()
     with CRED_FILE.open("a", encoding="utf-8") as fh:
-        fh.write(f"# WOLVE sign-in passwords (generated {utcnow().isoformat()}). Change them in Settings.\n" + "\n".join(lines) + "\n")
+        fh.write(f"# 3B sign-in passwords (generated {utcnow().isoformat()}). Change them in Settings.\n" + "\n".join(lines) + "\n")
 
 
 def seed(reset_by: str = "system") -> None:

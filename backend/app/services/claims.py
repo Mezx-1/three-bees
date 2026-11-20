@@ -1,11 +1,11 @@
-"""Fact-check what a caller says against things WOLVE can verify.
+"""Fact-check what a caller says against things 3B can verify.
 
 Checked facts:
   * time  — "it's 12 o'clock" vs the real UAE time (UTC+4, no daylight saving)
   * day   — "today is Thursday" vs the real UAE weekday
   * organisation — named organisation vs a directory of known UAE organisations
   * number vs claim — a UAE government body / bank / telecom calling from a foreign number
-WOLVE cannot tell the two voices apart in a speakerphone recording, so the user should ask the question
+3B cannot tell the two voices apart in a speakerphone recording, so the user should ask the question
 and let the caller answer. Absence from the directory means "not verified", never "does not exist".
 """
 from __future__ import annotations
@@ -179,7 +179,7 @@ def check_claims(text: str, caller_region: str | None = None, caller_is_uae: boo
             claims.append({"type": "organisation", "said": name, "actual": "Not found among known UAE organisations", "ok": False})
             findings.append(Finding(
                 "Organisation could not be verified",
-                f"The caller says they are from “{name}”, which is not in WOLVE's directory of known UAE organisations. "
+                f"The caller says they are from “{name}”, which is not in 3B's directory of known UAE organisations. "
                 "It may be a small company, a mishearing, or an invented name — ask for the official number and call back yourself.",
                 "claims", "medium", 18, "heuristic", ["impersonation"], evidence=name))
     return findings, claims

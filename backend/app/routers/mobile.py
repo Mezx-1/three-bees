@@ -28,7 +28,7 @@ JUNK_THRESHOLD = 50
 
 
 def mobile_caller(db: Session = Depends(get_db), x_device_token: str | None = Header(default=None),
-                  authorization: str | None = Header(default=None), x_wolve_user: str | None = Header(default=None)) -> str:
+                  authorization: str | None = Header(default=None), x_3b_user: str | None = Header(default=None)) -> str:
     """Phone apps authenticate with their device token; the web simulator uses the signed-in user's session."""
     from ..deps import resolve_user
 
@@ -36,7 +36,7 @@ def mobile_caller(db: Session = Depends(get_db), x_device_token: str | None = He
         d = db.scalars(select(Device).where(Device.token == x_device_token)).first()
         if d:
             return f"phone:{d.hostname}"
-    u = resolve_user(db, authorization, x_wolve_user)
+    u = resolve_user(db, authorization, x_3b_user)
     if u:
         return u.username
     raise HTTPException(401, "Missing device token")
@@ -74,7 +74,7 @@ def classify_sms(body: SmsIn, db: Session = Depends(get_db), who: str = Depends(
         rep = res.report
         findings = [Finding(**f) for f in rep["findings"]] + extra_f
         if sender_info and sender_info["normalized"] in ctx.blocked_phones:
-            findings.append(Finding("Sender number is on the WOLVE blocklist", "This number was reported as a scam number.",
+            findings.append(Finding("Sender number is on the 3B blocklist", "This number was reported as a scam number.",
                                     "phone", "critical", 70, "verified", ["smishing"], evidence=sender_info["normalized"]))
         keep = {k: v for k, v in rep.items() if k not in ("risk_score", "severity", "classification", "threat_categories", "confidence",
                                                           "findings", "verified_findings", "heuristic_findings", "ai_findings",
@@ -100,18 +100,18 @@ def _caller_verdict(db: Session, number: str) -> dict:
         raise HTTPException(422, str(exc))
     n = info["normalized"]
     if db.scalars(select(BlockedIndicator).where(BlockedIndicator.type == "phone", BlockedIndicator.value == n)).first():
-        findings.append(Finding("Number is on the WOLVE scam blocklist", "Reported as a scam number by an analyst.", "phone", "critical", 80, "verified", ["vishing"]))
+        findings.append(Finding("Number is on the 3B scam blocklist", "Reported as a scam number by an analyst.", "phone", "critical", 80, "verified", ["vishing"]))
     seen = db.scalars(select(Indicator).where(Indicator.type == "phone", Indicator.value == n, Indicator.analysis_id.is_not(None))).all()
     bad = [a for a in (db.get(Analysis, i.analysis_id) for i in seen) if a and a.risk_score >= 60]
     if bad:
-        findings.append(Finding("Number appeared in scam reports", f"Linked to {len(bad)} high-risk message(s) or call(s) analysed by WOLVE.",
+        findings.append(Finding("Number appeared in scam reports", f"Linked to {len(bad)} high-risk message(s) or call(s) analysed by 3B.",
                                 "phone", "high", 50, "verified", ["vishing"], evidence=", ".join(a.id for a in bad[:3])))
     rep = build_report(findings, limits)
     score = rep["risk_score"]
     if score >= 60:
-        level, label = "danger", "⚠️ WOLVE: likely scam"
+        level, label = "danger", "⚠️ 3B: likely scam"
     elif score >= 25:
-        level, label = "caution", "⚠️ WOLVE: be careful"
+        level, label = "caution", "⚠️ 3B: be careful"
     else:
         level, label = "none", ""
     return {"number": n, "registered_region": info.get("registered_region"), "warn": level != "none", "level": level, "label": label,
@@ -130,14 +130,14 @@ def call_directory(db: Session = Depends(get_db), who: str = Depends(mobile_call
     """Numbers for the iOS Call Directory extension: label (shown before answering) or block."""
     entries: dict[str, dict] = {}
     for b in db.scalars(select(BlockedIndicator).where(BlockedIndicator.type == "phone")).all():
-        entries[b.value] = {"number": b.value, "label": "⚠️ WOLVE: reported scam", "block": True}
+        entries[b.value] = {"number": b.value, "label": "⚠️ 3B: reported scam", "block": True}
     for i in db.scalars(select(Indicator).where(Indicator.type == "phone")).all():
         a = db.get(Analysis, i.analysis_id) if i.analysis_id else None
         if i.malicious or (a is not None and a.risk_score >= 60):  # numbers seen in high-risk calls / messages
-            entries.setdefault(i.value, {"number": i.value, "label": "⚠️ WOLVE: likely scam", "block": False})
+            entries.setdefault(i.value, {"number": i.value, "label": "⚠️ 3B: likely scam", "block": False})
     return {"entries": sorted(entries.values(), key=lambda e: e["number"]),
-            "prefix_warnings": [{"prefix": "+882", "label": "⚠️ WOLVE: satellite number"}, {"prefix": "+883", "label": "⚠️ WOLVE: satellite number"},
-                                {"prefix": "+881", "label": "⚠️ WOLVE: satellite number"}]}
+            "prefix_warnings": [{"prefix": "+882", "label": "⚠️ 3B: satellite number"}, {"prefix": "+883", "label": "⚠️ 3B: satellite number"},
+                                {"prefix": "+881", "label": "⚠️ 3B: satellite number"}]}
 
 
 # ---- phone pairing & on-device filter rules --------------------------------------------------
@@ -150,7 +150,7 @@ class PhoneRegisterIn(BaseModel):
 
 @router.post("/register")
 def register_phone(body: PhoneRegisterIn, db: Session = Depends(get_db)):
-    """Pair a phone using a one-time code created by an analyst in the WOLVE web app."""
+    """Pair a phone using a one-time code created by an analyst in the 3B web app."""
     import secrets
 
     from ..models import Device, utcnow
@@ -174,7 +174,7 @@ def register_phone(body: PhoneRegisterIn, db: Session = Depends(get_db)):
 
 @router.delete("/device")
 def delete_phone(db: Session = Depends(get_db), x_device_token: str | None = Header(default=None)):
-    """Unlink the phone and delete its data from WOLVE (App Store account-deletion requirement)."""
+    """Unlink the phone and delete its data from 3B (App Store account-deletion requirement)."""
     from ..services.store import audit
 
     d = db.scalars(select(Device).where(Device.token == (x_device_token or "-"), Device.source == "phone")).first()
@@ -183,7 +183,7 @@ def delete_phone(db: Session = Depends(get_db), x_device_token: str | None = Hea
     audit(db, f"phone:{d.hostname}", "phone.deleted", d.id)
     db.delete(d)
     db.commit()
-    return {"ok": True, "message": "This phone was unlinked and its data deleted from WOLVE."}
+    return {"ok": True, "message": "This phone was unlinked and its data deleted from 3B."}
 
 
 @router.get("/filter-config")

@@ -5,9 +5,9 @@ import re
 import tempfile
 
 _tmp = tempfile.mkdtemp()
-os.environ.setdefault("WOLVE_DATABASE_URL", f"sqlite:///{_tmp}/ar.db".replace("\\", "/"))
-os.environ.setdefault("WOLVE_UPLOAD_DIR", _tmp)
-os.environ["WOLVE_EXTERNAL_LOOKUPS"] = "false"
+os.environ.setdefault("THREEB_DATABASE_URL", f"sqlite:///{_tmp}/ar.db".replace("\\", "/"))
+os.environ.setdefault("THREEB_UPLOAD_DIR", _tmp)
+os.environ["THREEB_EXTERNAL_LOOKUPS"] = "false"
 os.environ["ANTHROPIC_API_KEY"] = ""
 
 import pytest  # noqa: E402
@@ -17,10 +17,10 @@ from app.demo import scenario  # noqa: E402
 from app.i18n_ar import DISPLAY_KEYS  # noqa: E402
 from app.main import app  # noqa: E402
 
-AR = {"X-WOLVE-User": "omar.analyst", "X-WOLVE-Lang": "ar"}
-ADMIN_AR = {"X-WOLVE-User": "aisha.admin", "X-WOLVE-Lang": "ar"}
+AR = {"X-3B-User": "omar.analyst", "X-3B-Lang": "ar"}
+ADMIN_AR = {"X-3B-User": "aisha.admin", "X-3B-Lang": "ar"}
 # English that is allowed to remain: product/protocol names, IDs, hosts, file names, quoted data.
-ALLOWED = re.compile(r"WOLVE|SPF|DKIM|DMARC|OTP|QR|PDF|ZIP|URL|IP|DNS|HTTPS?|VBA|OLE|JavaScript|PowerShell|Windows|Defender|"
+ALLOWED = re.compile(r"3B|SPF|DKIM|DMARC|OTP|QR|PDF|ZIP|URL|IP|DNS|HTTPS?|VBA|OLE|JavaScript|PowerShell|Windows|Defender|"
                      r"[\w.-]+\.(exe|js|pdf|png|eml|top|co|ae|com|xyz)\b|[\w.+-]+@[\w.-]+|INC-\w+|ANL-\w+|DEV-\w+|\d")
 
 
@@ -86,11 +86,11 @@ def test_reports_are_arabic(c):
 def test_enums_untouched_and_english_default(c):
     a = c.post("/api/analyze/message", json={"text": "URGENT verify your account password now http://x-login.top", "channel": "sms"}, headers=AR).json()
     assert a["severity"] in ("low", "medium", "high", "critical") and a["kind"] == "message" and a["status"] in ("new", "suspicious")
-    en = c.get(f"/api/analyses/{a['id']}", headers={"X-WOLVE-User": "omar.analyst"}).json()
+    en = c.get(f"/api/analyses/{a['id']}", headers={"X-3B-User": "omar.analyst"}).json()
     assert not re.search(r"[؀-ۿ]", en["report"]["classification"])
 
 
 def test_html_export_arabic(c):
     a = c.get("/api/analyses?kind=email", headers=AR).json()[0]
     r = c.get(f"/api/analyses/{a['id']}/export?format=html", headers=AR)
-    assert r.status_code == 200 and 'dir="rtl"' in r.text and "تقرير WOLVE" in r.text
+    assert r.status_code == 200 and 'dir="rtl"' in r.text and "تقرير 3B" in r.text

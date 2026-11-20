@@ -1,7 +1,7 @@
 """Request dependencies: identity, role checks, rate limiting, serializers.
 
 Identity: users sign in with a password and receive a bearer session token (services/auth.py).
-The legacy `X-WOLVE-User` header works only when WOLVE_DEV_HEADER_AUTH=true (automated tests).
+The legacy `X-3B-User` header works only when THREEB_DEV_HEADER_AUTH=true (automated tests).
 Endpoint agents authenticate with a per-device token (`X-Device-Token`)."""
 from __future__ import annotations
 
@@ -20,20 +20,20 @@ from .models import Analysis, Device, EndpointEvent, Incident, User
 ROLE_RANK = {"employee": 0, "analyst": 1, "admin": 2}
 
 
-def resolve_user(db: Session, authorization: str | None, x_wolve_user: str | None) -> User | None:
-    """Bearer session token (real login). The X-WOLVE-User header is honoured only in dev/test mode."""
+def resolve_user(db: Session, authorization: str | None, x_3b_user: str | None) -> User | None:
+    """Bearer session token (real login). The X-3B-User header is honoured only in dev/test mode."""
     from .services.auth import user_for_token
 
     if authorization and authorization.lower().startswith("bearer "):
         return user_for_token(db, authorization[7:].strip())
-    if settings.dev_header_auth and x_wolve_user:
-        return db.scalars(select(User).where(User.username == x_wolve_user)).first()
+    if settings.dev_header_auth and x_3b_user:
+        return db.scalars(select(User).where(User.username == x_3b_user)).first()
     return None
 
 
-def current_user(authorization: str | None = Header(default=None), x_wolve_user: str | None = Header(default=None),
+def current_user(authorization: str | None = Header(default=None), x_3b_user: str | None = Header(default=None),
                  db: Session = Depends(get_db)) -> User:
-    user = resolve_user(db, authorization, x_wolve_user)
+    user = resolve_user(db, authorization, x_3b_user)
     if not user:
         raise HTTPException(401, "Please sign in.")
     return user

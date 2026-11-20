@@ -127,7 +127,7 @@ def escalate(iid: str, db: Session = Depends(get_db), user: User = Depends(requi
     inc.escalated = True
     if inc.status == "open":
         inc.status = "investigating"
-    msg = "Escalated to SOC lead / CISO queue (WOLVE notification centre). No external email/SMS/paging integration is configured."
+    msg = "Escalated to SOC lead / CISO queue (3B notification centre). No external email/SMS/paging integration is configured."
     add_event(db, inc, "escalation", f"{user.full_name}: {msg}", user.username)
     db.add(ResponseAction(action="incident.escalate", target_type="incident", target_id=iid, actor=user.username, simulated=False, result=msg))
     audit(db, user.username, "incident.escalate", iid)

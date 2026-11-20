@@ -1,7 +1,7 @@
-# XcodeGen spec — on the Mac:  brew install xcodegen && cd mobile/ios && xcodegen && open WolveShield.xcodeproj
-name: WolveShield
+# XcodeGen spec — on the Mac:  brew install xcodegen && cd mobile/ios && xcodegen && open ThreeBees.xcodeproj
+name: ThreeBees
 options:
-  bundleIdPrefix: ae.wolve
+  bundleIdPrefix: ae.threebees
   deploymentTarget:
     iOS: "17.0"
   developmentLanguage: ar
@@ -14,20 +14,20 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  WolveShield:
+  ThreeBees:
     type: application
     platform: iOS
     sources: [App, Shared]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield
+        PRODUCT_BUNDLE_IDENTIFIER: ae.threebees.app
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: WOLVE
+        CFBundleDisplayName: Three Bees
         CFBundleDevelopmentRegion: ar
         CFBundleLocalizations: [ar, en]
         UILaunchScreen: {}
@@ -36,11 +36,11 @@ targets:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         ITSAppUsesNonExemptEncryption: false
-        NSLocalNetworkUsageDescription: "WOLVE يتصل بخادم WOLVE على شبكتك المحلية لمزامنة قوائم الحماية."
+        NSLocalNetworkUsageDescription: "3B يتصل بخادم 3B على شبكتك المحلية لمزامنة قوائم الحماية."
     entitlements:
-      path: App/WolveShield.entitlements
+      path: App/ThreeBees.entitlements
       properties:
-        com.apple.security.application-groups: [group.ae.wolve.shield]
+        com.apple.security.application-groups: [group.ae.threebees.app]
     dependencies:
       - target: MessageFilter
       - target: CallDirectory
@@ -51,11 +51,11 @@ targets:
     sources: [MessageFilter, Shared]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield.MessageFilter
+        PRODUCT_BUNDLE_IDENTIFIER: ae.threebees.app.MessageFilter
     info:
       path: MessageFilter/Info.plist
       properties:
-        CFBundleDisplayName: WOLVE
+        CFBundleDisplayName: Three Bees
         NSExtension:
           NSExtensionPointIdentifier: com.apple.identitylookup.message-filter
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).MessageFilterExtension
@@ -63,7 +63,7 @@ targets:
     entitlements:
       path: MessageFilter/MessageFilter.entitlements
       properties:
-        com.apple.security.application-groups: [group.ae.wolve.shield]
+        com.apple.security.application-groups: [group.ae.threebees.app]
 
   CallDirectory:
     type: app-extension
@@ -71,32 +71,32 @@ targets:
     sources: [CallDirectory, Shared]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield.CallDirectory
+        PRODUCT_BUNDLE_IDENTIFIER: ae.threebees.app.CallDirectory
     info:
       path: CallDirectory/Info.plist
       properties:
-        CFBundleDisplayName: WOLVE
+        CFBundleDisplayName: Three Bees
         NSExtension:
           NSExtensionPointIdentifier: com.apple.callkit.call-directory
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
     entitlements:
       path: CallDirectory/CallDirectory.entitlements
       properties:
-        com.apple.security.application-groups: [group.ae.wolve.shield]
+        com.apple.security.application-groups: [group.ae.threebees.app]
 
-  WolveShieldTests:
+  ThreeBeesTests:
     type: bundle.unit-test
     platform: iOS
     sources: [Tests, Shared]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ae.wolve.shield.tests
+        PRODUCT_BUNDLE_IDENTIFIER: ae.threebees.app.tests
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
-  WolveShield:
+  ThreeBees:
     build:
       targets:
-        WolveShield: all
+        ThreeBees: all
     test:
-      targets: [WolveShieldTests]
+      targets: [ThreeBeesTests]

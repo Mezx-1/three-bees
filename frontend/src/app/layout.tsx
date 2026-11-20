@@ -10,7 +10,7 @@ const plexAr = IBM_Plex_Sans_Arabic({ variable: "--font-plex-ar", subsets: ["ara
 const mono = JetBrains_Mono({ variable: "--font-mono-jb", subsets: ["latin"], weight: ["400", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "WOLVE — Security Center",
+  title: "Three Bees (3B) — Security Center",
   description: "AI-powered scam detection, email security and threat correlation platform",
 };
 

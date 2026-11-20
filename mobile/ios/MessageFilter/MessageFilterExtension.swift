@@ -1,8 +1,8 @@
 import IdentityLookup
 
 /// SMS/MMS filter. iOS calls this ONLY for messages from senders that are not in your contacts,
-/// and only after the user picks WOLVE in Settings → Apps → Messages → Unknown & Spam → SMS Filtering.
-/// Scoring runs entirely on the phone with rules synced by the WOLVE app; the message is not uploaded.
+/// and only after the user picks 3B in Settings → Apps → Messages → Unknown & Spam → SMS Filtering.
+/// Scoring runs entirely on the phone with rules synced by the 3B app; the message is not uploaded.
 final class MessageFilterExtension: ILMessageFilterExtension {}
 
 extension MessageFilterExtension: ILMessageFilterQueryHandling {

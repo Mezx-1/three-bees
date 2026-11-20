@@ -39,7 +39,7 @@ export default function Prevention() {
     <div className="space-y-5">
       <PageHeader title={t("nav_prevention")} subtitle={tr("Block indicators, review IOCs and audit every response action")} icon={ShieldCheck} />
       <div className="rounded-lg border border-ink-700 bg-ink-900/70 px-3 py-2 text-xs text-ink-300">
-        {tr("Blocking is enforced inside WOLVE: future analyses and endpoint telemetry matching a blocked indicator are flagged critical. To block an IP on a real laptop, use Block on its live connections (Endpoint Protection). Blocklist entries are not pushed to a network firewall, proxy or mail gateway.")}
+        {tr("Blocking is enforced inside 3B: future analyses and endpoint telemetry matching a blocked indicator are flagged critical. To block an IP on a real laptop, use Block on its live connections (Endpoint Protection). Blocklist entries are not pushed to a network firewall, proxy or mail gateway.")}
       </div>
       <Tabs value={tab} onChange={setTab} items={[
         { value: "indicators", label: tr("Indicators (IOCs)") }, { value: "blocklist", label: `${tr("Blocklist")}${bl.data ? ` (${bl.data.length})` : ""}` },

@@ -1,11 +1,11 @@
-# WOLVE — safe, repeatable demonstration
+# 3B — safe, repeatable demonstration
 
 Everything below is either **real** (live data from this laptop) or **simulated**, which is labelled in the UI and stored with `simulated=true`. No malware, no real attacks, no firewall changes.
 
 | # | Step | Real or simulated | How |
 |---|---|---|---|
-| 0 | Start WOLVE | — | `.\start.ps1` (backend :8000, web :3000). The interface opens in Arabic. |
-| 1 | Start the endpoint agent manually | **Real** | `backend\.venv\Scripts\python agent\wolve_agent.py --server http://localhost:8000 --enrol-as aisha.admin --consent`, then `... --monitor` |
+| 0 | Start 3B | — | `.\start.ps1` (backend :8000, web :3000). The interface opens in Arabic. |
+| 1 | Start the endpoint agent manually | **Real** | `backend\.venv\Scripts\python agent\threeb_agent.py --server http://localhost:8000 --enrol-as aisha.admin --consent`, then `... --monitor` |
 | 2 | Endpoint registered | **Real** | Endpoint Protection → the laptop appears with a green "live" badge |
 | 3 | Real connection metadata | **Real** | Laptop → *Live connections*: program, direction, remote address, port |
 | 4 | Approximate location of public IPs | **Real**, opt-in | Settings → as admin, switch on *External lookups* and accept the consent dialog. The map and countries fill in, labelled "approximate". |

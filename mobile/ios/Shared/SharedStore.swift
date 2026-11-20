@@ -1,7 +1,7 @@
 import Foundation
 
 /// Data shared between the app and its extensions through the App Group container.
-/// The app downloads rules from the WOLVE server; the extensions only read local files (they have no network access).
+/// The app downloads rules from the 3B server; the extensions only read local files (they have no network access).
 struct DirectoryEntry: Codable, Hashable {
     let number: String
     let label: String
@@ -9,8 +9,8 @@ struct DirectoryEntry: Codable, Hashable {
 }
 
 enum SharedStore {
-    static let appGroup = "group.ae.wolve.shield"
-    static let callDirectoryExtensionID = "ae.wolve.shield.CallDirectory"
+    static let appGroup = "group.ae.threebees.app"
+    static let callDirectoryExtensionID = "ae.threebees.app.CallDirectory"
 
     private static var container: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)

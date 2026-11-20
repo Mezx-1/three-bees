@@ -255,7 +255,7 @@ def analyze_file(data: bytes, filename: str, declared_mime: str | None = None, *
 
     # Hash reputation (local list of known-bad hashes; external provider optional elsewhere).
     if known_bad and h["sha256"] in known_bad:
-        findings.append(Finding("Hash matches a known-malicious file", f"SHA-256 is on the WOLVE blocklist: {known_bad[h['sha256']]}",
+        findings.append(Finding("Hash matches a known-malicious file", f"SHA-256 is on the 3B blocklist: {known_bad[h['sha256']]}",
                                 "attachment", "critical", 80, "verified", ["malware_delivery"], evidence=h["sha256"]))
 
     # Extension vs. real signature.

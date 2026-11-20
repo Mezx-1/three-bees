@@ -1,4 +1,4 @@
-# WOLVE — post-implementation security audit (after commit d6848c2)
+# 3B — post-implementation security audit (after commit d6848c2)
 
 Only what was actually executed is marked "tested". No firewall rule was created and no startup task was installed on the primary computer.
 
@@ -8,18 +8,18 @@ Only what was actually executed is marked "tested". No firewall rule was created
 | A1 | Agent firewall | `netsh` success was judged by the English text "Ok." — it fails on Arabic/other-language Windows, and real failures could be misread | High |
 | A2 | Agent firewall | Blocking twice created duplicate rules | Medium |
 | A3 | Agent firewall | If the outbound rule succeeded and the inbound failed, a half-applied block was left behind | Medium |
-| A4 | Agent firewall | No check for administrator rights, no refusal of private/loopback/special addresses (could cut a device off its LAN or from WOLVE) | High |
-| A5 | API | Block commands needed no explicit confirmation flag; duplicate commands could pile up; no way to inspect WOLVE-created rules | Medium |
+| A4 | Agent firewall | No check for administrator rights, no refusal of private/loopback/special addresses (could cut a device off its LAN or from 3B) | High |
+| A5 | API | Block commands needed no explicit confirmation flag; duplicate commands could pile up; no way to inspect 3B-created rules | Medium |
 | A6 | Agent posture | Firewall state was parsed from localised `netsh` text, so it returned "could not read" on non-English Windows | Medium |
 | A7 | Agent | A permission failure while reading connections would crash the cycle silently instead of being reported | Medium |
 | A8 | Detection accuracy | Every inbound connection to a non-standard port was rated "medium" (false positives for normal apps), while inbound connections to RDP/SSH/SMB were *not* flagged | Medium |
 | A9 | Privacy | ip-api.com lookups were **on by default**, with no consent; provider failures were silent | High |
 | A10 | Installer | Assigned to PowerShell's reserved `$args`; ignored failures of Python/pip/enrolment (could register a broken task); no admin check for `-AllowResponse`; did not list its changes before asking | Medium |
-| A11 | Auth (not fixed — MVP design) | Web identity is a user name sent in a header (`X-WOLVE-User`), so anyone who can reach the API can claim to be the admin; agent enrolment relies on it | **Critical for production** |
-| A12 | Transport (not fixed) | HTTP only, no TLS; device token is stored in plain text in `agent/.wolve_agent.json` | High for production |
+| A11 | Auth (not fixed — MVP design) | Web identity is a user name sent in a header (`X-3B-User`), so anyone who can reach the API can claim to be the admin; agent enrolment relies on it | **Critical for production** |
+| A12 | Transport (not fixed) | HTTP only, no TLS; device token is stored in plain text in `agent/.threeb_agent.json` | High for production |
 | A13 | Rate limiting (partial) | In-memory and only on analysis endpoints; agent endpoints are not limited | Low |
 
-Reviewed and found safe: every command the agent runs is a fixed argument list (no shell, no string concatenation). IP values are validated with `ipaddress` before they reach `netsh`. Rule names always use the `WOLVE-block-` prefix, so unrelated firewall rules cannot be touched. Uploaded files are never executed. Logs contain no command lines, tokens or message contents.
+Reviewed and found safe: every command the agent runs is a fixed argument list (no shell, no string concatenation). IP values are validated with `ipaddress` before they reach `netsh`. Rule names always use the `3B-block-` prefix, so unrelated firewall rules cannot be touched. Uploaded files are never executed. Logs contain no command lines, tokens or message contents.
 
 ## 2. Issues fixed (this commit)
 A1–A10 are fixed:
@@ -59,7 +59,7 @@ See `docs/PRIVACY.md`. In summary: lookups are opt-in with recorded consent, onl
 - **Listening ports:** 14, shown only as "open ports", never as intrusions.
 - **Firewall status:** read via `Get-NetFirewallProfile` — domain, private and public all on. This matches the system.
 - **Defender status:** service, antivirus and real-time protection on; signature age 0 days; last quick scan 2 days ago.
-- **WOLVE firewall rules:** none exist.
+- **3B firewall rules:** none exist.
 - **Location:** geography is labelled "approximate … not of a person" everywhere it appears.
 - **Suspicious events:** each one carries its findings, with evidence and reasons. Ordinary process starts (score below 25) are not stored.
 
@@ -74,7 +74,7 @@ See `docs/PRIVACY.md`. In summary: lookups are opt-in with recorded consent, onl
   - the Arabic HTML export
   - Call Guard (real speech-to-text on the sample recording, consent required, live sessions, blocked numbers)
   - mobile SMS and caller checks using the user's real examples
-  - agent firewall logic with the system mocked: refusals, admin check, idempotency, rollback, only WOLVE rules touched, unknown commands rejected
+  - agent firewall logic with the system mocked: refusals, admin check, idempotency, rollback, only 3B rules touched, unknown commands rejected
 - `tsc --noEmit`: passes. ESLint: 0 errors.
 - The installer was syntax-checked with the PowerShell parser, and `-DryRun` was run (it changed nothing and created no task).
 - **Not tested:** real firewall blocking (by design — needs an isolated Windows VM), the installer's real install, and live microphone capture in Call Guard.

@@ -121,7 +121,7 @@ def analyze_url(raw: str, *, blocklist: set[str] | None = None, org_domain: str 
     info["tld"] = tld
 
     if any(reg == b or host == b or host.endswith("." + b) for b in blocklist):
-        findings.append(Finding("Domain is on the WOLVE blocklist", "An analyst previously blocked this domain in the local WOLVE environment.",
+        findings.append(Finding("Domain is on the 3B blocklist", "An analyst previously blocked this domain in the local 3B environment.",
                                 "url", "critical", 70, "verified", ["malicious_link"], evidence=reg))
 
     if scheme == "http":

@@ -123,7 +123,7 @@ def create_incident_from_analysis(db: Session, a: Analysis, actor: str = "system
     rep = a.report
     ai_text = ((rep.get("ai") or {}).get("assessment") or {}).get("summary")
     inc = Incident(
-        title=f"{rep['classification']}: {a.title[:200]}", severity=a.severity, source=SOURCE_BY_KIND.get(a.kind, "WOLVE"),
+        title=f"{rep['classification']}: {a.title[:200]}", severity=a.severity, source=SOURCE_BY_KIND.get(a.kind, "3B"),
         risk_score=a.risk_score, demo=a.demo,
         summary="; ".join(f["title"] for f in rep["findings"][:6]),
         ai_explanation=ai_text, recommended_response=rep.get("recommended_actions", []),

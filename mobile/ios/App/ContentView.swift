@@ -29,7 +29,7 @@ struct ProtectionView: View {
                     HStack(spacing: 14) {
                         Image(systemName: "shield.checkered").font(.system(size: 40)).foregroundStyle(.blue)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("WOLVE").font(.title2.bold())
+                            Text("3B").font(.title2.bold())
                             Text("يحميك من رسائل ومكالمات الاحتيال").foregroundStyle(.secondary)
                         }
                     }
@@ -38,12 +38,12 @@ struct ProtectionView: View {
                     LabeledContent("آخر مزامنة", value: lastSync)
                 }
                 Section("١. تصفية الرسائل") {
-                    Text("الإعدادات ← التطبيقات ← الرسائل ← المرسلون المجهولون والبريد العشوائي ← تصفية الرسائل ← اختر WOLVE")
+                    Text("الإعدادات ← التطبيقات ← الرسائل ← المرسلون المجهولون والبريد العشوائي ← تصفية الرسائل ← اختر 3B")
                     Text("تُفحص رسائل المرسلين غير الموجودين في جهات الاتصال فقط، على الجوال نفسه، وتُنقل رسائل الاحتيال إلى «غير مرغوب».")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("٢. تحذير المكالمات قبل الرد") {
-                    Text("الإعدادات ← التطبيقات ← الهاتف ← حظر المكالمات وتحديد هويتها ← فعّل WOLVE")
+                    Text("الإعدادات ← التطبيقات ← الهاتف ← حظر المكالمات وتحديد هويتها ← فعّل 3B")
                     Button("فتح إعدادات حظر المكالمات") {
                         CXCallDirectoryManager.sharedInstance.openSettings { _ in }
                     }
@@ -54,7 +54,7 @@ struct ProtectionView: View {
                     Button {
                         Task { await sync() }
                     } label: {
-                        HStack { Text("مزامنة قوائم الحماية من WOLVE"); if syncing { Spacer(); ProgressView() } }
+                        HStack { Text("مزامنة قوائم الحماية من 3B"); if syncing { Spacer(); ProgressView() } }
                     }.disabled(syncing)
                     if let message { Text(message).font(.footnote) }
                 }
@@ -81,7 +81,7 @@ struct ProtectionView: View {
         syncing = true
         defer { syncing = false }
         do {
-            let result = try await WolveAPI(baseURL: url).syncProtection()
+            let result = try await ThreeBeesAPI(baseURL: url).syncProtection()
             try await CXCallDirectoryManager.sharedInstance.reloadExtension(withIdentifier: SharedStore.callDirectoryExtensionID)
             let stamp = Date().formatted(date: .abbreviated, time: .shortened)
             UserDefaults.standard.set(stamp, forKey: "lastSync")
@@ -94,7 +94,7 @@ struct ProtectionView: View {
     }
 }
 
-// MARK: - Manual checks (uses the WOLVE server, or offline rules if not connected)
+// MARK: - Manual checks (uses the 3B server, or offline rules if not connected)
 
 struct CheckView: View {
     @AppStorage("serverURL") private var serverURL = AppConfig.defaultServer
@@ -146,8 +146,8 @@ struct CheckView: View {
         defer { busy = false }
         if let url = URL(string: serverURL), Keychain.load("deviceToken") != nil {
             do {
-                let r = try await WolveAPI(baseURL: url).checkMessage(sender: sender, body: text)
-                smsResult = (r.risk_score, r.classification, r.reasons, r.action == "junk", "تحليل خادم WOLVE")
+                let r = try await ThreeBeesAPI(baseURL: url).checkMessage(sender: sender, body: text)
+                smsResult = (r.risk_score, r.classification, r.reasons, r.action == "junk", "تحليل خادم 3B")
                 return
             } catch {
                 self.error = error.localizedDescription + " — تم الفحص على الجوال بدلاً من ذلك."
@@ -161,7 +161,7 @@ struct CheckView: View {
         busy = true; error = nil
         defer { busy = false }
         guard let url = URL(string: serverURL) else { error = "عنوان الخادم غير صحيح"; return }
-        do { callResult = try await WolveAPI(baseURL: url).checkCaller(number) } catch { self.error = error.localizedDescription }
+        do { callResult = try await ThreeBeesAPI(baseURL: url).checkCaller(number) } catch { self.error = error.localizedDescription }
     }
 }
 
@@ -179,24 +179,24 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("خادم WOLVE") {
+                Section("خادم 3B") {
                     TextField(AppConfig.defaultServer, text: $serverURL)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                         .environment(\.layoutDirection, .leftToRight)
                 }
                 Section("الخصوصية") {
-                    Text("يفحص WOLVE رسائل المرسلين المجهولين على الجوال نفسه ولا يرفعها. لا يقرأ رسائل جهات الاتصال، ولا يستمع للمكالمات. عند الفحص اليدوي فقط يُرسل النص إلى خادم WOLVE.")
+                    Text("يفحص 3B رسائل المرسلين المجهولين على الجوال نفسه ولا يرفعها. لا يقرأ رسائل جهات الاتصال، ولا يستمع للمكالمات. عند الفحص اليدوي فقط يُرسل النص إلى خادم 3B.")
                         .font(.footnote)
                     Link("سياسة الخصوصية", destination: URL(string: serverURL + "/privacy") ?? URL(string: AppConfig.defaultServer)!)
                 }
                 if paired {
                     Section {
-                        Label("الجوال مربوط بـ WOLVE", systemImage: "checkmark.seal.fill").foregroundStyle(.green)
+                        Label("الجوال مربوط بـ 3B", systemImage: "checkmark.seal.fill").foregroundStyle(.green)
                         Button("فك الربط وحذف بيانات هذا الجوال", role: .destructive) { confirmDelete = true }
                     }
                 } else {
                     Section("ربط الجوال") {
-                        TextField("رمز الربط (من WOLVE ← الإعدادات ← ربط جهاز)", text: $code)
+                        TextField("رمز الربط (من 3B ← الإعدادات ← ربط جهاز)", text: $code)
                             .textInputAutocapitalization(.characters).autocorrectionDisabled()
                         Toggle("أوافق على حماية هذا الجوال", isOn: $consent)
                         Button("ربط الجوال") { Task { await pair() } }.disabled(!consent || busy || code.count < 6)
@@ -205,7 +205,7 @@ struct SettingsView: View {
                 if let message { Section { Text(message).font(.footnote) } }
             }
             .navigationTitle("الإعدادات")
-            .confirmationDialog("سيتم فك ربط الجوال وحذف بياناته من خادم WOLVE.", isPresented: $confirmDelete, titleVisibility: .visible) {
+            .confirmationDialog("سيتم فك ربط الجوال وحذف بياناته من خادم 3B.", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("فك الربط والحذف", role: .destructive) { Task { await unpair() } }
                 Button("إلغاء", role: .cancel) {}
             }
@@ -217,7 +217,7 @@ struct SettingsView: View {
         busy = true
         defer { busy = false }
         do {
-            try await WolveAPI(baseURL: url).register(pairingCode: code, deviceName: UIDevice.current.name)
+            try await ThreeBeesAPI(baseURL: url).register(pairingCode: code, deviceName: UIDevice.current.name)
             paired = true
             code = ""
             message = "تم الربط. اذهب إلى «الحماية» واضغط مزامنة."
@@ -231,7 +231,7 @@ struct SettingsView: View {
         busy = true
         defer { busy = false }
         do {
-            try await WolveAPI(baseURL: url).deleteDevice()
+            try await ThreeBeesAPI(baseURL: url).deleteDevice()
             message = "تم فك الربط وحذف بيانات الجوال من الخادم."
         } catch {
             Keychain.delete("deviceToken")

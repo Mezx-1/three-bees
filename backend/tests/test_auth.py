@@ -21,7 +21,7 @@ def c(monkeypatch):
 
 
 def test_header_identity_rejected_when_dev_mode_off(c):
-    assert c.get("/api/dashboard", headers={"X-WOLVE-User": "aisha.admin"}).status_code == 401
+    assert c.get("/api/dashboard", headers={"X-3B-User": "aisha.admin"}).status_code == 401
     assert c.get("/api/users").status_code == 401
 
 

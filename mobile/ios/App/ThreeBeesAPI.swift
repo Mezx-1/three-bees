@@ -3,7 +3,7 @@ import Security
 
 /// Device token is kept in the Keychain (not in plain UserDefaults).
 enum Keychain {
-    private static let service = "ae.wolve.shield"
+    private static let service = "ae.threebees.app"
     static func save(_ value: String, for key: String) {
         let base: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: key]
         SecItemDelete(base as CFDictionary)
@@ -52,8 +52,8 @@ private struct DirectoryResponse: Decodable { let entries: [DirectoryEntry] }
 private struct RegisterResponse: Decodable { let device_id: String; let token: String }
 private struct ErrorBody: Decodable { let detail: String }
 
-/// Talks to the WOLVE server. Requests ask for Arabic (`X-WOLVE-Lang: ar`) so labels and reasons come back in Arabic.
-final class WolveAPI {
+/// Talks to the 3B server. Requests ask for Arabic (`X-3B-Lang: ar`) so labels and reasons come back in Arabic.
+final class ThreeBeesAPI {
     var baseURL: URL
     var token: String? { Keychain.load("deviceToken") }
 
@@ -63,9 +63,9 @@ final class WolveAPI {
         guard let url = URL(string: path, relativeTo: baseURL) else { throw APIError(message: "عنوان الخادم غير صحيح") }
         var req = URLRequest(url: url, timeoutInterval: 15)
         req.httpMethod = method
-        req.setValue("ar", forHTTPHeaderField: "X-WOLVE-Lang")
+        req.setValue("ar", forHTTPHeaderField: "X-3B-Lang")
         if let token { req.setValue(token, forHTTPHeaderField: "X-Device-Token") }
-        if let user { req.setValue(user, forHTTPHeaderField: "X-WOLVE-User") }
+        if let user { req.setValue(user, forHTTPHeaderField: "X-3B-User") }
         if let body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(body)
@@ -74,7 +74,7 @@ final class WolveAPI {
         do {
             (data, response) = try await URLSession.shared.data(for: req)
         } catch {
-            throw APIError(message: "تعذّر الاتصال بخادم WOLVE. تأكد أن الجوال والكمبيوتر على نفس الشبكة.")
+            throw APIError(message: "تعذّر الاتصال بخادم 3B. تأكد أن الجوال والكمبيوتر على نفس الشبكة.")
         }
         guard let http = response as? HTTPURLResponse else { throw APIError(message: "رد غير متوقع من الخادم") }
         guard (200..<300).contains(http.statusCode) else {

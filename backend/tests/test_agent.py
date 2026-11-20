@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 
-spec = importlib.util.spec_from_file_location("wolve_agent", pathlib.Path(__file__).resolve().parents[2] / "agent" / "wolve_agent.py")
+spec = importlib.util.spec_from_file_location("threeb_agent", pathlib.Path(__file__).resolve().parents[2] / "agent" / "threeb_agent.py")
 agent = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent)
 
@@ -23,7 +23,7 @@ class FakeNetsh:
         action = cmd[3]
         args = dict(a.split("=", 1) for a in cmd[5:] if "=" in a) if action == "add" else dict(a.split("=", 1) for a in cmd[4:] if "=" in a)
         name, d = args.get("name"), args.get("dir")
-        assert name.startswith(agent.FW_RULE_PREFIX), "agent must only touch WOLVE-named rules"
+        assert name.startswith(agent.FW_RULE_PREFIX), "agent must only touch 3B-named rules"
         if action == "show":
             return (0, "rule") if (name, d) in self.rules else (1, "No rules match")
         if action == "add":
@@ -66,7 +66,7 @@ def test_dangerous_or_invalid_targets_refused(win, ip):
 
 def test_block_is_idempotent_and_both_directions(win):
     assert agent.execute({"type": "block_ip", "params": {"ip": "8.8.4.4"}}, True)[0] == "done"
-    assert win.rules == {("WOLVE-block-8.8.4.4", "out"), ("WOLVE-block-8.8.4.4", "in")}
+    assert win.rules == {("3B-block-8.8.4.4", "out"), ("3B-block-8.8.4.4", "in")}
     status, msg = agent.execute({"type": "block_ip", "params": {"ip": "8.8.4.4"}}, True)
     assert status == "done" and "already blocked" in msg and len(win.rules) == 2
 
@@ -80,8 +80,8 @@ def test_partial_failure_rolls_back(monkeypatch):
     assert status == "failed" and fake.rules == set(), "outbound rule must be removed when inbound fails"
 
 
-def test_unblock_only_removes_wolve_rule(win):
-    win.rules.add(("WOLVE-block-8.8.4.4", "in"))
+def test_unblock_only_removes_threeb_rule(win):
+    win.rules.add(("3B-block-8.8.4.4", "in"))
     assert agent.execute({"type": "unblock_ip", "params": {"ip": "8.8.4.4"}}, True)[0] == "done"
     assert win.rules == set()
     status, msg = agent.execute({"type": "unblock_ip", "params": {"ip": "8.8.4.4"}}, True)

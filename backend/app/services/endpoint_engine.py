@@ -46,7 +46,7 @@ def score_event(event_type: str, d: dict, ctx_blocked: dict) -> list[Finding]:
         dom = (d.get("dest_domain") or "").lower()
         port = d.get("dest_port")
         if ip in ctx_blocked["ip"] or (dom and registered_domain(dom) in ctx_blocked["domain"]):
-            f.append(Finding("Connection to a blocklisted destination", f"Endpoint contacted {dom or ip}, which is on the WOLVE blocklist.",
+            f.append(Finding("Connection to a blocklisted destination", f"Endpoint contacted {dom or ip}, which is on the 3B blocklist.",
                              "endpoint", "critical", 60, "verified", ["suspicious_infrastructure"], evidence=dom or ip))
         if port and int(port) in (4444, 1337, 8081, 6667, 9001, 31337):
             f.append(Finding("Connection on a port associated with C2/backdoors", f"Destination port {port}.", "endpoint", "high", 30, "heuristic",
@@ -129,7 +129,7 @@ def correlate(db: Session, ev: EndpointEvent, device: Device, inds: list[tuple[s
         if observed or inferred:
             target.correlated = True
             parts = [l["reason"] for l in (observed + inferred)[:4]]
-            add_event(db, target, "correlation", "Correlated: " + " | ".join(parts), "WOLVE correlation engine",
+            add_event(db, target, "correlation", "Correlated: " + " | ".join(parts), "3B correlation engine",
                       {"observed": len(observed), "inferred": len(inferred)})
             # Email + endpoint execution evidence => escalate.
             old = target.severity
@@ -137,7 +137,7 @@ def correlate(db: Session, ev: EndpointEvent, device: Device, inds: list[tuple[s
             target.severity = max_sev(target.severity, bump)
             target.risk_score = max(target.risk_score, min(100, max(target.risk_score, ev.risk_score) + 10))
             if target.severity != old:
-                add_event(db, target, "escalation", f"Severity escalated {old} → {target.severity}: attack progressed from email to endpoint.", "WOLVE correlation engine")
+                add_event(db, target, "escalation", f"Severity escalated {old} → {target.severity}: attack progressed from email to endpoint.", "3B correlation engine")
             for rec in ["Recommend isolating the endpoint from the network for investigation.", f"Check other recipients of the same email and devices contacting the same destinations."]:
                 if rec not in target.recommended_response:
                     target.recommended_response = [*target.recommended_response, rec]

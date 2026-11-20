@@ -1,4 +1,4 @@
-# WOLVE AI — one-command local start (Windows PowerShell).
+# Three Bees — one-command local start (Windows PowerShell).
 # First run installs dependencies; later runs just start both servers.
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path

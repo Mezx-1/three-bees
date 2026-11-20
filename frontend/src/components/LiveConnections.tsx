@@ -43,8 +43,8 @@ export function LiveConnections({ deviceId, hostname, online }: { deviceId: stri
   }, [data.data, tab, q]);
 
   const command = async (type: "block_ip" | "unblock_ip" | "list_rules", ip = "") => {
-    if (type === "block_ip" && !window.confirm(trf("Block {ip} in Windows Firewall on {host}?\n\nDirection: inbound AND outbound (rule name WOLVE-block-{ip}).\nImpact: every program on {host} will lose access to this address — if it belongs to a shared service (CDN, cloud, Microsoft/Google), websites or apps may stop working.\nOnly WOLVE-named rules are changed; you can undo it with Unblock.", { ip, host: hostname }))) return;
-    if (type === "unblock_ip" && !window.confirm(trf("Remove the WOLVE firewall rule for {ip} on {host}?", { ip, host: hostname }))) return;
+    if (type === "block_ip" && !window.confirm(trf("Block {ip} in Windows Firewall on {host}?\n\nDirection: inbound AND outbound (rule name 3B-block-{ip}).\nImpact: every program on {host} will lose access to this address — if it belongs to a shared service (CDN, cloud, Microsoft/Google), websites or apps may stop working.\nOnly 3B-named rules are changed; you can undo it with Unblock.", { ip, host: hostname }))) return;
+    if (type === "unblock_ip" && !window.confirm(trf("Remove the 3B firewall rule for {ip} on {host}?", { ip, host: hostname }))) return;
     setBusy(type + ip);
     try {
       const r = await apiSend(`/api/endpoints/${deviceId}/commands`, "POST", { type, ip: ip || undefined, confirm: type !== "list_rules" });
@@ -147,7 +147,7 @@ export function LiveConnections({ deviceId, hostname, online }: { deviceId: stri
             </table>
           </div>
         )}
-        <p className="mt-3 text-xs text-ink-400">{tr("WOLVE records connection metadata only (program, address, port). It never reads the content of your traffic.")}</p>
+        <p className="mt-3 text-xs text-ink-400">{tr("3B records connection metadata only (program, address, port). It never reads the content of your traffic.")}</p>
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -174,15 +174,15 @@ export function LiveConnections({ deviceId, hostname, online }: { deviceId: stri
         <Card title={<span className="flex items-center gap-2"><ShieldOff className="h-4 w-4 text-crit" /> {tr("Response actions on this device")}</span>}
           subtitle={tr("Blocking runs only if the agent was started with --allow-response.")}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Button className="text-xs" loading={busy === "list_rules"} onClick={() => { setBusy("list_rules"); command("list_rules"); }}>{tr("Show WOLVE firewall rules")}</Button>
-            {data.data.wolve_firewall_rules && (
-              <span className="text-xs text-ink-400">{data.data.wolve_firewall_rules.length === 0 ? tr("No WOLVE rules on this device.") : `${data.data.wolve_firewall_rules.length} ${tr("WOLVE rules")}`} · {fmtTime(data.data.wolve_firewall_rules_at)}</span>
+            <Button className="text-xs" loading={busy === "list_rules"} onClick={() => { setBusy("list_rules"); command("list_rules"); }}>{tr("Show 3B firewall rules")}</Button>
+            {data.data.threeb_firewall_rules && (
+              <span className="text-xs text-ink-400">{data.data.threeb_firewall_rules.length === 0 ? tr("No 3B rules on this device.") : `${data.data.threeb_firewall_rules.length} ${tr("3B rules")}`} · {fmtTime(data.data.threeb_firewall_rules_at)}</span>
             )}
           </div>
-          {data.data.wolve_firewall_rules?.length > 0 && (
+          {data.data.threeb_firewall_rules?.length > 0 && (
             <ul className="mb-3 space-y-1 text-xs" dir="ltr">
-              {data.data.wolve_firewall_rules.map((r: any, i: number) => <li key={i} className="flex items-center gap-2 font-mono"><span>{r.name}</span><Pill>{r.direction}</Pill><Pill>{r.action}</Pill>
-                <Button variant="ghost" className="ms-auto h-6 !px-2 text-xs" onClick={() => command("unblock_ip", String(r.name).replace("WOLVE-block-", ""))}>{tr("Unblock")}</Button></li>)}
+              {data.data.threeb_firewall_rules.map((r: any, i: number) => <li key={i} className="flex items-center gap-2 font-mono"><span>{r.name}</span><Pill>{r.direction}</Pill><Pill>{r.action}</Pill>
+                <Button variant="ghost" className="ms-auto h-6 !px-2 text-xs" onClick={() => command("unblock_ip", String(r.name).replace("3B-block-", ""))}>{tr("Unblock")}</Button></li>)}
             </ul>
           )}
           {(cmds.data || []).length === 0 ? <p className="text-sm text-ink-400">{tr("No actions yet. Use Block on a connection above.")}</p> : (

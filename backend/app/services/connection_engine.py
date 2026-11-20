@@ -90,10 +90,10 @@ def score_connection(c: dict, origin: dict, blocked_ips: set[str], malicious_ips
     exe = (c.get("exe") or "").lower()
     public = origin.get("scope") == "public"
     if rip in blocked_ips:
-        f.append(Finding("Connection to a blocked IP", f"{proc or 'A process'} is talking to {rip}, which is on the WOLVE blocklist.",
+        f.append(Finding("Connection to a blocked IP", f"{proc or 'A process'} is talking to {rip}, which is on the 3B blocklist.",
                          "network", "critical", 70, "verified", ["suspicious_infrastructure"], evidence=rip))
     elif rip in malicious_ips:
-        f.append(Finding("Connection to an IP flagged in an investigation", f"{rip} was flagged malicious in a WOLVE analysis or incident.",
+        f.append(Finding("Connection to an IP flagged in an investigation", f"{rip} was flagged malicious in a 3B analysis or incident.",
                          "network", "high", 50, "verified", ["suspicious_infrastructure"], evidence=rip))
     if proc in SCRIPT_HOSTS and public and c.get("direction") == "outbound":
         f.append(Finding("Script interpreter connecting to the internet", f"{proc} opened a connection to {rip}:{rport}. Scripts downloading code is a common malware step.",

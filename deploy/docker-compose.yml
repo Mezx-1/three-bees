@@ -8,9 +8,9 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      WOLVE_CORS_ORIGINS: https://${WOLVE_DOMAIN}
-      WOLVE_DEV_HEADER_AUTH: "false"
-    volumes: [wolve-data:/data]
+      THREEB_CORS_ORIGINS: https://${THREEB_DOMAIN}
+      THREEB_DEV_HEADER_AUTH: "false"
+    volumes: [threeb-data:/data]
   frontend:
     build: ../frontend
     restart: unless-stopped
@@ -19,11 +19,11 @@ services:
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     environment:
-      WOLVE_DOMAIN: ${WOLVE_DOMAIN}
+      THREEB_DOMAIN: ${THREEB_DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
     depends_on: [backend, frontend]
 volumes:
-  wolve-data:
+  threeb-data:
   caddy-data:

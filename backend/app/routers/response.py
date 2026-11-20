@@ -67,7 +67,7 @@ def add_block(body: BlockIn, db: Session = Depends(get_db), user: User = Depends
     db.add(b)
     for ind in db.scalars(select(Indicator).where(Indicator.type == body.type, Indicator.value == value)).all():
         ind.malicious = True
-    msg = f"Blocked {body.type} {value} in the WOLVE demo environment. Future analyses and endpoint events matching it are flagged. Not pushed to any firewall, proxy or mail gateway."
+    msg = f"Blocked {body.type} {value} in the 3B demo environment. Future analyses and endpoint events matching it are flagged. Not pushed to any firewall, proxy or mail gateway."
     db.add(ResponseAction(action=f"block.{body.type}", target_type=body.type, target_id=value, actor=user.username, simulated=True, result=msg))
     audit(db, user.username, "blocklist.add", value, {"type": body.type, "reason": body.reason})
     db.commit()

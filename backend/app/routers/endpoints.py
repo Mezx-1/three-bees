@@ -34,7 +34,7 @@ class DeviceIn(BaseModel):
 class AgentRegisterIn(DeviceIn):
     agent_version: str = Field(default="0.1.0", max_length=40)
     system_info: dict = Field(default_factory=dict)
-    consent: bool = Field(description="The device user agreed to WOLVE monitoring")
+    consent: bool = Field(description="The device user agreed to 3B monitoring")
     pairing_code: str = Field(min_length=6, max_length=20)
 
 
@@ -96,7 +96,7 @@ def recommend_isolation(device_id: str, db: Session = Depends(get_db), user: Use
     if not d:
         raise HTTPException(404, "Device not found")
     d.status = "isolation_recommended"
-    msg = (f"Isolation recommended for {d.hostname}. WOLVE does not control the network in this MVP — "
+    msg = (f"Isolation recommended for {d.hostname}. 3B does not control the network in this MVP — "
            "IT must isolate the device via EDR/NAC or by disconnecting it.")
     db.add(ResponseAction(action="endpoint.recommend_isolation", target_type="device", target_id=d.id, actor=user.username, simulated=False, result=msg))
     for inc_id in {e.incident_id for e in d.events if e.incident_id}:
@@ -126,11 +126,11 @@ agent_router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 @agent_router.post("/register")
 def agent_register(body: AgentRegisterIn, db: Session = Depends(get_db)):
-    """Called by the WOLVE agent with a one-time pairing code (created by an analyst). Returns the device token."""
+    """Called by the 3B agent with a one-time pairing code (created by an analyst). Returns the device token."""
     from ..services.auth import redeem_pairing_code
 
     if not body.consent:
-        raise HTTPException(422, "Device user consent is required before WOLVE monitoring can be enabled.")
+        raise HTTPException(422, "Device user consent is required before 3B monitoring can be enabled.")
     pc = redeem_pairing_code(db, body.pairing_code, "agent")
     if not pc:
         raise HTTPException(401, "Pairing code is wrong, already used or expired.")
@@ -268,10 +268,10 @@ def agent_command_result(cid: int, body: CmdResult, x_device_token: str | None =
     if c.type == "list_rules" and body.status == "done":
         info = dict(d.system_info or {})
         try:
-            info["wolve_firewall_rules"] = json.loads(body.result)
+            info["threeb_firewall_rules"] = json.loads(body.result)
         except ValueError:
-            info["wolve_firewall_rules"] = []
-        info["wolve_firewall_rules_at"] = utcnow().isoformat()
+            info["threeb_firewall_rules"] = []
+        info["threeb_firewall_rules_at"] = utcnow().isoformat()
         d.system_info = info
     db.add(ResponseAction(action=f"agent.{c.type}", target_type="device", target_id=d.id, actor=c.created_by, simulated=False,
                           result=f"{body.status}: {body.result} ({c.params})"))
@@ -294,8 +294,8 @@ def device_connections(device_id: str, active: bool = True, db: Session = Depend
             "listening": (d.system_info or {}).get("listening_ports", []), "updated_at": (d.system_info or {}).get("connections_updated_at"),
             "posture": (d.system_info or {}).get("posture"), "posture_findings": (d.system_info or {}).get("posture_findings", []),
             "collection_error": (d.system_info or {}).get("collection_error"), "external_lookups": external_lookups_enabled(db),
-            "wolve_firewall_rules": (d.system_info or {}).get("wolve_firewall_rules"),
-            "wolve_firewall_rules_at": (d.system_info or {}).get("wolve_firewall_rules_at")}
+            "threeb_firewall_rules": (d.system_info or {}).get("threeb_firewall_rules"),
+            "threeb_firewall_rules_at": (d.system_info or {}).get("threeb_firewall_rules_at")}
 
 
 class CommandIn(BaseModel):
@@ -310,7 +310,7 @@ def queue_command(device_id: str, body: CommandIn, db: Session = Depends(get_db)
     if not d:
         raise HTTPException(404, "Device not found")
     if d.source != "agent":
-        raise HTTPException(422, "This device has no WOLVE agent installed, so it cannot receive commands.")
+        raise HTTPException(422, "This device has no 3B agent installed, so it cannot receive commands.")
     params: dict = {}
     if body.type in ("block_ip", "unblock_ip"):
         if not body.confirm:
@@ -320,8 +320,8 @@ def queue_command(device_id: str, body: CommandIn, db: Session = Depends(get_db)
         except ValueError:
             raise HTTPException(422, "Invalid IP address")
         if ipo.is_private or ipo.is_loopback or ipo.is_unspecified or ipo.is_multicast or ipo.is_link_local or ipo.is_reserved:
-            raise HTTPException(422, "Refusing to block a private, local or special-purpose address: it could cut the device off from its network or from WOLVE.")
-        params = {"ip": str(ipo), "direction": "inbound+outbound", "rule_name": f"WOLVE-block-{ipo}"}
+            raise HTTPException(422, "Refusing to block a private, local or special-purpose address: it could cut the device off from its network or from 3B.")
+        params = {"ip": str(ipo), "direction": "inbound+outbound", "rule_name": f"3B-block-{ipo}"}
     dup = db.scalars(select(AgentCommand).where(AgentCommand.device_id == d.id, AgentCommand.type == body.type,
                                                 AgentCommand.status.in_(["pending", "sent"]))).all()
     dup = [x for x in dup if x.params.get("ip") == params.get("ip")]
@@ -332,7 +332,7 @@ def queue_command(device_id: str, body: CommandIn, db: Session = Depends(get_db)
     audit(db, user.username, f"endpoint.command.{body.type}", d.id, params)
     db.commit()
     if body.type == "list_rules":
-        return {"ok": True, "id": c.id, "message": f"Asked the agent on {d.hostname} to list WOLVE firewall rules (read-only)."}
+        return {"ok": True, "id": c.id, "message": f"Asked the agent on {d.hostname} to list 3B firewall rules (read-only)."}
     return {"ok": True, "id": c.id, "message": f"Command queued. The agent on {d.hostname} will run it on its next check-in (only if it was started with --allow-response)."}
 
 

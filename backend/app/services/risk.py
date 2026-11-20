@@ -1,4 +1,4 @@
-"""WOLVE risk engine.
+"""3B risk engine.
 
 Every analyzer emits `Finding`s. Each finding records *where its evidence came from*:
 

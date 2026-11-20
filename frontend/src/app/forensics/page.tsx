@@ -91,7 +91,7 @@ export default function Forensics() {
               <Cap ok={s.media.ffprobe} label={tr("Audio/video metadata (ffprobe)")} />
               <Cap ok={s.media.ffmpeg} label={tr("Video frame sampling + OCR")} />
               <Cap ok={false} label={tr("Speech-to-text")} note="Not installed — paste a transcript" />
-              <Cap ok={false} label={tr("Synthetic voice / deepfake detection")} note="Not implemented; WOLVE never labels media fake on impressions" />
+              <Cap ok={false} label={tr("Synthetic voice / deepfake detection")} note="Not implemented; 3B never labels media fake on impressions" />
               <Cap ok={false} label={tr("Dynamic sandbox detonation")} note={s.sandbox.note} />
             </ul>
           )}

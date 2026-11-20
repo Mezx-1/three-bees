@@ -235,13 +235,13 @@ export function useApi<T>(fn: () => Promise<T>, deps: unknown[] = [], pollMs?: n
   useEffect(() => {
     load();
     const onUser = () => load(true);
-    window.addEventListener("wolve-user", onUser);
-    window.addEventListener("wolve-refresh", onUser);
+    window.addEventListener("3b-user", onUser);
+    window.addEventListener("3b-refresh", onUser);
     let t: any;
     if (pollMs) t = setInterval(() => load(true), pollMs);
     return () => {
-      window.removeEventListener("wolve-user", onUser);
-      window.removeEventListener("wolve-refresh", onUser);
+      window.removeEventListener("3b-user", onUser);
+      window.removeEventListener("3b-refresh", onUser);
       if (t) clearInterval(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,7 +249,7 @@ export function useApi<T>(fn: () => Promise<T>, deps: unknown[] = [], pollMs?: n
   return { data, error, loading, reload: load, setData };
 }
 
-export const broadcastRefresh = () => window.dispatchEvent(new Event("wolve-refresh"));
+export const broadcastRefresh = () => window.dispatchEvent(new Event("3b-refresh"));
 
 // ---- toasts ----------------------------------------------------------------
 type Toast = { id: number; kind: "ok" | "err" | "info"; text: string };

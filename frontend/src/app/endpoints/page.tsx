@@ -19,7 +19,7 @@ const PRESETS = [
 ];
 
 const sourceLabel = (src: string): React.ReactNode => ({
-  agent: <Pill className="text-safe">{tr("WOLVE agent")}</Pill>, simulated: <SimBadge label={tr("Simulated device")} />, manual: <Pill>{tr("Manual entry")}</Pill>,
+  agent: <Pill className="text-safe">{tr("3B agent")}</Pill>, simulated: <SimBadge label={tr("Simulated device")} />, manual: <Pill>{tr("Manual entry")}</Pill>,
 } as Record<string, React.ReactNode>)[src];
 
 export default function Endpoints() {
@@ -75,7 +75,7 @@ export default function Endpoints() {
         actions={<Button onClick={() => setShowAdd(!showAdd)}><Plus className="h-4 w-4" /> {tr("Register device")}</Button>} />
 
       <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
-        {tr("Seeded devices are simulated inventory for the demo. Real devices appear only when the consent-based WOLVE agent registers. WOLVE does not record screens, calls, keystrokes or passwords.")}
+        {tr("Seeded devices are simulated inventory for the demo. Real devices appear only when the consent-based 3B agent registers. 3B does not record screens, calls, keystrokes or passwords.")}
       </div>
 
       {showAdd && (
@@ -122,7 +122,7 @@ export default function Endpoints() {
                   <Button className="text-xs" loading={busy === "ok"} onClick={() => act("ok", async () => { await apiSend(`/api/endpoints/${d.id}/mark-healthy`, "POST"); toast("ok", `${d.hostname} marked healthy.`); })}><HeartPulse className="h-4 w-4" /> {tr("Mark healthy")}</Button>
                 </div>}>
                 <div className="flex flex-wrap items-center gap-3 text-sm"><StatusDot s={d.status} /><span className="text-ink-300">{tr("Risk")} <b className="font-mono">{d.risk_score}</b>/100</span>{sourceLabel(d.source)}<span className="text-xs text-ink-400">{tr("Owner:")} {d.owner_email || "—"}</span></div>
-                {d.status === "isolation_recommended" && <p className="mt-2 text-xs text-high">{tr("Isolation recommended. WOLVE does not control the network in the MVP — isolate via EDR/NAC.")}</p>}
+                {d.status === "isolation_recommended" && <p className="mt-2 text-xs text-high">{tr("Isolation recommended. 3B does not control the network in the MVP — isolate via EDR/NAC.")}</p>}
                 <div className="mt-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-medium text-ink-400"><Zap className="h-3.5 w-3.5 text-violet-700" /> {tr("Inject simulated event")}</div>
                   <div className="flex flex-wrap gap-2">
@@ -136,7 +136,7 @@ export default function Endpoints() {
                 </div>
               </Card>
               <Card title={`${tr("Event timeline")} (${d.events.length})`}>
-                {d.events.length === 0 ? <EmptyState title={tr("No events from this device")} icon={Terminal}>{tr("Events arrive from the WOLVE agent, or inject a simulated event above.")}</EmptyState> : (
+                {d.events.length === 0 ? <EmptyState title={tr("No events from this device")} icon={Terminal}>{tr("Events arrive from the 3B agent, or inject a simulated event above.")}</EmptyState> : (
                   <ul className="space-y-2">
                     {d.events.map((e) => (
                       <li key={e.id} className="rounded-lg border border-ink-700 bg-ink-850/60 p-3">
@@ -160,16 +160,16 @@ export default function Endpoints() {
 
       {d && d.source === "agent" && <LiveConnections deviceId={d.id} hostname={d.hostname} online={!!(d as any).online} />}
 
-      <Card title={<span className="flex items-center gap-2"><Terminal className="h-4 w-4 text-volt" /> {tr("Real WOLVE endpoint agent")}</span>}
+      <Card title={<span className="flex items-center gap-2"><Terminal className="h-4 w-4 text-volt" /> {tr("Real 3B endpoint agent")}</span>}
         subtitle={tr("Consent-based. Sends heartbeat + system info, and only the security events you enable. Never runs hidden.")}>
         <div className="space-y-3 text-sm">
           <div className="font-medium text-ink-100">{tr("Install on a laptop (Windows)")}</div>
           <div><div className="mb-1 text-ink-300">{tr("1. Enrol the device (admin, with the user's consent)")}</div>
-            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --server http://localhost:8000 --pair CODE --consent</pre></div>
+            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/threeb_agent.py --server http://localhost:8000 --pair CODE --consent</pre></div>
           <div><div className="mb-1 text-ink-300">{tr("2. Start live monitoring")}</div>
-            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --monitor</pre></div>
+            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/threeb_agent.py --monitor</pre></div>
           <div><div className="mb-1 text-ink-300">{tr("3. Optional: allow analysts to block IPs in Windows Firewall (run as administrator)")}</div>
-            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/wolve_agent.py --monitor --allow-response</pre></div>
+            <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">python agent/threeb_agent.py --monitor --allow-response</pre></div>
           <div><div className="mb-1 text-ink-300">{tr("Or install it to start automatically at sign-in:")}</div>
             <pre dir="ltr" className="overflow-x-auto rounded-lg bg-ink-800 p-3 font-mono text-xs text-ink-200">powershell -ExecutionPolicy Bypass -File agent/install_agent.ps1 -PairCode CODE</pre></div>
         </div>

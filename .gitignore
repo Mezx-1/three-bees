@@ -10,7 +10,7 @@ backend/*.db-shm
 backend/storage/
 
 # Agent state (contains device token)
-agent/.wolve_agent.json
+agent/.threeb_agent.json
 
 # Node
 frontend/node_modules/

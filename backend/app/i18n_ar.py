@@ -1,6 +1,6 @@
 """Arabic translation of backend-generated text (reports, alerts, messages).
 
-Applied to JSON responses when the client sends `X-WOLVE-Lang: ar` (see main.py), and to the
+Applied to JSON responses when the client sends `X-3B-Lang: ar` (see main.py), and to the
 exported HTML report. Only display fields are translated — identifiers and enum values are not.
 EXACT holds fixed sentences; TEMPLATES hold sentences with values, written with {0}, {1}…
 """
@@ -63,8 +63,8 @@ EXACT: dict[str, str] = {
         "لا تُشغَّل الملفات التنفيذية. تحليل السلوك يتطلب بيئة معزولة (مخطّط لها).",
     "Structural URL analysis only — the page was not visited or rendered.": "تحليل لبنية الرابط فقط — لم تتم زيارة الصفحة.",
     "External lookups disabled: DNS was not queried.": "البحث الخارجي متوقف: لم يتم الاستعلام عن DNS.",
-    "No URL reputation provider configured (e.g. Google Safe Browsing, VirusTotal); WOLVE does not claim reputation results.":
-        "لا يوجد مزوّد لسمعة الروابط (مثل Google Safe Browsing أو VirusTotal)؛ لذلك لا يقدّم WOLVE نتائج سمعة.",
+    "No URL reputation provider configured (e.g. Google Safe Browsing, VirusTotal); 3B does not claim reputation results.":
+        "لا يوجد مزوّد لسمعة الروابط (مثل Google Safe Browsing أو VirusTotal)؛ لذلك لا يقدّم 3B نتائج سمعة.",
     "External lookups disabled: no geolocation/ASN was queried.": "البحث الخارجي متوقف: لم يتم الاستعلام عن الموقع أو الشبكة.",
     "No IP reputation provider configured (AbuseIPDB key not set) — reputation is unknown, not clean.":
         "لا يوجد مزوّد لسمعة عناوين IP (مفتاح AbuseIPDB غير مضبوط) — السمعة غير معروفة، وليست نظيفة.",
@@ -75,8 +75,8 @@ EXACT: dict[str, str] = {
         "رمز الدولة يوضح أين سُجّل نطاق الرقم — وليس مكان وجود المتصل فعلياً.",
     "Caller ID can be spoofed: a call showing a local or official number may originate anywhere.":
         "يمكن تزييف هوية المتصل: مكالمة تُظهر رقماً محلياً أو رسمياً قد تأتي من أي مكان.",
-    "No carrier/HLR or reputation lookup is configured; WOLVE cannot confirm the number's owner.":
-        "لا يوجد استعلام عن مشغّل الرقم أو سمعته؛ لا يستطيع WOLVE تأكيد مالك الرقم.",
+    "No carrier/HLR or reputation lookup is configured; 3B cannot confirm the number's owner.":
+        "لا يوجد استعلام عن مشغّل الرقم أو سمعته؛ لا يستطيع 3B تأكيد مالك الرقم.",
     "Text heuristics detect common scam techniques; novel or well-written scams may score low.":
         "فحص النص يكشف أساليب الاحتيال الشائعة؛ قد تحصل الأساليب الجديدة أو المكتوبة بإتقان على درجة منخفضة.",
     "Sender identity of SMS/WhatsApp/chat messages cannot be verified from text alone.":
@@ -85,16 +85,16 @@ EXACT: dict[str, str] = {
         "الفيديو: فُحصت إطارات مختارة فقط (إطار كل 3 ثوانٍ، 4 كحد أقصى)؛ ولم يُحوَّل الصوت إلى نص.",
     "Speech-to-text is not installed in this deployment; provide a transcript to analyse spoken content.":
         "تحويل الكلام إلى نص غير مثبّت؛ أرفق نص المحادثة لتحليل ما قيل.",
-    "Synthetic-voice / deepfake detection is not implemented. WOLVE never labels media as fake based on impressions.":
-        "كشف الصوت المُصطنع / التزييف العميق غير متوفر. لا يصف WOLVE أي وسائط بأنها مزيّفة بناءً على الانطباع.",
+    "Synthetic-voice / deepfake detection is not implemented. 3B never labels media as fake based on impressions.":
+        "كشف الصوت المُصطنع / التزييف العميق غير متوفر. لا يصف 3B أي وسائط بأنها مزيّفة بناءً على الانطباع.",
     "ffprobe not installed: media metadata unavailable.": "أداة ffprobe غير مثبّتة: البيانات الوصفية للوسائط غير متاحة.",
-    "Email was analysed from submitted content; WOLVE is not connected to a live mailbox, so actions apply to the WOLVE record only.":
-        "حُلّل البريد من المحتوى المُرسل؛ WOLVE غير متصل بصندوق بريد حقيقي، لذا تُطبَّق الإجراءات على سجل WOLVE فقط.",
+    "Email was analysed from submitted content; 3B is not connected to a live mailbox, so actions apply to the 3B record only.":
+        "حُلّل البريد من المحتوى المُرسل؛ 3B غير متصل بصندوق بريد حقيقي، لذا تُطبَّق الإجراءات على سجل 3B فقط.",
     "No Authentication-Results header: SPF/DKIM/DMARC outcome unknown. Paste full headers or upload the .eml for this check.":
         "لا توجد ترويسة Authentication-Results: نتيجة SPF/DKIM/DMARC غير معروفة. الصق الترويسات كاملة أو ارفع ملف ‎.eml لإجراء هذا الفحص.",
     "No From header found — sender checks were skipped (pasted body only?).": "لم تُوجد ترويسة المرسل — تم تخطي فحص المرسل (هل لُصق النص فقط؟).",
     "No Received headers: the delivery path could not be traced.": "لا توجد ترويسات Received: تعذّر تتبّع مسار التسليم.",
-    "not configured (no API key). Results come from WOLVE's built-in checks.": "غير مُفعَّل (لا يوجد مفتاح API). النتائج من فحوصات WOLVE المدمجة.",
+    "not configured (no API key). Results come from 3B's built-in checks.": "غير مُفعَّل (لا يوجد مفتاح API). النتائج من فحوصات 3B المدمجة.",
     "AI analysis disabled in Settings.": "التحليل بالذكاء الاصطناعي متوقف من الإعدادات.",
     "AI not used for single-URL structural checks.": "لا يُستخدم الذكاء الاصطناعي لفحص بنية رابط منفرد.",
     "The AI model declined to assess this content.": "رفض نموذج الذكاء الاصطناعي تقييم هذا المحتوى.",
@@ -161,8 +161,8 @@ EXACT: dict[str, str] = {
         "الخدمات الموثوقة تستخدم أسماء نطاقات غالباً؛ الروابط بعناوين IP مباشرة شائعة في التصيّد ونشر البرمجيات الخبيثة.",
     "Link targets a private/internal IP": "الرابط يستهدف عنوان IP داخلياً",
     "The URL points at a private network address.": "الرابط يشير إلى عنوان في شبكة خاصة.",
-    "Domain is on the WOLVE blocklist": "النطاق موجود في قائمة حظر WOLVE",
-    "An analyst previously blocked this domain in the local WOLVE environment.": "قام محلل سابقاً بحظر هذا النطاق في بيئة WOLVE.",
+    "Domain is on the 3B blocklist": "النطاق موجود في قائمة حظر 3B",
+    "An analyst previously blocked this domain in the local 3B environment.": "قام محلل سابقاً بحظر هذا النطاق في بيئة 3B.",
     "Unencrypted HTTP link": "رابط HTTP غير مشفّر",
     "The link does not use HTTPS. Credentials sent here could be intercepted.": "الرابط لا يستخدم HTTPS. يمكن اعتراض أي بيانات دخول تُرسل عبره.",
     "Credentials/@ trick in URL": "خدعة الرمز @ في الرابط",
@@ -184,7 +184,7 @@ EXACT: dict[str, str] = {
     "The URL points directly at an executable/script file type.": "الرابط يشير مباشرة إلى ملف تنفيذي أو سكربت.",
     "Embedded redirect": "إعادة توجيه مضمّنة",
     "The URL embeds another URL, a pattern used for open-redirect abuse.": "الرابط يتضمن رابطاً آخر، وهو نمط يُستغل لإعادة التوجيه.",
-    "URL is on the WOLVE blocklist": "الرابط موجود في قائمة حظر WOLVE",
+    "URL is on the 3B blocklist": "الرابط موجود في قائمة حظر 3B",
     "An analyst blocked this exact URL.": "قام محلل بحظر هذا الرابط تحديداً.",
     "Domain does not exist (NXDOMAIN)": "النطاق غير موجود (NXDOMAIN)",
     "DNS reports the domain is not registered/resolvable. It may be taken down, not yet live, or fabricated.":
@@ -264,14 +264,14 @@ EXACT: dict[str, str] = {
     "Unknown binary": "ملف ثنائي غير معروف",
     # --- network / IP / phone
     "Documentation/test IP range": "نطاق IP مخصّص للتوثيق/الاختبار",
-    "This address is reserved for documentation (RFC 5737/3849) and is not routable on the internet. Used in WOLVE demo scenarios.":
-        "هذا العنوان مخصّص للتوثيق (RFC 5737/3849) ولا يعمل على الإنترنت. يُستخدم في سيناريوهات عرض WOLVE.",
+    "This address is reserved for documentation (RFC 5737/3849) and is not routable on the internet. Used in 3B demo scenarios.":
+        "هذا العنوان مخصّص للتوثيق (RFC 5737/3849) ولا يعمل على الإنترنت. يُستخدم في سيناريوهات عرض 3B.",
     "Private / internal address": "عنوان خاص / داخلي",
     "This is not a public internet address; it belongs to a local network. External geolocation does not apply.":
         "ليس عنواناً عاماً على الإنترنت؛ بل ينتمي لشبكة محلية. لا ينطبق عليه تحديد الموقع الخارجي.",
     "Reserved / special-purpose address": "عنوان محجوز / لاستخدام خاص",
     "Address is in a special-purpose range.": "العنوان ضمن نطاق مخصّص لاستخدام خاص.",
-    "IP is on the WOLVE blocklist": "عنوان IP موجود في قائمة حظر WOLVE",
+    "IP is on the 3B blocklist": "عنوان IP موجود في قائمة حظر 3B",
     "An analyst blocked this IP in the local environment.": "قام محلل بحظر هذا العنوان.",
     "Provider flags IP as proxy/VPN/Tor": "المزوّد يصنّف العنوان كبروكسي/VPN/Tor",
     "The geolocation provider marks this IP as an anonymising proxy.": "يصنّف مزوّد الموقع هذا العنوان كخدمة لإخفاء الهوية.",
@@ -328,15 +328,15 @@ EXACT: dict[str, str] = {
     # --- incidents, actions & messages
     "Recommend isolation for": "التوصية بعزل",
     "Incident marked false positive after email was reviewed as safe.": "تم تصنيف الحادثة كإنذار كاذب بعد مراجعة البريد واعتباره آمناً.",
-    "Email moved to WOLVE quarantine (local record). Not removed from any external mailbox — no mail integration is connected.":
-        "نُقل البريد إلى حجر WOLVE (سجل محلي). لم يُحذف من أي صندوق بريد خارجي — لا يوجد ربط بالبريد.",
-    "Email released from WOLVE quarantine.": "أُخرج البريد من حجر WOLVE.",
+    "Email moved to 3B quarantine (local record). Not removed from any external mailbox — no mail integration is connected.":
+        "نُقل البريد إلى حجر 3B (سجل محلي). لم يُحذف من أي صندوق بريد خارجي — لا يوجد ربط بالبريد.",
+    "Email released from 3B quarantine.": "أُخرج البريد من حجر 3B.",
     "Email marked safe after analyst review.": "تم تعليم البريد كآمن بعد مراجعة المحلل.",
     "Email marked as suspicious.": "تم تعليم البريد كمشبوه.",
-    "Reported to IT security: an incident was opened/updated in WOLVE.": "تم الإبلاغ لفريق أمن المعلومات: فُتحت/حُدّثت حادثة في WOLVE.",
-    "Escalated to SOC lead / CISO queue (WOLVE notification centre). No external email/SMS/paging integration is configured.":
-        "صُعّدت إلى قائد مركز العمليات الأمنية / مسؤول أمن المعلومات (مركز إشعارات WOLVE). لا يوجد ربط بإرسال بريد أو رسائل خارجية.",
-    "Local WOLVE record deleted. No external mailbox was modified.": "حُذف السجل من WOLVE. لم يُعدَّل أي صندوق بريد خارجي.",
+    "Reported to IT security: an incident was opened/updated in 3B.": "تم الإبلاغ لفريق أمن المعلومات: فُتحت/حُدّثت حادثة في 3B.",
+    "Escalated to SOC lead / CISO queue (3B notification centre). No external email/SMS/paging integration is configured.":
+        "صُعّدت إلى قائد مركز العمليات الأمنية / مسؤول أمن المعلومات (مركز إشعارات 3B). لا يوجد ربط بإرسال بريد أو رسائل خارجية.",
+    "Local 3B record deleted. No external mailbox was modified.": "حُذف السجل من 3B. لم يُعدَّل أي صندوق بريد خارجي.",
     "Demo environment reset.": "تمت إعادة ضبط بيئة العرض.",
     "These endpoint events are SIMULATED for the demo.": "أحداث الأجهزة هذه محاكاة لأغراض العرض.",
     "Marking a critical-risk email as safe requires a review note.": "تعليم بريد عالي الخطورة كآمن يتطلب ملاحظة مراجعة.",
@@ -353,7 +353,7 @@ EXACT: dict[str, str] = {
     "Invalid IP address": "عنوان IP غير صحيح",
     "Invalid domain": "نطاق غير صحيح",
     "Hash must be a SHA-256 hex digest": "يجب أن تكون البصمة بصيغة SHA-256",
-    "Missing X-WOLVE-User header (select a user in Settings).": "لم يتم تحديد المستخدم (اختر مستخدماً من الإعدادات).",
+    "Missing X-3B-User header (select a user in Settings).": "لم يتم تحديد المستخدم (اختر مستخدماً من الإعدادات).",
     "Rate limit exceeded — please wait a minute.": "تم تجاوز عدد الطلبات المسموح — انتظر دقيقة.",
     "Provide an .eml file or paste the email source/body.": "أرفق ملف ‎.eml أو الصق مصدر البريد/نصه.",
     "Upload a .eml file (or paste the raw email).": "ارفع ملف ‎.eml (أو الصق البريد الخام).",
@@ -367,13 +367,13 @@ EXACT: dict[str, str] = {
     "Not a valid phone number (expected 6–15 digits, optionally with + country code)": "رقم هاتف غير صحيح (من 6 إلى 15 رقماً، مع رمز الدولة اختيارياً)",
     "Transcript too long (max 100k characters).": "نص المحادثة طويل جداً (100 ألف حرف كحد أقصى).",
     "Threshold must be between 30 and 95": "يجب أن يكون الحد بين 30 و95",
-    "Device user consent is required before WOLVE monitoring can be enabled.": "موافقة مستخدم الجهاز مطلوبة قبل تفعيل مراقبة WOLVE.",
-    "This device has no WOLVE agent installed, so it cannot receive commands.": "لا يوجد وكيل WOLVE مثبّت على هذا الجهاز، لذلك لا يمكنه استقبال أوامر.",
+    "Device user consent is required before 3B monitoring can be enabled.": "موافقة مستخدم الجهاز مطلوبة قبل تفعيل مراقبة 3B.",
+    "This device has no 3B agent installed, so it cannot receive commands.": "لا يوجد وكيل 3B مثبّت على هذا الجهاز، لذلك لا يمكنه استقبال أوامر.",
     "Invalid device token": "رمز الجهاز غير صحيح",
     "Missing X-Device-Token": "رمز الجهاز مفقود",
     "No active incidents": "لا توجد حوادث نشطة",
     "Relationship directly present in submitted evidence or endpoint telemetry": "علاقة موجودة مباشرة في الأدلة أو بيانات الأجهزة",
-    "Relationship inferred by WOLVE (e.g. same person, no shared artefact)": "علاقة استنتجها WOLVE (مثل الشخص نفسه، دون دليل مشترك)",
+    "Relationship inferred by 3B (e.g. same person, no shared artefact)": "علاقة استنتجها 3B (مثل الشخص نفسه، دون دليل مشترك)",
     "observed link": "رابط مُلاحَظ",
     "inferred link": "رابط مُستنتَج",
     "owned by": "يملكه",
@@ -391,7 +391,7 @@ EXACT: dict[str, str] = {
     "file name": "اسم الملف",
     "process target": "ملف العملية",
     "Correlated": "تم الربط",
-    "WOLVE correlation engine": "محرّك الربط في WOLVE",
+    "3B correlation engine": "محرّك الربط في 3B",
     "Matched": "تطابق",
     "Email Security": "أمن البريد الإلكتروني",
     "Scam Analyzer": "محلل الاحتيال",
@@ -418,7 +418,7 @@ EXACT: dict[str, str] = {
     "Hash lookups only; files are never uploaded": "بحث بالبصمات فقط؛ لا تُرفع الملفات أبداً",
     "System resolver via dnspython (when external lookups are on)": "استعلام DNS من النظام (عند تفعيل البحث الخارجي)",
     "ip-api.com free tier (when external lookups are on)": "خدمة ip-api.com المجانية (عند تفعيل البحث الخارجي)",
-    "All samples are harmless test data generated by WOLVE.": "جميع الأمثلة بيانات اختبار غير ضارة أنشأها WOLVE.",
+    "All samples are harmless test data generated by 3B.": "جميع الأمثلة بيانات اختبار غير ضارة أنشأها 3B.",
     "Simulated inventory device for the demo": "جهاز محاكاة في الجرد لأغراض العرض",
     # --- call guard
     "Call Guard": "حارس المكالمات",
@@ -427,30 +427,30 @@ EXACT: dict[str, str] = {
     "Organisation could not be verified": "تعذّر التحقق من الجهة",
     "Known UAE organisation": "جهة إماراتية معروفة",
     "Not found among known UAE organisations": "غير موجودة ضمن الجهات الإماراتية المعروفة",
-    "Claim checks compare what was said with the real UAE time/date and a directory of known UAE organisations. WOLVE cannot tell the two voices apart: ask your question and let the caller answer.":
-        "يقارن التحقق ما قيل بالوقت والتاريخ الفعليين في الإمارات وبدليل الجهات الإماراتية المعروفة. لا يميّز WOLVE بين الصوتين: اطرح سؤالك ودع المتصل يجيب.",
+    "Claim checks compare what was said with the real UAE time/date and a directory of known UAE organisations. 3B cannot tell the two voices apart: ask your question and let the caller answer.":
+        "يقارن التحقق ما قيل بالوقت والتاريخ الفعليين في الإمارات وبدليل الجهات الإماراتية المعروفة. لا يميّز 3B بين الصوتين: اطرح سؤالك ودع المتصل يجيب.",
     "Wrong user name or password.": "اسم المستخدم أو كلمة المرور غير صحيحة.",
     "Too many sign-in attempts — wait a minute.": "محاولات دخول كثيرة — انتظر دقيقة.",
     "Please sign in.": "يرجى تسجيل الدخول.",
     "Current password is wrong.": "كلمة المرور الحالية غير صحيحة.",
     "Pairing code is wrong, already used or expired.": "رمز الربط غير صحيح أو مستخدم أو منتهي الصلاحية.",
     "Consent is required to protect this phone.": "الموافقة مطلوبة لحماية هذا الجوال.",
-    "This phone was unlinked and its data deleted from WOLVE.": "تم فك ربط هذا الجوال وحذف بياناته من WOLVE.",
+    "This phone was unlinked and its data deleted from 3B.": "تم فك ربط هذا الجوال وحذف بياناته من 3B.",
     "Repeated failed logins for local account": "محاولات دخول فاشلة متكررة لحساب محلي",
     "powershell.exe launched by WINWORD.EXE": "WINWORD.EXE شغّل powershell.exe",
     "Teams.exe updated": "تم تحديث Teams.exe",
     "Text message sent from an email address": "رسالة نصية مُرسلة من عنوان بريد إلكتروني",
     "Banks, government services and delivery companies send SMS from short names or numbers. Messages from email addresses (iMessage) are a common way scammers bypass SMS filters.":
         "البنوك والجهات الحكومية وشركات التوصيل ترسل الرسائل من أسماء مختصرة أو أرقام. الرسائل من عناوين بريد (iMessage) طريقة شائعة لتجاوز فلاتر الرسائل.",
-    "Sender number is on the WOLVE blocklist": "رقم المرسل موجود في قائمة حظر WOLVE",
+    "Sender number is on the 3B blocklist": "رقم المرسل موجود في قائمة حظر 3B",
     "This number was reported as a scam number.": "تم الإبلاغ عن هذا الرقم كرقم احتيال.",
-    "Number is on the WOLVE scam blocklist": "الرقم موجود في قائمة احتيال WOLVE",
+    "Number is on the 3B scam blocklist": "الرقم موجود في قائمة احتيال 3B",
     "Reported as a scam number by an analyst.": "أبلغ محلل أنه رقم احتيال.",
     "Number appeared in scam reports": "ظهر الرقم في بلاغات احتيال",
-    "⚠️ WOLVE: likely scam": "⚠️ WOLVE: احتيال محتمل",
-    "⚠️ WOLVE: be careful": "⚠️ WOLVE: كن حذراً",
-    "⚠️ WOLVE: reported scam": "⚠️ WOLVE: رقم احتيال مُبلّغ عنه",
-    "⚠️ WOLVE: satellite number": "⚠️ WOLVE: رقم فضائي",
+    "⚠️ 3B: likely scam": "⚠️ 3B: احتيال محتمل",
+    "⚠️ 3B: be careful": "⚠️ 3B: كن حذراً",
+    "⚠️ 3B: reported scam": "⚠️ 3B: رقم احتيال مُبلّغ عنه",
+    "⚠️ 3B: satellite number": "⚠️ 3B: رقم فضائي",
     "Do not share codes, passwords or card numbers. If they claim to be a bank or the police, hang up and call the official number.":
         "لا تشارك أي رموز أو كلمات مرور أو أرقام بطاقات. إذا ادّعى أنه من البنك أو الشرطة، أنهِ المكالمة واتصل بالرقم الرسمي.",
     "Based on the number only. Caller ID can be spoofed.": "مبني على الرقم فقط. يمكن تزييف هوية المتصل.",
@@ -464,10 +464,10 @@ EXACT: dict[str, str] = {
     "The message asks you to pay and sends you to a website pretending to be an official service — the pattern of fake toll, fine and parcel-fee scams.":
         "الرسالة تطلب الدفع وتوجّهك إلى موقع ينتحل صفة جهة رسمية — وهو نمط احتيال رسوم الطرق والمخالفات والطرود المزيّفة.",
     "Call (unknown number)": "مكالمة (رقم غير معروف)",
-    "Caller number is on the WOLVE blocklist": "رقم المتصل موجود في قائمة حظر WOLVE",
+    "Caller number is on the 3B blocklist": "رقم المتصل موجود في قائمة حظر 3B",
     "An analyst previously blocked this number as a scam number.": "قام محلل سابقاً بحظر هذا الرقم كرقم احتيال.",
-    "WOLVE cannot intercept phone calls. It only analyses audio captured by this computer's microphone with consent, or recordings you upload.":
-        "لا يستطيع WOLVE اعتراض المكالمات الهاتفية. يحلّل فقط الصوت الذي يلتقطه ميكروفون هذا الجهاز بموافقتك، أو التسجيلات التي ترفعها.",
+    "3B cannot intercept phone calls. It only analyses audio captured by this computer's microphone with consent, or recordings you upload.":
+        "لا يستطيع 3B اعتراض المكالمات الهاتفية. يحلّل فقط الصوت الذي يلتقطه ميكروفون هذا الجهاز بموافقتك، أو التسجيلات التي ترفعها.",
     "A number's country code shows where the number range is registered — not where the caller physically is. Caller ID can be spoofed.":
         "رمز الدولة في الرقم يبيّن أين سُجّل نطاق الرقم — لا مكان وجود المتصل فعلياً. ويمكن تزييف هوية المتصل.",
     "No caller number provided (hidden/unknown caller).": "لم يُدخل رقم المتصل (متصل مخفي أو مجهول).",
@@ -487,8 +487,8 @@ EXACT: dict[str, str] = {
     "Inbound connection from a public address": "اتصال وارد من عنوان عام",
     "Origin lookup failed": "فشل تحديد المصدر",
     "Firewall changes must be explicitly confirmed.": "تغييرات جدار الحماية تتطلب تأكيداً صريحاً.",
-    "Refusing to block a private, local or special-purpose address: it could cut the device off from its network or from WOLVE.":
-        "رُفض حظر عنوان خاص أو محلي أو مخصّص: قد يفصل الجهاز عن شبكته أو عن WOLVE.",
+    "Refusing to block a private, local or special-purpose address: it could cut the device off from its network or from 3B.":
+        "رُفض حظر عنوان خاص أو محلي أو مخصّص: قد يفصل الجهاز عن شبكته أو عن 3B.",
     "The same command is already waiting for the agent.": "الأمر نفسه بانتظار التنفيذ لدى الوكيل.",
     "Turning on external lookups requires explicit consent: public IP addresses and domains will be sent to ip-api.com and your DNS resolver.":
         "تفعيل البحث الخارجي يتطلب موافقة صريحة: سيتم إرسال عناوين IP العامة والنطاقات إلى ip-api.com وخادم DNS لديك.",
@@ -512,8 +512,8 @@ TEMPLATES: dict[str, str] = {
     "AbuseIPDB score {0}/100.": "درجة AbuseIPDB هي {0}/100.",
     "Assign an analyst to critical incident {0}.": "عيّن محللاً للحادثة الحرجة {0}.",
     "Assigned to {0}": "أُسندت إلى {0}",
-    "Blocked {0} {1} in the WOLVE demo environment. Future analyses and endpoint events matching it are flagged. Not pushed to any firewall, proxy or mail gateway.":
-        "تم حظر {1} في بيئة WOLVE. أي تحليلات أو أحداث أجهزة مستقبلية تطابقه ستُعلَّم. لم يُرسل إلى أي جدار حماية أو بروكسي أو بوابة بريد.",
+    "Blocked {0} {1} in the 3B demo environment. Future analyses and endpoint events matching it are flagged. Not pushed to any firewall, proxy or mail gateway.":
+        "تم حظر {1} في بيئة 3B. أي تحليلات أو أحداث أجهزة مستقبلية تطابقه ستُعلَّم. لم يُرسل إلى أي جدار حماية أو بروكسي أو بوابة بريد.",
     "Brand name '{0}' used on an unrelated domain": "اسم العلامة «{0}» مستخدم على نطاق لا علاقة له بها",
     "Calling code +{0} is assigned to {1}. Scam calls claiming to be local authorities or banks often come from abroad.":
         "رمز الاتصال ‎+{0} مخصّص لـ {1}. مكالمات الاحتيال التي تدّعي أنها من جهات محلية أو بنوك تأتي غالباً من الخارج.",
@@ -528,7 +528,7 @@ TEMPLATES: dict[str, str] = {
     "Domain contains non-Latin characters ({0}) that can visually imitate Latin letters.": "النطاق يحتوي أحرفاً غير لاتينية ({0}) يمكنها تقليد الأحرف اللاتينية بصرياً.",
     "Domain decodes to '{0}'. Punycode is used in homograph attacks that imitate real brands.": "يُفك النطاق إلى «{0}». يُستخدم Punycode في هجمات تقليد العلامات التجارية.",
     "Encoder/software metadata mentions '{0}'. This suggests (but does not prove) synthetic or edited media.": "البيانات الوصفية تذكر «{0}». هذا يوحي (دون إثبات) بأن الوسائط مُصطنعة أو معدّلة.",
-    "Endpoint contacted {0}, which is on the WOLVE blocklist.": "اتصل الجهاز بـ {0}، وهو في قائمة حظر WOLVE.",
+    "Endpoint contacted {0}, which is on the 3B blocklist.": "اتصل الجهاز بـ {0}، وهو في قائمة حظر 3B.",
     "Endpoint threat on {0}: {1}": "تهديد على الجهاز {0}: {1}",
     "Endpoint {0} matches {1} '{2}' from {3} analysis {4}": "بيانات الجهاز ({0}) تطابق ({1}) «{2}» من تحليل {3} رقم {4}",
     "Endpoint {0} shows compromise indicators — recommend isolation.": "الجهاز {0} تظهر عليه مؤشرات اختراق — يُوصى بالعزل.",
@@ -543,8 +543,8 @@ TEMPLATES: dict[str, str] = {
     "Incident created from endpoint event #{0} on {1}.": "أُنشئت الحادثة من حدث الجهاز رقم {0} على {1}.",
     "Incident created manually by {0}.": "أنشأ {0} الحادثة يدوياً.",
     "Internal error: {0}. See server log.": "خطأ داخلي: {0}. راجع سجل الخادم.",
-    "Isolation recommended for {0}. WOLVE does not control the network in this MVP — IT must isolate the device via EDR/NAC or by disconnecting it.":
-        "يُوصى بعزل {0}. لا يتحكم WOLVE بالشبكة في هذا الإصدار — على فريق التقنية عزل الجهاز عبر EDR/NAC أو فصله عن الشبكة.",
+    "Isolation recommended for {0}. 3B does not control the network in this MVP — IT must isolate the device via EDR/NAC or by disconnecting it.":
+        "يُوصى بعزل {0}. لا يتحكم 3B بالشبكة في هذا الإصدار — على فريق التقنية عزل الجهاز عبر EDR/NAC أو فصله عن الشبكة.",
     "Linked analysis {0}: {1}": "التحليل المرتبط {0}: {1}",
     "Look-alike of '{0}'": "نطاق شبيه بـ «{0}»",
     "Message-ID was generated by '{0}', not the sender's domain.": "معرّف الرسالة أُنشئ بواسطة «{0}»، وليس نطاق المرسل.",
@@ -554,7 +554,7 @@ TEMPLATES: dict[str, str] = {
     "Remote port {0} is commonly used by remote-access tools and malware.": "المنفذ {0} تستخدمه أدوات الوصول عن بُعد والبرمجيات الخبيثة غالباً.",
     "Replies go to {0}, not the sender {1}. Attackers use this to receive replies on a mailbox they control.":
         "الردود تذهب إلى {0} وليس إلى المرسل {1}. يستخدم المهاجمون ذلك لاستلام الردود على بريد يتحكمون به.",
-    "SHA-256 is on the WOLVE blocklist: {0}": "البصمة SHA-256 موجودة في قائمة حظر WOLVE: {0}",
+    "SHA-256 is on the 3B blocklist: {0}": "البصمة SHA-256 موجودة في قائمة حظر 3B: {0}",
     "Sender declared '{0}', content is '{1}'.": "المرسل أعلن «{0}»، والمحتوى الفعلي «{1}».",
     "Sender name references {0} while sending from {1}.": "اسم المرسل يذكر {0} بينما يرسل من {1}.",
     "Severity escalated {0} → {1}: attack progressed from email to endpoint.": "رُفع مستوى الخطورة {0} ← {1}: انتقل الهجوم من البريد إلى الجهاز.",
@@ -589,7 +589,7 @@ TEMPLATES: dict[str, str] = {
     "{0} failed login attempts.": "{0} محاولة دخول فاشلة.",
     "{0} high-severity incident(s) under investigation": "{0} حادثة عالية الخطورة قيد التحقيق",
     "{0} is one or two characters away from {1} (typosquatting).": "{0} يختلف بحرف أو حرفين فقط عن {1} (انتحال بأخطاء إملائية).",
-    "{0} is talking to {1}, which is on the WOLVE blocklist.": "{0} يتصل بـ {1}، وهو في قائمة حظر WOLVE.",
+    "{0} is talking to {1}, which is on the 3B blocklist.": "{0} يتصل بـ {1}، وهو في قائمة حظر 3B.",
     "{0} launched {1} — a typical malicious-attachment execution chain.": "{0} شغّل {1} — سلسلة تشغيل نموذجية لمرفق خبيث.",
     "{0} lower-severity incident(s) open": "{0} حادثة منخفضة الخطورة مفتوحة",
     "{0} malicious domain/IP indicator(s) are not on the blocklist.": "{0} مؤشر خبيث (نطاق/IP) غير موجود في قائمة الحظر.",
@@ -604,7 +604,7 @@ TEMPLATES: dict[str, str] = {
     "{0} suspicious email(s) not yet quarantined or reviewed.": "{0} رسالة مشبوهة لم تُحجز أو تُراجع بعد.",
     "{0} trailing bytes": "{0} بايت إضافي",
     "{0} was created on disk.": "أُنشئ {0} على القرص.",
-    "{0} was flagged malicious in a WOLVE analysis or incident.": "عُلّم {0} كخبيث في تحليل أو حادثة على WOLVE.",
+    "{0} was flagged malicious in a 3B analysis or incident.": "عُلّم {0} كخبيث في تحليل أو حادثة على 3B.",
     "Status {0} → {1}": "الحالة {0} ← {1}",
     "Severity {0} → {1}": "الخطورة {0} ← {1}",
     "Process started: {0} (parent {1})": "بدأت عملية: {0} (العملية الأم {1})",
@@ -612,7 +612,7 @@ TEMPLATES: dict[str, str] = {
     "Windows Firewall is off ({0})": "جدار حماية Windows متوقف ({0})",
     "{0} → {1}": "{0} ← {1}",
     "{0} vs {1}": "{0} مقابل {1}",
-    "Linked to {0} high-risk message(s) or call(s) analysed by WOLVE.": "مرتبط بـ {0} رسالة أو مكالمة عالية الخطورة حلّلها WOLVE.",
+    "Linked to {0} high-risk message(s) or call(s) analysed by 3B.": "مرتبط بـ {0} رسالة أو مكالمة عالية الخطورة حلّلها 3B.",
     "SMS from {0}: {1}": "رسالة من {0}: {1}",
     "Call from {0}": "مكالمة من {0}",
     "The caller said “{0}”, but the time in the UAE is {1}, about {2} hour(s) different. Someone really calling from the UAE would know the local time — this suggests the caller is abroad.":
@@ -621,8 +621,8 @@ TEMPLATES: dict[str, str] = {
     "Claims to be {0} but calls from a foreign number": "يدّعي أنه من {0} لكنه يتصل من رقم أجنبي",
     "{0} is a UAE organisation, but the call comes from a number registered to {1}. UAE government bodies, banks and telecoms call from UAE numbers.":
         "{0} جهة إماراتية، لكن المكالمة من رقم مسجّل لدى {1}. الجهات الحكومية والبنوك وشركات الاتصالات في الإمارات تتصل من أرقام إماراتية.",
-    "The caller says they are from “{0}”, which is not in WOLVE's directory of known UAE organisations. It may be a small company, a mishearing, or an invented name — ask for the official number and call back yourself.":
-        "يقول المتصل إنه من «{0}»، وهي غير موجودة في دليل WOLVE للجهات الإماراتية المعروفة. قد تكون شركة صغيرة أو خطأ في السماع أو اسماً مختلقاً — اطلب الرقم الرسمي واتصل بنفسك.",
+    "The caller says they are from “{0}”, which is not in 3B's directory of known UAE organisations. It may be a small company, a mishearing, or an invented name — ask for the official number and call back yourself.":
+        "يقول المتصل إنه من «{0}»، وهي غير موجودة في دليل 3B للجهات الإماراتية المعروفة. قد تكون شركة صغيرة أو خطأ في السماع أو اسماً مختلقاً — اطلب الرقم الرسمي واتصل بنفسك.",
     "said {0} · actual {1} GST": "قال {0} · الفعلي {1} بتوقيت الإمارات",
     "said {0} · actual {1}": "قال {0} · الفعلي {1}",
     "{0} (UAE, UTC+4)": "{0} (الإمارات، UTC+4)",
@@ -641,7 +641,7 @@ TEMPLATES: dict[str, str] = {
         "يوجد اتصال مفتوح من عنوان عام ({0}) إلى {1} على المنفذ {2}. هذا ليس دليلاً على اختراق، لكن لا ينبغي كشف هذه الخدمات على الإنترنت.",
     "{0} is connected to local port {1} ({2}). Normal for servers, games and P2P apps; review if unexpected.":
         "{0} متصل بالمنفذ المحلي {1} ({2}). هذا طبيعي للخوادم والألعاب وتطبيقات المشاركة؛ راجعه إن كان غير متوقع.",
-    "Asked the agent on {0} to list WOLVE firewall rules (read-only).": "طُلب من الوكيل على {0} عرض قواعد جدار الحماية الخاصة بـ WOLVE (قراءة فقط).",
+    "Asked the agent on {0} to list 3B firewall rules (read-only).": "طُلب من الوكيل على {0} عرض قواعد جدار الحماية الخاصة بـ 3B (قراءة فقط).",
     "Audio exceeds the {0} MB limit.": "الملف الصوتي يتجاوز حد {0} ميغابايت.",
     "Could not decode the audio: {0}": "تعذّر فك ترميز الصوت: {0}",
     "{0} ≈ {1}": "{0} ≈ {1}",

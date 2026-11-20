@@ -37,7 +37,7 @@ def analyze_ip(value: str) -> tuple[list[Finding], dict, list[str]]:
     doc_ranges = [ipaddress.ip_network(n) for n in ("192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24", "2001:db8::/32")]
     if any(ip in n for n in doc_ranges if n.version == ip.version):
         info["documentation_range"] = True
-        findings.append(Finding("Documentation/test IP range", "This address is reserved for documentation (RFC 5737/3849) and is not routable on the internet. Used in WOLVE demo scenarios.",
+        findings.append(Finding("Documentation/test IP range", "This address is reserved for documentation (RFC 5737/3849) and is not routable on the internet. Used in 3B demo scenarios.",
                                 "network", "info", 0, "verified"))
     elif ip.is_private or ip.is_loopback or ip.is_link_local:
         findings.append(Finding("Private / internal address", "This is not a public internet address; it belongs to a local network. External geolocation does not apply.",
@@ -150,6 +150,6 @@ def analyze_phone(raw: str) -> tuple[list[Finding], dict, list[str]]:
     limitations = [
         "A country calling code shows where the number range is registered — NOT where the caller physically is.",
         "Caller ID can be spoofed: a call showing a local or official number may originate anywhere.",
-        "No carrier/HLR or reputation lookup is configured; WOLVE cannot confirm the number's owner.",
+        "No carrier/HLR or reputation lookup is configured; 3B cannot confirm the number's owner.",
     ]
     return findings, info, limitations

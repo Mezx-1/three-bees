@@ -3,11 +3,11 @@ import os
 import tempfile
 
 _tmp = tempfile.mkdtemp()
-os.environ["WOLVE_DATABASE_URL"] = f"sqlite:///{_tmp}/test.db".replace("\\", "/")
-os.environ["WOLVE_UPLOAD_DIR"] = _tmp
-os.environ["WOLVE_EXTERNAL_LOOKUPS"] = "false"
+os.environ["THREEB_DATABASE_URL"] = f"sqlite:///{_tmp}/test.db".replace("\\", "/")
+os.environ["THREEB_UPLOAD_DIR"] = _tmp
+os.environ["THREEB_EXTERNAL_LOOKUPS"] = "false"
 os.environ["ANTHROPIC_API_KEY"] = ""
-os.environ["WOLVE_RATE_LIMIT_PER_MINUTE"] = "1000"
+os.environ["THREEB_RATE_LIMIT_PER_MINUTE"] = "1000"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -15,9 +15,9 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.demo import scenario  # noqa: E402
 from app.main import app  # noqa: E402
 
-ANALYST = {"X-WOLVE-User": "omar.analyst"}
-ADMIN = {"X-WOLVE-User": "aisha.admin"}
-EMPLOYEE = {"X-WOLVE-User": "sara.ahmed"}
+ANALYST = {"X-3B-User": "omar.analyst"}
+ADMIN = {"X-3B-User": "aisha.admin"}
+EMPLOYEE = {"X-3B-User": "sara.ahmed"}
 
 
 @pytest.fixture(scope="module")
@@ -29,7 +29,7 @@ def c():
 
 def test_auth_required(c):
     assert c.get("/api/dashboard").status_code == 401
-    assert c.get("/api/dashboard", headers={"X-WOLVE-User": "nobody"}).status_code == 401
+    assert c.get("/api/dashboard", headers={"X-3B-User": "nobody"}).status_code == 401
 
 
 def test_full_demo_scenario(c):
@@ -85,7 +85,7 @@ def test_block_and_review(c):
     assert r.status_code == 200 and r.json()["value"] == "evil-example.top"
     assert c.post("/api/blocklist", json={"type": "domain", "value": "evil-example.top"}, headers=ANALYST).status_code == 409
     r = c.post("/api/analyze/url", json={"value": "http://login.evil-example.top/x"}, headers=EMPLOYEE).json()
-    assert any(f["title"] == "Domain is on the WOLVE blocklist" for f in r["report"]["findings"])
+    assert any(f["title"] == "Domain is on the 3B blocklist" for f in r["report"]["findings"])
 
 
 def test_messages_and_inputs(c):
@@ -141,7 +141,7 @@ def test_external_lookups_need_consent(c):
 def test_export_and_settings(c):
     a = c.get("/api/analyses?kind=email", headers=ANALYST).json()[0]
     r = c.get(f"/api/analyses/{a['id']}/export", headers=ANALYST)
-    assert r.status_code == 200 and "WOLVE" in r.text and 'dir="ltr"' in r.text
+    assert r.status_code == 200 and "3B" in r.text and 'dir="ltr"' in r.text
     assert c.put("/api/settings", json={"ai_enabled": False}, headers=ANALYST).status_code == 403
     assert c.put("/api/settings", json={"auto_incident_threshold": 70}, headers=ADMIN).json()["auto_incident_threshold"] == 70
     assert c.get("/api/system/status").json()["integrations"]["microsoft_365"]["connected"] is False
@@ -234,7 +234,7 @@ def test_call_guard(c):
     # blocked scam number
     c.post("/api/blocklist", json={"type": "phone", "value": "+971 50 999 8888", "reason": "reported scam"}, headers=ANALYST)
     b = c.post("/api/calls/analyze", data={"consent": "true", "caller_number": "0509998888", "transcript": "hello"}, headers=EMPLOYEE).json()
-    assert any(f["title"] == "Caller number is on the WOLVE blocklist" for f in b["report"]["findings"])
+    assert any(f["title"] == "Caller number is on the 3B blocklist" for f in b["report"]["findings"])
 
 
 def test_mobile_protection(c):

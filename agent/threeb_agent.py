@@ -1,4 +1,4 @@
-"""WOLVE endpoint agent.
+"""3B endpoint agent.
 
 What it monitors (only after the device user consents with --consent):
   * network connections: which program talks to which remote IP/port, direction (in/out), state
@@ -12,10 +12,10 @@ passwords or phone calls. Response actions (blocking an IP in Windows Firewall) 
 agent was started with --allow-response; otherwise they are refused and reported back.
 
 Usage:
-  python wolve_agent.py --server http://localhost:8000 --pair ABCD2345 --consent
-  python wolve_agent.py --monitor                       # run with the saved enrolment
-  python wolve_agent.py --monitor --allow-response      # also allow firewall block/unblock commands
-  python wolve_agent.py --simulate-demo                 # send the labelled demo attack events
+  python threeb_agent.py --server http://localhost:8000 --pair ABCD2345 --consent
+  python threeb_agent.py --monitor                       # run with the saved enrolment
+  python threeb_agent.py --monitor --allow-response      # also allow firewall block/unblock commands
+  python threeb_agent.py --simulate-demo                 # send the labelled demo attack events
 """
 from __future__ import annotations
 
@@ -35,11 +35,11 @@ import urllib.request
 from pathlib import Path
 
 VERSION = "0.2.0"
-STATE = Path(__file__).with_name(".wolve_agent.json")
+STATE = Path(__file__).with_name(".threeb_agent.json")
 IS_WINDOWS = os.name == "nt"
 WATCHED_CMDLINE = {"powershell.exe", "pwsh.exe", "cmd.exe", "wscript.exe", "cscript.exe", "mshta.exe", "rundll32.exe",
                    "regsvr32.exe", "certutil.exe", "bitsadmin.exe", "msiexec.exe", "schtasks.exe", "wmic.exe", "bash", "sh", "python.exe"}
-FW_RULE_PREFIX = "WOLVE-block-"
+FW_RULE_PREFIX = "3B-block-"
 
 try:
     import psutil  # type: ignore
@@ -48,7 +48,7 @@ except ImportError:  # pragma: no cover
 
 
 def log(msg: str) -> None:
-    print(f"[wolve-agent {time.strftime('%H:%M:%S')}] {msg}", flush=True)
+    print(f"[threeb-agent {time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 # ------------------------------------------------------------------ transport
@@ -62,7 +62,7 @@ class Server:
         if self.token:
             headers["X-Device-Token"] = self.token
         if self.user:
-            headers["X-WOLVE-User"] = self.user
+            headers["X-3B-User"] = self.user
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(self.url + path, data=data, method=method, headers=headers)
         try:
@@ -73,7 +73,7 @@ class Server:
         except urllib.error.URLError as e:
             msg = f"cannot reach {self.url}: {e.reason}"
         if fatal:
-            sys.exit("[wolve-agent] " + msg)
+            sys.exit("[threeb-agent] " + msg)
         log(msg)
         return None
 
@@ -93,7 +93,7 @@ def local_ip() -> str | None:
 
 def system_info() -> dict:
     info = {"platform": platform.platform(), "machine": platform.machine(), "python": platform.python_version(),
-            "cpu_count": os.cpu_count(), "agent": f"wolve-agent/{VERSION}",
+            "cpu_count": os.cpu_count(), "agent": f"threeb-agent/{VERSION}",
             "collection": "connections, new processes, security posture (no content)"}
     if psutil:
         info["boot_time"] = int(psutil.boot_time())
@@ -245,8 +245,8 @@ def collect_posture() -> dict:
 
 # ------------------------------------------------------------------ response actions
 
-def list_wolve_rules() -> tuple[list[dict] | None, str]:
-    """Read-only: only rules whose name starts with the WOLVE prefix."""
+def list_threeb_rules() -> tuple[list[dict] | None, str]:
+    """Read-only: only rules whose name starts with the 3B prefix."""
     data, err = _ps_json(f"Get-NetFirewallRule -DisplayName '{FW_RULE_PREFIX}*' -ErrorAction SilentlyContinue | "
                          "Select-Object DisplayName,@{n='Direction';e={[string]$_.Direction}},@{n='Action';e={[string]$_.Action}},"
                          "@{n='Enabled';e={[string]$_.Enabled}} | ConvertTo-Json")
@@ -270,17 +270,17 @@ def validate_block_target(ip: str) -> str | None:
     if o.is_loopback or o.is_unspecified or o.is_multicast or o.is_link_local or o.is_reserved:
         return f"Refusing to block special-purpose address {ip}."
     if o.is_private:
-        return f"Refusing to block private/local address {ip}: it could cut this device off from its own network or the WOLVE server."
+        return f"Refusing to block private/local address {ip}: it could cut this device off from its own network or the 3B server."
     return None
 
 
 def execute(cmd: dict, allow: bool) -> tuple[str, str]:
-    """Run a response command from the server. Only touches firewall rules named WOLVE-block-<ip>."""
+    """Run a response command from the server. Only touches firewall rules named 3B-block-<ip>."""
     ctype, params = cmd.get("type"), cmd.get("params") or {}
     if ctype == "list_rules":  # read-only, allowed without --allow-response
         if not IS_WINDOWS:
             return "failed", "Firewall inspection is implemented for Windows only."
-        rules, err = list_wolve_rules()
+        rules, err = list_threeb_rules()
         if rules is None:
             return "failed", f"Could not read firewall rules: {err}"
         return "done", json.dumps(rules)
@@ -306,23 +306,23 @@ def execute(cmd: dict, allow: bool) -> tuple[str, str]:
             if rc != 0:
                 for done_dir in created:  # roll back so no half-applied block is left behind
                     _exec(["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}", f"dir={done_dir}"])
-                return "failed", f"Could not create the {d}bound rule (exit {rc}): {out.strip()[:300]}. No WOLVE rule left in place."
+                return "failed", f"Could not create the {d}bound rule (exit {rc}): {out.strip()[:300]}. No 3B rule left in place."
             created.append(d)
         if not created:
-            return "done", f"{ip} was already blocked by WOLVE rules (inbound and outbound); nothing changed."
+            return "done", f"{ip} was already blocked by 3B rules (inbound and outbound); nothing changed."
         return "done", f"Blocked {ip} in Windows Firewall ({' + '.join(x + 'bound' for x in created)}), rule name '{name}'."
     # unblock
     if not (_rule_exists(name, "in") or _rule_exists(name, "out")):
-        return "done", f"No WOLVE rule exists for {ip}; nothing to remove."
+        return "done", f"No 3B rule exists for {ip}; nothing to remove."
     rc, out = _exec(["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"])
-    return ("done", f"Removed WOLVE firewall rule '{name}'.") if rc == 0 else ("failed", f"Could not remove rule (exit {rc}): {out.strip()[:300]}")
+    return ("done", f"Removed 3B firewall rule '{name}'.") if rc == 0 else ("failed", f"Could not remove rule (exit {rc}): {out.strip()[:300]}")
 
 
 # ------------------------------------------------------------------ main loop
 
 def monitor(srv: Server, interval: int, allow_response: bool) -> None:
     if psutil is None:
-        sys.exit("[wolve-agent] psutil is required: pip install psutil")
+        sys.exit("[threeb-agent] psutil is required: pip install psutil")
     watcher = ProcessWatcher()
     last_posture = 0.0
     if allow_response and not is_admin():
@@ -360,11 +360,11 @@ def monitor(srv: Server, interval: int, allow_response: bool) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="WOLVE endpoint agent")
-    ap.add_argument("--server", default=None, help="WOLVE server URL (default: saved, else http://localhost:8000)")
-    ap.add_argument("--pair", metavar="CODE", help="One-time pairing code from WOLVE → Settings → Pair a device")
+    ap = argparse.ArgumentParser(description="3B endpoint agent")
+    ap.add_argument("--server", default=None, help="3B server URL (default: saved, else http://localhost:8000)")
+    ap.add_argument("--pair", metavar="CODE", help="One-time pairing code from 3B → Settings → Pair a device")
     ap.add_argument("--owner", help="Device owner email", default=None)
-    ap.add_argument("--consent", action="store_true", help="Confirm the device user consents to WOLVE monitoring")
+    ap.add_argument("--consent", action="store_true", help="Confirm the device user consents to 3B monitoring")
     ap.add_argument("--monitor", action="store_true", help="Continuously monitor connections, processes and posture")
     ap.add_argument("--interval", type=int, default=10)
     ap.add_argument("--allow-response", action="store_true", help="Allow analysts to block/unblock IPs in Windows Firewall")
@@ -375,7 +375,7 @@ def main() -> None:
     server = a.server or state.get("server") or "http://localhost:8000"
     if a.pair:
         if not a.consent:
-            sys.exit("[wolve-agent] Refusing to enrol: pass --consent to confirm the device user agreed to monitoring.")
+            sys.exit("[threeb-agent] Refusing to enrol: pass --consent to confirm the device user agreed to monitoring.")
         res = Server(server).call("/api/agent/register", {
             "pairing_code": a.pair,
             "hostname": socket.gethostname(), "os": f"{platform.system()} {platform.release()}",
@@ -386,7 +386,7 @@ def main() -> None:
         STATE.write_text(json.dumps(state))
         log(f"enrolled as {res['device_id']} (token saved to {STATE.name})")
     if not state.get("token"):
-        sys.exit("[wolve-agent] not enrolled — run with --pair <CODE> --consent first (code: WOLVE → Settings → Pair a device)")
+        sys.exit("[threeb-agent] not enrolled — run with --pair <CODE> --consent first (code: 3B → Settings → Pair a device)")
     srv = Server(server, token=state["token"])
 
     if a.simulate_demo:

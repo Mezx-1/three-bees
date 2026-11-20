@@ -6,8 +6,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 # Database, uploads and the generated sign-in passwords live on the mounted volume.
-ENV WOLVE_DATABASE_URL=sqlite:////data/wolve.db WOLVE_UPLOAD_DIR=/data/storage WOLVE_CREDENTIALS_FILE=/data/demo-credentials.txt
-RUN useradd -m wolve && mkdir -p /data && chown wolve /data
-USER wolve
+ENV THREEB_DATABASE_URL=sqlite:////data/threeb.db THREEB_UPLOAD_DIR=/data/storage THREEB_CREDENTIALS_FILE=/data/demo-credentials.txt
+RUN useradd -m threebees && mkdir -p /data && chown threebees /data
+USER threebees
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]

@@ -1,10 +1,10 @@
 import CallKit
 import Foundation
 
-/// Call Directory extension: before you answer, iOS shows the WOLVE label under the caller's number
-/// (e.g. "⚠️ WOLVE: احتيال محتمل") or blocks numbers reported as scams.
-/// Enable it in Settings → Apps → Phone → Call Blocking & Identification → WOLVE.
-/// The list comes from the WOLVE app (synced from the server); iOS only supports exact numbers, not prefixes.
+/// Call Directory extension: before you answer, iOS shows the 3B label under the caller's number
+/// (e.g. "⚠️ 3B: احتيال محتمل") or blocks numbers reported as scams.
+/// Enable it in Settings → Apps → Phone → Call Blocking & Identification → 3B.
+/// The list comes from the 3B app (synced from the server); iOS only supports exact numbers, not prefixes.
 final class CallDirectoryHandler: CXCallDirectoryProvider {
     override func beginRequest(with context: CXCallDirectoryExtensionContext) {
         context.delegate = self
@@ -26,7 +26,7 @@ final class CallDirectoryHandler: CXCallDirectoryProvider {
             context.addBlockingEntry(withNextSequentialPhoneNumber: n)
         }
         for n in labels.keys.sorted() where !blocked.contains(n) {
-            context.addIdentificationEntry(withNextSequentialPhoneNumber: n, label: labels[n] ?? "WOLVE")
+            context.addIdentificationEntry(withNextSequentialPhoneNumber: n, label: labels[n] ?? "3B")
         }
         context.completeRequest()
     }

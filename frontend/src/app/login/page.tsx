@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WolfMark } from "@/components/WolfMark";
+import { BeeMark } from "@/components/BeeMark";
 import { Button, ErrorBox, inputCls, Label } from "@/components/ui";
 import { apiSend, setSession } from "@/lib/api";
 import { tr, useI18n } from "@/lib/i18n";
@@ -33,8 +33,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl border border-ink-700 bg-ink-900 p-8 shadow-sm" noValidate>
         <div className="flex flex-col items-center gap-2 text-center">
-          <WolfMark className="h-14 w-14" />
-          <div className="text-2xl font-bold text-ink-100">WOLVE</div>
+          <BeeMark className="h-14 w-14" />
+          <div className="text-2xl font-bold text-ink-100">Three Bees</div>
           <div className="text-sm text-ink-400">{tr("Sign in to the security center")}</div>
         </div>
         <div>

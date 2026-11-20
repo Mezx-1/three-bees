@@ -60,7 +60,7 @@ export default function PhoneProtection() {
         subtitle={tr("Scam messages go straight to Junk, and calls from risky numbers show a warning before you answer.")}
         actions={<SimBadge label="Simulation of the mobile app" />} />
       <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
-        {tr("This page simulates the phone app using the real WOLVE analysis. On iPhone, Apple only lets an app filter messages from unknown senders (they go to the Junk folder) and label or block numbers before you answer — it cannot read your other messages or listen to phone calls.")}
+        {tr("This page simulates the phone app using the real 3B analysis. On iPhone, Apple only lets an app filter messages from unknown senders (they go to the Junk folder) and label or block numbers before you answer — it cannot read your other messages or listen to phone calls.")}
       </div>
       {err && <ErrorBox error={err} />}
       <div className="grid gap-6 xl:grid-cols-2">
@@ -91,7 +91,7 @@ export default function PhoneProtection() {
                     <div dir="auto" className="line-clamp-3 text-ink-300">{m.body}</div>
                     {m.res.action === "junk" && (
                       <div className="mt-1 border-t border-red-200 pt-1 text-crit">
-                        <b>WOLVE · {m.res.risk_score}/100</b> — {m.res.classification}
+                        <b>3B · {m.res.risk_score}/100</b> — {m.res.classification}
                         <ul className="mt-0.5 list-disc ps-4 text-ink-300">{m.res.reasons.slice(0, 3).map((r: string) => <li key={r}>{r}</li>)}</ul>
                       </div>
                     )}
@@ -110,7 +110,7 @@ export default function PhoneProtection() {
                 <Button variant="primary" loading={busy === "call"} onClick={ring}><Phone className="h-4 w-4" />{tr("Simulate incoming call")}</Button>
                 {["+882 1234 5678", "+44 7399 367678", "+49 177 5111338", "050 123 4567"].map((n) => <Button key={n} variant="ghost" className="text-xs" onClick={() => setCaller(n)}><span dir="ltr">{n}</span></Button>)}
               </div>
-              <p className="text-xs text-ink-400">{tr("The warning is based on the number only (registration country, satellite ranges, WOLVE scam reports). To analyse what the caller says, use Call Guard with the call on speaker.")}</p>
+              <p className="text-xs text-ink-400">{tr("The warning is based on the number only (registration country, satellite ranges, 3B scam reports). To analyse what the caller says, use Call Guard with the call on speaker.")}</p>
             </div>
             <div className="mx-auto flex h-[420px] w-[260px] flex-col items-center rounded-[2rem] border-8 border-ink-100 bg-gradient-to-b from-slate-700 to-slate-900 p-4 text-white shadow-lg">
               {call ? (

@@ -1,4 +1,4 @@
-"""Email Security workflow. Actions operate on WOLVE's local records only — there is no live
+"""Email Security workflow. Actions operate on 3B's local records only — there is no live
 Microsoft 365 / Google Workspace connection in the MVP (see integrations status)."""
 from __future__ import annotations
 
@@ -73,11 +73,11 @@ def email_action(aid: str, body: EmailAction, db: Session = Depends(get_db), use
     else:
         a.status = ACTION_STATUS[body.action]
     msg = {
-        "quarantine": "Email moved to WOLVE quarantine (local record). Not removed from any external mailbox — no mail integration is connected.",
-        "release": "Email released from WOLVE quarantine.",
+        "quarantine": "Email moved to 3B quarantine (local record). Not removed from any external mailbox — no mail integration is connected.",
+        "release": "Email released from 3B quarantine.",
         "mark_safe": "Email marked safe after analyst review.",
         "mark_suspicious": "Email marked as suspicious.",
-        "report": "Reported to IT security: an incident was opened/updated in WOLVE.",
+        "report": "Reported to IT security: an incident was opened/updated in 3B.",
     }[body.action]
     if body.action == "report" and not a.incident_id:
         create_incident_from_analysis(db, a, actor=user.username)

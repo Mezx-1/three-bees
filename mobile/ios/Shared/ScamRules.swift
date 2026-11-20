@@ -1,6 +1,6 @@
 import Foundation
 
-/// Rules synced from the WOLVE server (`GET /api/mobile/filter-config`). A built-in copy is used until the first sync.
+/// Rules synced from the 3B server (`GET /api/mobile/filter-config`). A built-in copy is used until the first sync.
 struct FilterConfig: Codable {
     var version: Int
     var blocked_domains: [String]
@@ -102,7 +102,7 @@ enum ScamRules {
             let reg = registeredDomain(host)
             let tld = host.split(separator: ".").last.map(String.init) ?? ""
             if config.blocked_domains.contains(where: { reg == $0 || host.hasSuffix("." + $0) || host == $0 }) {
-                signals.append(("الرابط موجود في قائمة حظر WOLVE", 70))
+                signals.append(("الرابط موجود في قائمة حظر 3B", 70))
             }
             if host.range(of: #"^\d{1,3}(\.\d{1,3}){3}$"#, options: .regularExpression) != nil {
                 signals.append(("الرابط عنوان IP مباشر", 30))
@@ -129,7 +129,7 @@ enum ScamRules {
         if s.contains("@") {
             signals.append(("الرسالة مُرسلة من عنوان بريد إلكتروني وليس من جهة رسمية", 30))
         } else if let phone = normalizePhone(s) {
-            if config.blocked_phones.contains(phone) { signals.append(("رقم المرسل في قائمة حظر WOLVE", 70)) }
+            if config.blocked_phones.contains(phone) { signals.append(("رقم المرسل في قائمة حظر 3B", 70)) }
             if satellitePrefixes.contains(where: { phone.hasPrefix($0) }) { signals.append(("رقم شبكة فضائية/دولية", 30)) }
             else if phone.hasPrefix("+") && !phone.hasPrefix("+971") { signals.append(("رقم دولي", 10)) }
             if matched.contains("missed_call") && phone.hasPrefix("+") && !phone.hasPrefix("+971") {

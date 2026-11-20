@@ -146,7 +146,7 @@ export default function CallGuard() {
   return (
     <div className="space-y-5">
       <PageHeader title={tr("Call Guard")} icon={PhoneCall}
-        subtitle={tr("Is the person on the phone a scammer? WOLVE listens to what they say and how they say it, and checks their number.")} />
+        subtitle={tr("Is the person on the phone a scammer? 3B listens to what they say and how they say it, and checks their number.")} />
 
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <Card>
@@ -171,7 +171,7 @@ export default function CallGuard() {
             )}
             <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-ink-200">
               <input type="checkbox" className="mt-1 h-4 w-4 accent-blue-600" checked={consent} onChange={(e) => setConsent(e.target.checked)} disabled={live} />
-              <span>{tr("I am a participant in this call and analysing it is allowed. I understand WOLVE only hears what this computer's microphone picks up (put the call on speaker) — it cannot intercept phone calls.")}</span>
+              <span>{tr("I am a participant in this call and analysing it is allowed. I understand 3B only hears what this computer's microphone picks up (put the call on speaker) — it cannot intercept phone calls.")}</span>
             </label>
             {err && <ErrorBox error={err} />}
             {mode === "live" ? (
@@ -200,7 +200,7 @@ export default function CallGuard() {
             <li>• «{tr("What time is it where you are now?")}»</li>
             <li>• «{tr("What day is it today?")}»</li>
             <li>• «{tr("Which company are you from, and what is its official number?")}»</li>
-            <li className="text-xs text-ink-400">{tr("WOLVE can't tell voices apart — ask, then stay quiet while the caller answers.")}</li>
+            <li className="text-xs text-ink-400">{tr("3B can't tell voices apart — ask, then stay quiet while the caller answers.")}</li>
           </ul>
           <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
             <Pill className={st?.speech_to_text?.available ? "text-safe" : "text-crit"}>{tr("Speech-to-text")}: {st?.speech_to_text?.available ? st.speech_to_text.engine : tr("not installed")}</Pill>

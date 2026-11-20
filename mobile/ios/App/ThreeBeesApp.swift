@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct WolveShieldApp: App {
+struct ThreeBeesApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

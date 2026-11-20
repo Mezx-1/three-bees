@@ -73,7 +73,7 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
       <Button variant="ghost" loading={busy === "html"} onClick={() => act("html", () => download(`/api/analyses/${a.id}/export?format=html`, `${a.id}.html`))}><Download className="h-4 w-4" /> {tr("Report")}</Button>
       <Button variant="ghost" loading={busy === "json"} onClick={() => act("json", () => download(`/api/analyses/${a.id}/export?format=json`, `${a.id}.json`))}><FileJson className="h-4 w-4" /> {tr("JSON")}</Button>
       <Button variant="ghost" className="text-crit" loading={busy === "del"} onClick={() => {
-        if (!window.confirm(tr("Delete this local WOLVE record? This does not affect any external mailbox."))) return;
+        if (!window.confirm(tr("Delete this local 3B record? This does not affect any external mailbox."))) return;
         act("del", async () => {
           const r = await apiSend(`/api/analyses/${a.id}`, "DELETE");
           toast("ok", r.message);

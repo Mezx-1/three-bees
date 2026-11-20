@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiGet, apiSend, getMe, getToken, type Me, setSession } from "@/lib/api";
 import { DictKey, useI18n, tr } from "@/lib/i18n";
-import { WolfMark } from "./WolfMark";
+import { BeeMark } from "./BeeMark";
 import { cn } from "./ui";
 
 const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[] }[] = [
@@ -67,9 +67,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sidebar = (
     <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-5" aria-label={tr("Main")}>
       <Link href="/" className="flex items-center gap-3 px-2">
-        <WolfMark />
+        <BeeMark />
         <div>
-          <div className="text-lg font-bold tracking-wide text-ink-100">{tr("WOLVE")}</div>
+          <div className="text-lg font-bold tracking-wide text-ink-100">Three Bees</div>
           <div className="text-xs leading-tight text-ink-400">{tr("Security Center")}</div>
         </div>
       </Link>

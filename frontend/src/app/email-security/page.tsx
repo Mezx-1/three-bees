@@ -89,7 +89,7 @@ export default function EmailSecurity() {
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-ink-700 bg-ink-900/70 px-3 py-2 text-xs text-ink-300">
         <PlugZap className="h-4 w-4 text-ink-400" />
         {tr("Mailbox integrations:")} <Pill>{tr("Microsoft 365 — not connected")}</Pill><Pill>{tr("Google Workspace — not connected")}</Pill>
-        <span className="text-ink-400">{tr("Planned via Microsoft Graph / Gmail API with admin consent. In this MVP, emails are submitted manually and actions apply to WOLVE records only.")}</span>
+        <span className="text-ink-400">{tr("Planned via Microsoft Graph / Gmail API with admin consent. In this MVP, emails are submitted manually and actions apply to 3B records only.")}</span>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_320px]">

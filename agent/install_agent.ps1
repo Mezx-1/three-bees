@@ -1,4 +1,4 @@
-# WOLVE endpoint agent installer (Windows, current user).
+# 3B endpoint agent installer (Windows, current user).
 #
 #   Preview only (changes nothing):  powershell -ExecutionPolicy Bypass -File agent\install_agent.ps1 -DryRun
 #   Install:                         powershell -ExecutionPolicy Bypass -File agent\install_agent.ps1 [-Server http://host:8000] -PairCode ABCD2345
@@ -13,12 +13,12 @@ param(
     [switch]$DryRun
 )
 $ErrorActionPreference = "Stop"
-$TaskName = "WOLVE Agent"
+$TaskName = "3B Agent"
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Venv = Join-Path $Here ".venv"
 $Py = Join-Path $Venv "Scripts\python.exe"
-$Agent = Join-Path $Here "wolve_agent.py"
-$StateFile = Join-Path $Here ".wolve_agent.json"
+$Agent = Join-Path $Here "threeb_agent.py"
+$StateFile = Join-Path $Here ".threeb_agent.json"
 
 function Test-Admin {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -40,8 +40,8 @@ if ($Uninstall) {
         if (Test-Path $StateFile) { Remove-Item $StateFile -Force; Write-Host "Deleted device token file." }
         if (Test-Path $Venv) { Remove-Item $Venv -Recurse -Force; Write-Host "Deleted agent environment." }
     }
-    Write-Host "Note: WOLVE firewall rules (named WOLVE-block-*) are not removed automatically. List them with:"
-    Write-Host "  Get-NetFirewallRule -DisplayName 'WOLVE-block-*'"
+    Write-Host "Note: 3B firewall rules (named 3B-block-*) are not removed automatically. List them with:"
+    Write-Host "  Get-NetFirewallRule -DisplayName '3B-block-*'"
     exit 0
 }
 
@@ -49,7 +49,7 @@ $existing = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
 Write-Host ""
 Write-Host "This installer will make these changes:" -ForegroundColor Cyan
 Write-Host "  1. Create a Python environment in $Venv and install psutil"
-Write-Host "  2. Enrol this computer with the WOLVE server $Server (saves a device token in $StateFile)"
+Write-Host "  2. Enrol this computer with the 3B server $Server (saves a device token in $StateFile)"
 if ($existing) { Write-Host "  3. REPLACE the existing scheduled task '$TaskName' (no duplicate is created)" }
 else { Write-Host "  3. Create the scheduled task '$TaskName' that starts the agent (in a visible window) when $env:USERNAME signs in" }
 Write-Host ""
@@ -59,7 +59,7 @@ Write-Host "  - suspicious new processes (e.g. Office starting PowerShell)"
 Write-Host "  - Windows Firewall and Defender status (read-only)"
 Write-Host "It does NOT record screens, keystrokes, calls, files, browsing or passwords."
 if ($AllowResponse) {
-    Write-Host "  - analysts may BLOCK IP addresses in Windows Firewall (rules named WOLVE-block-<ip>); the task runs with highest privileges" -ForegroundColor Yellow
+    Write-Host "  - analysts may BLOCK IP addresses in Windows Firewall (rules named 3B-block-<ip>); the task runs with highest privileges" -ForegroundColor Yellow
 }
 Write-Host "Undo at any time with:  install_agent.ps1 -Uninstall -Purge"
 Write-Host ""
@@ -79,8 +79,8 @@ try {
     }
     & $Py -m pip install --quiet -r (Join-Path $Here "requirements.txt"); Assert-Ok "Installing psutil"
     if (-not (Test-Path $StateFile)) {
-        if (-not $PairCode) { throw "A pairing code is required: WOLVE web app -> Settings -> Pair a device -> Code for a laptop agent, then pass -PairCode CODE" }
-        & $Py $Agent --server $Server --pair $PairCode --consent; Assert-Ok "Enrolling with the WOLVE server"
+        if (-not $PairCode) { throw "A pairing code is required: 3B web app -> Settings -> Pair a device -> Code for a laptop agent, then pass -PairCode CODE" }
+        & $Py $Agent --server $Server --pair $PairCode --consent; Assert-Ok "Enrolling with the 3B server"
     }
     $taskArgs = "`"$Agent`" --monitor"
     if ($AllowResponse) { $taskArgs += " --allow-response" }
@@ -91,7 +91,7 @@ try {
     $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel $runLevel
     Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $taskSettings -Principal $principal -Force | Out-Null
     Start-ScheduledTask -TaskName $TaskName
-    Write-Host "WOLVE agent installed and started. It runs visibly at every sign-in. Remove with -Uninstall." -ForegroundColor Green
+    Write-Host "3B agent installed and started. It runs visibly at every sign-in. Remove with -Uninstall." -ForegroundColor Green
 } catch {
     Write-Host "Installation failed: $($_.Exception.Message)" -ForegroundColor Red
     exit 1

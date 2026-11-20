@@ -77,7 +77,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("wolve.lang.v2") as Lang | null;
+      const saved = localStorage.getItem("3b.lang.v2") as Lang | null;
       if (saved === "ar" || saved === "en") setLangState(saved);
     } catch {}
   }, []);
@@ -88,7 +88,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const setLang = (l: Lang) => {
     setLangState(l);
     try {
-      localStorage.setItem("wolve.lang.v2", l);
+      localStorage.setItem("3b.lang.v2", l);
     } catch {}
   };
   currentLang = lang; // set before children render so tr() uses the active language

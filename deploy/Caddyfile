@@ -1,4 +1,4 @@
-{$WOLVE_DOMAIN} {
+{$THREEB_DOMAIN} {
 	encode gzip
 	header Strict-Transport-Security "max-age=31536000"
 	handle /api/* {

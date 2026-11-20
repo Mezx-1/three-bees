@@ -1,7 +1,7 @@
 """Claude-powered analysis layer.
 
 The AI layer *explains and supplements* deterministic findings; it never replaces them. When no API
-key is configured (or AI is disabled in Settings) WOLVE runs in transparent deterministic-only mode
+key is configured (or AI is disabled in Settings) 3B runs in transparent deterministic-only mode
 and reports AI as unavailable.
 
 Submitted content is untrusted: it is wrapped in tags and the model is told to treat it as data,
@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from ..config import settings
 from .risk import Finding
 
-log = logging.getLogger("wolve.ai")
+log = logging.getLogger("threeb.ai")
 
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
@@ -39,7 +39,7 @@ class AIAssessment(BaseModel):
     extracted_text: str | None = Field(description="Visible text read from attached images, if any were provided")
 
 
-SYSTEM_PROMPT = """You are WOLVE AI, a security analyst assistant in a Security Operations Center.
+SYSTEM_PROMPT = """You are Three Bees, a security analyst assistant in a Security Operations Center.
 You assess emails, messages, call transcripts, URLs and media for scams, phishing, fraud and social engineering.
 
 Rules:
@@ -53,7 +53,7 @@ Rules:
 
 def ai_status(enabled_setting: bool) -> dict:
     if not settings.anthropic_api_key:
-        return {"available": False, "reason": "not configured (no API key). Results come from WOLVE's built-in checks.", "model": None}
+        return {"available": False, "reason": "not configured (no API key). Results come from 3B's built-in checks.", "model": None}
     if not enabled_setting:
         return {"available": False, "reason": "AI analysis disabled in Settings.", "model": settings.ai_model}
     return {"available": True, "reason": None, "model": settings.ai_model}

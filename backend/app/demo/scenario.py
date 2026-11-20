@@ -21,7 +21,7 @@ ATTACKER_DOMAIN = "alnoor-logistics-portal.top"
 ATTACKER_URL = f"http://verify.{ATTACKER_DOMAIN}/secure/login.php?acct=finance&session=8f2a"
 ATTACKER_IP = "203.0.113.45"
 INNER_SCRIPT_NAME = "Invoice_Q4_2026.pdf.js"
-INNER_SCRIPT = (b"// WOLVE AI demo file - HARMLESS.\r\n"
+INNER_SCRIPT = (b"// Three Bees demo file - HARMLESS.\r\n"
                 b"// This file contains no executable payload. It exists only so the analyser can\r\n"
                 b"// detect a double-extension script hidden inside a mislabelled archive.\r\n")
 INNER_SHA256 = hashlib.sha256(INNER_SCRIPT).hexdigest()
@@ -73,7 +73,7 @@ def make_disguised_attachment() -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(INNER_SCRIPT_NAME, INNER_SCRIPT)
-        z.writestr("README-WOLVE-DEMO.txt", "Harmless WOLVE AI hackathon demo archive.")
+        z.writestr("README-3B-DEMO.txt", "Harmless Three Bees hackathon demo archive.")
     return buf.getvalue()
 
 

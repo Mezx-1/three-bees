@@ -54,7 +54,7 @@ def url_subanalysis(url: str, ctx: Context, *, lookups: bool | None = None) -> d
     lookups = ctx.external_lookups if lookups is None else lookups
     findings, info = ua.analyze_url(url, blocklist=ctx.blocked_domains, org_domain=ctx.org_domain)
     if ua.normalize_url(url) in ctx.blocked_urls:
-        findings.append(Finding("URL is on the WOLVE blocklist", "An analyst blocked this exact URL.", "url", "critical", 70, "verified", ["malicious_link"]))
+        findings.append(Finding("URL is on the 3B blocklist", "An analyst blocked this exact URL.", "url", "critical", 70, "verified", ["malicious_link"]))
     intel: dict = {}
     if lookups and info.get("host") and not info.get("ip_literal"):
         dns_info = ua.resolve_dns(info["host"])
@@ -70,7 +70,7 @@ def run_url(url: str, ctx: Context) -> AnalysisResult:
     limitations = ["Structural URL analysis only — the page was not visited or rendered."]
     if not ctx.external_lookups:
         limitations.append("External lookups disabled: DNS was not queried.")
-    limitations.append("No URL reputation provider configured (e.g. Google Safe Browsing, VirusTotal); WOLVE does not claim reputation results.")
+    limitations.append("No URL reputation provider configured (e.g. Google Safe Browsing, VirusTotal); 3B does not claim reputation results.")
     report = build_report(sub["findings"], limitations, default_classification="No significant threat detected",
                           extra={"url": sub["info"], "intel": sub["intel"], "ai": {"available": False, "reason": "AI not used for single-URL structural checks."}})
     malicious = report["risk_score"] >= 60
@@ -93,7 +93,7 @@ def run_ip(ip: str, ctx: Context) -> AnalysisResult:
     findings, info, limitations = ni.analyze_ip(ip)
     intel: dict = {}
     if info["ip"] in ctx.blocked_ips:
-        findings.append(Finding("IP is on the WOLVE blocklist", "An analyst blocked this IP in the local environment.", "network", "critical", 70, "verified", ["suspicious_infrastructure"]))
+        findings.append(Finding("IP is on the 3B blocklist", "An analyst blocked this IP in the local environment.", "network", "critical", 70, "verified", ["suspicious_infrastructure"]))
     if info["is_global"] and not info.get("documentation_range"):
         if ctx.external_lookups:
             intel["geolocation"] = ni.geolocate(info["ip"])
@@ -287,7 +287,7 @@ def run_file(data: bytes, filename: str, declared_mime: str | None, ctx: Context
         finally:
             tmp_path.unlink(missing_ok=True)
         limitations.append("Speech-to-text is not installed in this deployment; provide a transcript to analyse spoken content.")
-        limitations.append("Synthetic-voice / deepfake detection is not implemented. WOLVE never labels media as fake based on impressions.")
+        limitations.append("Synthetic-voice / deepfake detection is not implemented. 3B never labels media as fake based on impressions.")
 
     if transcript and transcript.strip():
         tf, art = ta.analyze_text(transcript, "call")
@@ -408,7 +408,7 @@ def run_email(raw: bytes | str, ctx: Context) -> AnalysisResult:
     extra["ai"] = ai_info
     if not ai_info["available"]:
         limitations.append(f"AI review not used: {ai_info.get('reason') or ai_info.get('error')}")
-    limitations.append("Email was analysed from submitted content; WOLVE is not connected to a live mailbox, so actions apply to the WOLVE record only.")
+    limitations.append("Email was analysed from submitted content; 3B is not connected to a live mailbox, so actions apply to the 3B record only.")
 
     report = build_report(findings, limitations, extra=extra)
     if report["risk_score"] >= 60:
@@ -426,9 +426,9 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
 
     findings: list[Finding] = []
     limitations = [
-        "WOLVE cannot intercept phone calls. It only analyses audio captured by this computer's microphone with consent, or recordings you upload.",
+        "3B cannot intercept phone calls. It only analyses audio captured by this computer's microphone with consent, or recordings you upload.",
         "A number's country code shows where the number range is registered — not where the caller physically is. Caller ID can be spoofed.",
-        "Claim checks compare what was said with the real UAE time/date and a directory of known UAE organisations. WOLVE cannot tell the two voices apart: ask your question and let the caller answer.",
+        "Claim checks compare what was said with the real UAE time/date and a directory of known UAE organisations. 3B cannot tell the two voices apart: ask your question and let the caller answer.",
     ]
     extra: dict = {"call": {"transcript": transcript, "stt": stt or {}, "features": features or {}}}
     inds: list = []
@@ -439,7 +439,7 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
             extra["call"]["caller"] = pinfo
             inds.append(("phone", pinfo["normalized"], "caller", False))
             if pinfo["normalized"] in ctx.blocked_phones:
-                findings.append(Finding("Caller number is on the WOLVE blocklist", "An analyst previously blocked this number as a scam number.",
+                findings.append(Finding("Caller number is on the 3B blocklist", "An analyst previously blocked this number as a scam number.",
                                         "phone", "critical", 70, "verified", ["vishing"], evidence=pinfo["normalized"]))
         except ValueError as exc:
             limitations.append(f"Caller number not analysed: {exc}")

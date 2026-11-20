@@ -3,8 +3,8 @@ import { getLang } from "./i18n";
 // Empty string = same origin (production behind Caddy); unset = local development backend.
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const TOKEN_KEY = "wolve.token";
-const ME_KEY = "wolve.me";
+const TOKEN_KEY = "3b.token";
+const ME_KEY = "3b.me";
 
 export type Me = { username: string; full_name: string; role: string; email: string };
 
@@ -33,7 +33,7 @@ export function setSession(token: string | null, me: Me | null) {
     if (me) localStorage.setItem(ME_KEY, JSON.stringify(me));
     else localStorage.removeItem(ME_KEY);
   } catch {}
-  window.dispatchEvent(new Event("wolve-user"));
+  window.dispatchEvent(new Event("3b-user"));
 }
 
 function onUnauthorized() {
@@ -65,7 +65,7 @@ async function handle<T>(res: Response): Promise<T> {
 
 function headers(extra?: Record<string, string>) {
   const t = getToken();
-  return { ...(t ? { Authorization: `Bearer ${t}` } : {}), "X-WOLVE-Lang": getLang(), ...(extra || {}) } as Record<string, string>;
+  return { ...(t ? { Authorization: `Bearer ${t}` } : {}), "X-3B-Lang": getLang(), ...(extra || {}) } as Record<string, string>;
 }
 
 export async function apiGet<T = any>(path: string): Promise<T> {
@@ -74,7 +74,7 @@ export async function apiGet<T = any>(path: string): Promise<T> {
     return handle<T>(res);
   } catch (e) {
     if (e instanceof ApiError) throw e;
-    throw new ApiError(0, `Cannot reach the WOLVE backend at ${API_URL}. Is it running?`);
+    throw new ApiError(0, `Cannot reach the 3B backend at ${API_URL}. Is it running?`);
   }
 }
 
@@ -88,7 +88,7 @@ export async function apiSend<T = any>(path: string, method: "POST" | "PUT" | "P
     return handle<T>(res);
   } catch (e) {
     if (e instanceof ApiError) throw e;
-    throw new ApiError(0, `Cannot reach the WOLVE backend at ${API_URL}. Is it running?`);
+    throw new ApiError(0, `Cannot reach the 3B backend at ${API_URL}. Is it running?`);
   }
 }
 
@@ -98,7 +98,7 @@ export async function apiUpload<T = any>(path: string, form: FormData): Promise<
     return handle<T>(res);
   } catch (e) {
     if (e instanceof ApiError) throw e;
-    throw new ApiError(0, `Cannot reach the WOLVE backend at ${API_URL}. Is it running?`);
+    throw new ApiError(0, `Cannot reach the 3B backend at ${API_URL}. Is it running?`);
   }
 }
 

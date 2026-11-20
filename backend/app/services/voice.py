@@ -19,9 +19,9 @@ import numpy as np
 from ..config import settings
 from .risk import Finding
 
-log = logging.getLogger("wolve.voice")
+log = logging.getLogger("threeb.voice")
 SR = 16000
-STT_MODEL = os.getenv("WOLVE_STT_MODEL", "small")  # small: much better Arabic, ~4 s per 8 s chunk on a laptop CPU
+STT_MODEL = os.getenv("THREEB_STT_MODEL", "small")  # small: much better Arabic, ~4 s per 8 s chunk on a laptop CPU
 
 
 def decode_audio(data: bytes, suffix: str = ".webm") -> np.ndarray:

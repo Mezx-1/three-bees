@@ -42,11 +42,11 @@ export function DemoScenario() {
       }),
     },
     {
-      k: "quarantine", title: tr("Analyst quarantines the message"), desc: tr("Moves the email to WOLVE quarantine (local demo environment — no live mailbox is connected)."), needs: "email",
+      k: "quarantine", title: tr("Analyst quarantines the message"), desc: tr("Moves the email to 3B quarantine (local demo environment — no live mailbox is connected)."), needs: "email",
       action: () => run("quarantine", async () => {
         const r = await apiSend(`/api/emails/${emailId}/action`, "POST", { action: "quarantine" });
         mark("quarantine", r.message);
-        toast("ok", "Email quarantined in WOLVE.");
+        toast("ok", "Email quarantined in 3B.");
       }),
     },
     {

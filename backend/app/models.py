@@ -55,7 +55,7 @@ class AuthSession(Base):
 
 
 class PairingCode(Base):
-    """One-time code that lets a phone or laptop agent join WOLVE (replaces trusting a user name)."""
+    """One-time code that lets a phone or laptop agent join 3B (replaces trusting a user name)."""
 
     __tablename__ = "pairing_codes"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -74,7 +74,7 @@ class Device(Base):
     owner_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
     agent_version: Mapped[str] = mapped_column(String(40), default="none")
-    # "agent" = registered by the real WOLVE agent; "simulated" = demo device; "manual" = inventory entry
+    # "agent" = registered by the real 3B agent; "simulated" = demo device; "manual" = inventory entry
     source: Mapped[str] = mapped_column(String(20), default="manual")
     status: Mapped[str] = mapped_column(String(20), default="healthy")  # healthy|at_risk|compromised|isolation_recommended|offline
     risk_score: Mapped[int] = mapped_column(Integer, default=0)
@@ -138,7 +138,7 @@ class Indicator(Base):
 
 
 class BlockedIndicator(Base):
-    """Local demo blocklist. Enforced inside WOLVE analyses only — not pushed to any firewall/proxy."""
+    """Local demo blocklist. Enforced inside 3B analyses only — not pushed to any firewall/proxy."""
 
     __tablename__ = "blocklist"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

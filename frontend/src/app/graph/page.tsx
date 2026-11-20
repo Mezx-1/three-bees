@@ -109,7 +109,7 @@ export default function GraphPage() {
         } />
       <div className="flex flex-wrap items-center gap-3 text-xs text-ink-300">
         <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 bg-volt" /> {tr("Observed — present in evidence/telemetry")}</span>
-        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 border-t-2 border-dashed border-warn" /> {tr("Inferred — linked by WOLVE without a shared artefact")}</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-8 border-t-2 border-dashed border-warn" /> {tr("Inferred — linked by 3B without a shared artefact")}</span>
         <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded border border-crit" /> {tr("Malicious indicator")}</span>
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
