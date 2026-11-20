@@ -56,6 +56,8 @@ Scams in the UAE reach people through every channel: fake Salik and parcel-fee S
  SQLAlchemy → SQLite (default) or PostgreSQL
 ```
 
+Presentation (architecture, model choices, privacy design): [docs/presentation/ThreeBees_3B.pptx](docs/presentation/ThreeBees_3B.pptx)
+
 More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · privacy: [docs/PRIVACY.md](docs/PRIVACY.md) · what works: [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md) · security audit: [docs/AUDIT_REPORT.md](docs/AUDIT_REPORT.md)
 
 ## 4. Technical choices and why
