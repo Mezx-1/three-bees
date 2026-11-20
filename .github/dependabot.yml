@@ -1,17 +1,27 @@
 version: 2
-# Weekly pull requests for security and version updates (free on GitHub).
+# Weekly pull requests for version updates (free on GitHub). Major versions are skipped
+# because they can break the build; security fixes still arrive through Dependabot alerts.
 updates:
   - package-ecosystem: pip
     directory: /backend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
