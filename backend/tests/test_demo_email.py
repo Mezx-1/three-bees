@@ -31,3 +31,14 @@ def test_demo_email_with_attachment_is_critical():
         r = c.post("/api/emails/analyze", files={"file": ("scam.eml", bytes(m), "message/rfc822")}, headers={"X-3B-User": "omar.analyst"})
     assert r.status_code == 200, r.text
     assert r.json()["severity"] == "critical"
+
+
+def test_email_pasted_as_one_line_is_still_analysed():
+    one_line = ("From: Emirates Security Department Subject: URGENT: Your Bank Account Will Be Suspended Dear Customer, "
+                "We have detected unusual activity on your bank account. To avoid account suspension, please verify your account "
+                "immediately. Transaction amount: AED 4,850 Verification code: 739201 You are required to complete the verification "
+                "process within 30 minutes. Failure to do so may result in temporary account suspension. Thank you, Security Department")
+    with TestClient(app) as c:
+        r = c.post("/api/emails/analyze", data={"raw": one_line}, headers={"X-3B-User": "omar.analyst"})
+    assert r.status_code == 200, r.text
+    assert r.json()["severity"] == "critical"

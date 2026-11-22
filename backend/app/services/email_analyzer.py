@@ -68,10 +68,35 @@ def looks_like_headers(text: str) -> bool:
     return bool(re.search(r"^(from|subject|to|received|return-path|delivered-to|message-id|date):", head, re.I | re.M))
 
 
+_INLINE_STOP = r"(?=\s+(?:from|subject|to|date|sent|email|reply-to)\s*:|\s+(?:dear|hello|hi|hey|greetings|good (?:morning|afternoon|evening))\b|\n|$)"
+
+
+def _pasted_as_message(text: str) -> str:
+    """Rebuild a pasted email whose headers and body were run together (e.g. copied as one line from a mail client).
+
+    Known header fields are pulled out of the text; the whole paste is kept as the body so no content is lost."""
+    headers = ["Content-Type: text/plain; charset=utf-8"]
+    for name in ("From", "Subject", "To", "Date", "Reply-To"):
+        m = re.search(r"(?:^|\s)" + name + r"\s*:\s*(.+?)" + _INLINE_STOP, text, re.I)
+        if m and m.group(1).strip():
+            headers.append(f"{name}: {re.sub(r'[\r\n]+', ' ', m.group(1).strip())[:300]}")
+    return "\n".join(headers) + "\n\n" + text
+
+
 def parse_email(raw: bytes | str) -> EmailMessage:
     if isinstance(raw, str):
-        if not looks_like_headers(raw):
-            raw = "Content-Type: text/plain; charset=utf-8\n\n" + raw
+        text = raw
+        if not looks_like_headers(text):
+            raw = "Content-Type: text/plain; charset=utf-8\n\n" + text
+        else:
+            msg = email.message_from_bytes(text.encode("utf-8", "replace"), policy=policy.default)
+            body = msg.get_body(preferencelist=("plain", "html"))
+            content = body.get_content() if body is not None else ""
+            # Headers with (almost) no body: the paste ran headers and text together, so rebuild it.
+            if len(content.strip()) < 40 and len(text) > 120:
+                raw = _pasted_as_message(text)
+            else:
+                return msg  # type: ignore[return-value]
         raw = raw.encode("utf-8", "replace")
     return email.message_from_bytes(raw, policy=policy.default)  # type: ignore[return-value]
 
