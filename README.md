@@ -36,6 +36,14 @@ Scams in the UAE reach people through every channel: fake Salik and parcel-fee S
 | **Incidents & Threat Graph** | Findings from email, files and endpoints are correlated on shared indicators (hash, filename, domain, IP) into one incident, drawn as a graph (observed = solid, inferred = dashed) |
 | **Prevention Center** | Blocklist, IOC review, recommendations, full audit log |
 
+### Screenshots (real app, Arabic by default)
+
+| Command Center | Fake Salik SMS: 81/100, reasons in Arabic |
+|---|---|
+| ![Command Center](docs/screenshots/dashboard.jpg) | ![SMS report](docs/screenshots/sms-report.jpg) |
+| **Call Guard: verified facts from a test call** | **Threat graph of the CEO-fraud incident** |
+| ![Call Guard](docs/screenshots/call-guard.jpg) | ![Threat graph](docs/screenshots/threat-graph.jpg) |
+
 ## 3. Architecture
 
 ```
