@@ -1,0 +1,74 @@
+From: Emirates Security Department <security-alert@example.com>
+To: customer@example.com
+Subject: URGENT: Your Bank Account Will Be Suspended
+Date: Sun, 22 Nov 2026 16:30:00 +0400
+Message-ID: <demo-3b-001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============1913726395517103065=="
+
+--===============1913726395517103065==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Dear Customer,
+
+We have detected unusual activity on your bank account.
+
+To avoid account suspension, please verify your account immediately.
+
+Transaction amount: AED 4,850
+
+Verification code: 739201 (fictional demo code)
+
+You are required to complete the verification process within 30 minutes.
+
+Failure to do so may result in temporary account suspension.
+
+Thank you,
+
+Security Department
+
+--===============1913726395517103065==
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="Account_Verification_Form.pdf.html"
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjwhLS0KICBUSFJFRSBCRUVTIERFTU8gRklMRSDigJQgaGFybWxlc3Mu
+CiAgSXQgaW1pdGF0ZXMgYSBwaGlzaGluZyBhdHRhY2htZW50IHNvIDNCIGhhcyBzb21ldGhpbmcg
+dG8gZmxhZzoKICBhIGRvY3VtZW50IG5hbWUgaGlkaW5nIGFuIC5odG1sIGZpbGUsIGEgY2FyZC9w
+YXNzd29yZCBmb3JtLCBhbmQgYSBzY3JpcHQuCiAgVGhlIGZvcm0gcG9pbnRzIHRvIGV4YW1wbGUu
+aW52YWxpZCAoYSByZXNlcnZlZCBuYW1lIHRoYXQgbmV2ZXIgcmVzb2x2ZXMpIGFuZCB0aGUKICBz
+Y3JpcHQgb25seSB3cml0ZXMgdG8gdGhlIGJyb3dzZXIgY29uc29sZS4gTm90aGluZyBpcyBzZW50
+IGFueXdoZXJlLgotLT4KPGh0bWwgbGFuZz0iZW4iPgo8aGVhZD4KPG1ldGEgY2hhcnNldD0idXRm
+LTgiPgo8dGl0bGU+QWNjb3VudCBWZXJpZmljYXRpb24gLSBTZWN1cml0eSBEZXBhcnRtZW50PC90
+aXRsZT4KPHN0eWxlPgogIGJvZHkgeyBmb250LWZhbWlseTogQXJpYWwsIHNhbnMtc2VyaWY7IGJh
+Y2tncm91bmQ6ICNmMmY0Zjc7IG1hcmdpbjogMDsgfQogIC5ib3ggeyBtYXgtd2lkdGg6IDQyMHB4
+OyBtYXJnaW46IDYwcHggYXV0bzsgYmFja2dyb3VuZDogI2ZmZjsgcGFkZGluZzogMjhweDsgYm9y
+ZGVyLXJhZGl1czogOHB4OyB9CiAgaDEgeyBmb250LXNpemU6IDIwcHg7IG1hcmdpbjogMCAwIDZw
+eDsgfQogIHAgeyBjb2xvcjogIzU1NTsgZm9udC1zaXplOiAxNHB4OyB9CiAgbGFiZWwgeyBkaXNw
+bGF5OiBibG9jazsgZm9udC1zaXplOiAxM3B4OyBtYXJnaW46IDE0cHggMCA0cHg7IH0KICBpbnB1
+dCB7IHdpZHRoOiAxMDAlOyBwYWRkaW5nOiA5cHg7IGJveC1zaXppbmc6IGJvcmRlci1ib3g7IH0K
+ICBidXR0b24geyBtYXJnaW4tdG9wOiAxOHB4OyB3aWR0aDogMTAwJTsgcGFkZGluZzogMTFweDsg
+YmFja2dyb3VuZDogI2I0MjMxODsgY29sb3I6ICNmZmY7IGJvcmRlcjogMDsgYm9yZGVyLXJhZGl1
+czogNnB4OyB9CiAgLmRlbW8geyBtYXJnaW4tdG9wOiAxOHB4OyBmb250LXNpemU6IDEycHg7IGNv
+bG9yOiAjOTk5OyB0ZXh0LWFsaWduOiBjZW50ZXI7IH0KPC9zdHlsZT4KPC9oZWFkPgo8Ym9keT4K
+ICA8ZGl2IGNsYXNzPSJib3giPgogICAgPGgxPlZlcmlmeSB5b3VyIGJhbmsgYWNjb3VudDwvaDE+
+CiAgICA8cD5Zb3VyIGFjY291bnQgd2lsbCBiZSBzdXNwZW5kZWQgaW4gMzAgbWludXRlcyB1bmxl
+c3MgeW91IGNvbmZpcm0geW91ciBkZXRhaWxzLjwvcD4KICAgIDxmb3JtIGFjdGlvbj0iaHR0cHM6
+Ly9zZWN1cmUtdmVyaWZ5LmV4YW1wbGUuaW52YWxpZC9jb25maXJtIiBtZXRob2Q9InBvc3QiIG9u
+c3VibWl0PSJyZXR1cm4gZmFsc2UiPgogICAgICA8bGFiZWw+Q2FyZCBudW1iZXI8L2xhYmVsPjxp
+bnB1dCBuYW1lPSJjYXJkIiBhdXRvY29tcGxldGU9Im9mZiI+CiAgICAgIDxsYWJlbD5FeHBpcnkg
+LyBDVlY8L2xhYmVsPjxpbnB1dCBuYW1lPSJjdnYiIGF1dG9jb21wbGV0ZT0ib2ZmIj4KICAgICAg
+PGxhYmVsPk9ubGluZSBiYW5raW5nIHBhc3N3b3JkPC9sYWJlbD48aW5wdXQgdHlwZT0icGFzc3dv
+cmQiIG5hbWU9InBhc3N3b3JkIiBhdXRvY29tcGxldGU9Im9mZiI+CiAgICAgIDxsYWJlbD5WZXJp
+ZmljYXRpb24gY29kZSAoT1RQKTwvbGFiZWw+PGlucHV0IG5hbWU9Im90cCIgYXV0b2NvbXBsZXRl
+PSJvZmYiPgogICAgICA8YnV0dG9uIHR5cGU9InN1Ym1pdCI+VmVyaWZ5IG5vdzwvYnV0dG9uPgog
+ICAgPC9mb3JtPgogICAgPGRpdiBjbGFzcz0iZGVtbyI+VGhyZWUgQmVlcyBkZW1vIGZpbGUuIE5v
+dGhpbmcgeW91IHR5cGUgaGVyZSBpcyBzZW50IGFueXdoZXJlLjwvZGl2PgogIDwvZGl2PgogIDxz
+Y3JpcHQ+CiAgICAvLyBEZW1vIG9ubHk6IGEgcmVhbCBwaGlzaGluZyBraXQgd291bGQgc2VuZCB0
+aGUgZm9ybSB0byB0aGUgYXR0YWNrZXIgaGVyZS4KICAgIGNvbnNvbGUubG9nKCJUaHJlZSBCZWVz
+IGRlbW86IHRoaXMgc2NyaXB0IGRvZXMgbm90aGluZy4iKTsKICA8L3NjcmlwdD4KPC9ib2R5Pgo8
+L2h0bWw+Cg==
+
+--===============1913726395517103065==--

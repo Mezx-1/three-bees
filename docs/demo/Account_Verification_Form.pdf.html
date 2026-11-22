@@ -1,0 +1,42 @@
+<!doctype html>
+<!--
+  THREE BEES DEMO FILE — harmless.
+  It imitates a phishing attachment so 3B has something to flag:
+  a document name hiding an .html file, a card/password form, and a script.
+  The form points to example.invalid (a reserved name that never resolves) and the
+  script only writes to the browser console. Nothing is sent anywhere.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account Verification - Security Department</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; }
+  .box { max-width: 420px; margin: 60px auto; background: #fff; padding: 28px; border-radius: 8px; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p { color: #555; font-size: 14px; }
+  label { display: block; font-size: 13px; margin: 14px 0 4px; }
+  input { width: 100%; padding: 9px; box-sizing: border-box; }
+  button { margin-top: 18px; width: 100%; padding: 11px; background: #b42318; color: #fff; border: 0; border-radius: 6px; }
+  .demo { margin-top: 18px; font-size: 12px; color: #999; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>Verify your bank account</h1>
+    <p>Your account will be suspended in 30 minutes unless you confirm your details.</p>
+    <form action="https://secure-verify.example.invalid/confirm" method="post" onsubmit="return false">
+      <label>Card number</label><input name="card" autocomplete="off">
+      <label>Expiry / CVV</label><input name="cvv" autocomplete="off">
+      <label>Online banking password</label><input type="password" name="password" autocomplete="off">
+      <label>Verification code (OTP)</label><input name="otp" autocomplete="off">
+      <button type="submit">Verify now</button>
+    </form>
+    <div class="demo">Three Bees demo file. Nothing you type here is sent anywhere.</div>
+  </div>
+  <script>
+    // Demo only: a real phishing kit would send the form to the attacker here.
+    console.log("Three Bees demo: this script does nothing.");
+  </script>
+</body>
+</html>

@@ -273,6 +273,9 @@ def analyze_file(data: bytes, filename: str, declared_mime: str | None = None, *
     if re.search(r"\.(pdf|docx?|xlsx?|jpe?g|png|txt|zip)\.(exe|scr|js|vbs|bat|cmd|hta|lnk|ps1|com|pif)$", safe_name.lower()):
         findings.append(Finding("Double file extension", f"'{safe_name}' hides an executable extension behind a document extension.",
                                 "attachment", "critical", 50, "verified", ["malware_delivery"], evidence=safe_name))
+    elif re.search(r"\.(pdf|docx?|xlsx?|jpe?g|png|txt)\.(html?|svg|shtml|xhtml)$", safe_name.lower()):
+        findings.append(Finding("Document name hides a web page", f"'{safe_name}' looks like a document but opens in the browser as a web page.",
+                                "attachment", "high", 30, "verified", ["phishing", "credential_theft"], evidence=safe_name))
     if "‮" in (filename or ""):
         findings.append(Finding("Right-to-left override in filename", "The filename uses the RLO character to visually reverse its extension.",
                                 "attachment", "critical", 55, "verified", ["malware_delivery"]))

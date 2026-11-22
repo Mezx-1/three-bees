@@ -1,0 +1,19 @@
+Subject: URGENT: Your Bank Account Will Be Suspended
+
+Dear Customer,
+
+We have detected unusual activity on your bank account.
+
+To avoid account suspension, please verify your account immediately.
+
+Transaction amount: AED 4,850
+
+Verification code: 739201 (fictional demo code)
+
+You are required to complete the verification process within 30 minutes.
+
+Failure to do so may result in temporary account suspension.
+
+Thank you,
+
+Security Department

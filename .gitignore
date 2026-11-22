@@ -29,3 +29,6 @@ xcuserdata/
 backend/demo-credentials.txt
 deploy/.env
 dist/
+
+# Demo recordings (large, personal voices)
+docs/demo/*.mp4
