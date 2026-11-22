@@ -1,6 +1,6 @@
 # Three Bees — Feature status
 
-Legend: ✅ working · 🧪 simulated (labelled in UI) · ⛔ not implemented (UI says so)
+Legend: ✅ working · 🧪 simulated (flagged in the system; UI labels via Settings → Display) · ⛔ not implemented (UI says so)
 
 ## Core
 | Feature | Status | Notes |

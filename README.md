@@ -176,7 +176,7 @@ Full script and backup plan: [docs/DEMO.md](docs/DEMO.md), [docs/LIVE_DEMO.md](d
 ## 9. What is real and what is simulated
 
 - **Real:** everything listed in sections 2–5, running on real input.
-- **Simulated (always labelled "simulated" in the UI):** the seeded inventory devices and the demo endpoint events used in the email scenario.
+- **Simulated:** the seeded inventory devices and the demo endpoint events used in the email scenario. They are flagged as simulated in the database and API; the UI labels are hidden by default for presenting and come back with Settings → Display → "Show demo-data labels".
 - **Not tested on real hardware yet:**
   - the iPhone build (the code is written and has unit tests, but has not been compiled in Xcode);
   - Docker deployment;

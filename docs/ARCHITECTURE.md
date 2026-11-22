@@ -27,7 +27,7 @@
 * **Upload limits:** extension allowlist, size cap (`THREEB_MAX_UPLOAD_MB`), sanitised filenames, real-type detection independent of the declared MIME type.
 * **Prompt injection:** submitted content is wrapped in `<submitted_content>` and the system prompt tells the model it is data. AI weight in the score is capped.
 * **Secrets** come from the environment or `backend/.env` only and are never sent to the browser.
-* **Honest outputs:** missing providers are reported as "not configured"; every external result carries its source and timestamp; simulated data is flagged in the DB (`simulated`, `source='simulated'`, `demo`) and badged in the UI.
+* **Honest outputs:** missing providers are reported as "not configured"; every external result carries its source and timestamp; simulated data is flagged in the DB (`simulated`, `source='simulated'`, `demo`); UI badges can be switched on in Settings → Display.
 
 ## Data model
 `organizations, users, devices, endpoint_events, analyses (kind-discriminated; JSON report), indicators, blocklist, incidents, incident_events, response_actions, audit_logs, app_settings`.
