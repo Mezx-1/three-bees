@@ -1,6 +1,7 @@
 "use client";
 
 import { tr } from "@/lib/i18n";
+import { useDemoLabels } from "@/lib/prefs";
 import { CheckCircle2, Circle, FlaskConical, Play } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -11,6 +12,7 @@ type StepState = { done: boolean; info?: React.ReactNode };
 
 export function DemoScenario() {
   const toast = useToast();
+  const showSim = useDemoLabels();
   const [busy, setBusy] = useState<string | null>(null);
   const [emailId, setEmailId] = useState<string | null>(null);
   const [incId, setIncId] = useState<string | null>(null);
@@ -50,12 +52,12 @@ export function DemoScenario() {
       }),
     },
     {
-      k: "endpoint", title: tr("Endpoint reports activity"), desc: tr("Simulated telemetry from ALN-FIN-LT07: outlook.exe → wscript.exe runs the hidden script, then an outbound connection to the phishing domain."), needs: "email", sim: true,
+      k: "endpoint", title: tr("Endpoint reports activity"), desc: tr(showSim ? "Simulated telemetry from ALN-FIN-LT07: outlook.exe → wscript.exe runs the hidden script, then an outbound connection to the phishing domain." : "Telemetry from ALN-FIN-LT07: outlook.exe → wscript.exe runs the hidden script, then an outbound connection to the phishing domain."), needs: "email", sim: true,
       action: () => run("endpoint", async () => {
         const r = await apiSend("/api/demo/scenario/endpoint", "POST");
         const corr = r.results.find((x: any) => x.correlation.incident_id);
         const obs = r.results.reduce((n: number, x: any) => n + x.correlation.links.filter((l: any) => l.type === "observed").length, 0);
-        mark("endpoint", <>{r.results.length} simulated events · {obs} observed indicator matches{corr && <> · {tr("correlated into")} <Link className="text-volt underline" href={`/incidents/${corr.correlation.incident_id}`}>{corr.correlation.incident_id}</Link></>}</>);
+        mark("endpoint", <>{r.results.length} {showSim ? "simulated events" : "events"} · {obs} observed indicator matches{corr && <> · {tr("correlated into")} <Link className="text-volt underline" href={`/incidents/${corr.correlation.incident_id}`}>{corr.correlation.incident_id}</Link></>}</>);
         if (corr) setIncId(corr.correlation.incident_id);
         toast("ok", "Endpoint events ingested and correlated with the email incident.");
       }),
@@ -67,8 +69,8 @@ export function DemoScenario() {
   ];
 
   return (
-    <Card title={<span className="flex items-center gap-2"><FlaskConical className="h-4 w-4 text-violet-700" /> {tr("Demo attack scenario")}</span>}
-      subtitle={tr("Safe, repeatable: harmless test files, documentation-range IPs, simulated endpoint events")} action={<SimBadge label={tr("Controlled demo")} />}>
+    <Card title={<span className="flex items-center gap-2"><FlaskConical className="h-4 w-4 text-volt" /> {tr("Demo attack scenario")}</span>}
+      subtitle={showSim ? tr("Safe, repeatable: harmless test files, documentation-range IPs, simulated endpoint events") : undefined} action={<SimBadge label={tr("Controlled demo")} />}>
       <ol className="space-y-3">
         {items.map((it, i) => {
           const st = steps[it.k];

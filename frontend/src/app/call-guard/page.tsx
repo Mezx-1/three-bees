@@ -170,7 +170,7 @@ export default function CallGuard() {
               </>
             )}
             <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-ink-200">
-              <input type="checkbox" className="mt-1 h-4 w-4 accent-blue-600" checked={consent} onChange={(e) => setConsent(e.target.checked)} disabled={live} />
+              <input type="checkbox" className="mt-1 h-4 w-4 accent-amber-600" checked={consent} onChange={(e) => setConsent(e.target.checked)} disabled={live} />
               <span>{tr("I am a participant in this call and analysing it is allowed. I understand 3B only hears what this computer's microphone picks up (put the call on speaker) — it cannot intercept phone calls.")}</span>
             </label>
             {err && <ErrorBox error={err} />}

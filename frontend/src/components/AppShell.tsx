@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { apiGet, apiSend, getMe, getToken, type Me, setSession } from "@/lib/api";
 import { DictKey, useI18n, tr } from "@/lib/i18n";
 import { BeeMark } from "./BeeMark";
-import { cn } from "./ui";
+import { cn, hexPoints } from "./ui";
 
 const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[] }[] = [
   { section: "section_detect", items: [
@@ -66,44 +66,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-5" aria-label={tr("Main")}>
-      <Link href="/" className="flex items-center gap-3 px-2">
-        <BeeMark />
+      <Link href="/" className="flex items-center gap-3 rounded-lg px-2 focus-visible:outline-2 focus-visible:outline-honey">
+        <BeeMark className="h-10 w-10" />
         <div>
-          <div className="text-lg font-bold tracking-wide text-ink-100">Three Bees</div>
-          <div className="text-xs leading-tight text-ink-400">{tr("Security Center")}</div>
+          <div className="font-display text-lg font-semibold leading-tight text-white" style={{ fontVariationSettings: '"HEXP" 60' }}>Three Bees</div>
+          <div className="text-xs leading-tight text-slate-400">{tr("Security Center")}</div>
         </div>
       </Link>
       {NAV.map((sec) => (
         <div key={sec.section}>
-          <div className="mb-1.5 px-3 text-xs font-medium text-ink-400">{t(sec.section)}</div>
+          <div className="mb-1.5 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-500">{t(sec.section)}</div>
           <ul className="space-y-0.5">
             {sec.items.map((it) => (
               <li key={it.href}>
                 <Link href={it.href} aria-current={active(it.href) ? "page" : undefined}
-                  className={cn("group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                    active(it.href) ? "bg-blue-50 font-medium text-volt" : "text-ink-300 hover:bg-ink-800 hover:text-ink-100")}>
-                  <it.icon className={cn("h-4 w-4", active(it.href) ? "text-volt" : "text-ink-400 group-hover:text-ink-200")} />
+                  className={cn("group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition focus-visible:outline-2 focus-visible:outline-honey",
+                    active(it.href) ? "bg-comb font-medium text-white" : "text-slate-300 hover:bg-comb/70 hover:text-white")}>
+                  <it.icon className={cn("h-4 w-4", active(it.href) ? "text-honey" : "text-slate-400 group-hover:text-slate-200")} />
                   {t(it.key)}
+                  {active(it.href) && (
+                    <svg viewBox="0 0 10 10" className="ms-auto h-2.5 w-2.5" aria-hidden="true"><polygon points={hexPoints(5, 5, 5)} fill="var(--color-honey)" /></svg>
+                  )}
                 </Link>
               </li>
             ))}
           </ul>
         </div>
       ))}
-      <p className="mt-auto px-3 text-xs leading-relaxed text-ink-400">
-        {tr("Results are based on the evidence found and can't catch every attack. Demo data is always marked.")}
+      <p className="mt-auto px-3 text-xs leading-relaxed text-slate-500">
+        {tr("Results are based on the evidence found and can't catch every attack.")}
       </p>
     </nav>
   );
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-e border-ink-700 bg-ink-900 lg:block">{sidebar}</aside>
+      <aside className="hive-pattern sticky top-0 hidden h-screen w-64 shrink-0 lg:block">{sidebar}</aside>
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 start-0 w-72 border-e border-ink-700 bg-ink-900">
-            <button className="absolute end-3 top-3 text-ink-300" aria-label={tr("Close menu")} onClick={() => setOpen(false)}><X className="h-5 w-5" /></button>
+          <div className="absolute inset-0 bg-hive/50" onClick={() => setOpen(false)} />
+          <aside className="hive-pattern absolute inset-y-0 start-0 w-72">
+            <button className="absolute end-3 top-3 text-slate-300" aria-label={tr("Close menu")} onClick={() => setOpen(false)}><X className="h-5 w-5" /></button>
             {sidebar}
           </aside>
         </div>

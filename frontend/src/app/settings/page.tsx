@@ -6,11 +6,12 @@ import { DemoScenario } from "@/components/DemoScenario";
 import { broadcastRefresh, Button, Card, fmtTime, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, useApi, useToast } from "@/components/ui";
 import { API_URL, apiGet, apiSend } from "@/lib/api";
 import { tr, trf, useI18n } from "@/lib/i18n";
+import { setDemoLabels, useDemoLabels } from "@/lib/prefs";
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
     <button role="switch" aria-checked={checked} aria-label={label} disabled={disabled} onClick={() => onChange(!checked)}
-      className={"relative h-6 w-11 rounded-full transition disabled:opacity-40 " + (checked ? "bg-volt" : "bg-ink-600")}>
+      className={"relative h-6 w-11 rounded-full transition disabled:opacity-40 " + (checked ? "bg-honey-deep" : "bg-ink-600")}>
       <span className={"absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all " + (checked ? "start-[22px]" : "start-0.5")} />
     </button>
   );
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const [pair, setPair] = useState<{ code: string; purpose: string; expires_at: string } | null>(null);
   const [threshold, setThreshold] = useState(60);
   const [busy, setBusy] = useState<string | null>(null);
+  const demoLabels = useDemoLabels();
   useEffect(() => { if (st.data) setThreshold(st.data.auto_incident_threshold); }, [st.data]);
   const role = meQ.data?.role;
   const isAnalyst = role === "admin" || role === "analyst";
@@ -88,6 +90,15 @@ export default function SettingsPage() {
               </div>
             )}
           </Card>
+          <Card title={tr("Display")}>
+            <div className="flex items-start justify-between gap-4 text-sm">
+              <div>
+                <div className="font-medium text-ink-100">{tr("Show demo-data labels")}</div>
+                <p className="mt-0.5 text-xs text-ink-400">{tr("Marks seeded devices and demo events as simulated. Off by default for presentations; the data stays flagged in the system either way.")}</p>
+              </div>
+              <Toggle checked={demoLabels} onChange={setDemoLabels} label={tr("Show demo-data labels")} />
+            </div>
+          </Card>
           <Card title={tr("Pair a device")} subtitle={tr("One-time code for the 3B iPhone app or a laptop agent. Valid for 15 minutes.")}>
             {!isAnalyst ? <p className="text-sm text-ink-400">{tr("Ask an analyst or admin to create a pairing code.")}</p> : (
               <div className="space-y-3">
@@ -96,7 +107,7 @@ export default function SettingsPage() {
                   <Button loading={busy === "pair-agent"} onClick={() => makeCode("agent")}>{tr("Code for a laptop agent")}</Button>
                 </div>
                 {pair && (
-                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-center">
+                  <div className="rounded-xl border border-honey/40 bg-wax p-4 text-center">
                     <div className="text-xs text-ink-400">{pair.purpose === "phone" ? tr("Enter this code in the iPhone app → Settings") : tr("Run: python agent/threeb_agent.py --pair CODE --consent")}</div>
                     <div dir="ltr" className="my-2 font-mono text-4xl font-bold tracking-[0.3em] text-volt">{pair.code}</div>
                     <div className="text-xs text-ink-400">{tr("Expires")} {fmtTime(pair.expires_at)} · {tr("can be used once")}</div>
@@ -128,7 +139,7 @@ export default function SettingsPage() {
               <div>
                 <Label htmlFor="th">{tr("Auto-incident threshold (risk score)")}</Label>
                 <div className="flex items-center gap-3">
-                  <input id="th" type="range" min={30} max={95} value={threshold} disabled={!isAdmin} onChange={(e) => setThreshold(+e.target.value)} className="flex-1 accent-blue-600" />
+                  <input id="th" type="range" min={30} max={95} value={threshold} disabled={!isAdmin} onChange={(e) => setThreshold(+e.target.value)} className="flex-1 accent-amber-600" />
                   <span className="w-10 font-mono">{threshold}</span>
                   <Button className="h-8 text-xs" disabled={!isAdmin || threshold === st.data.auto_incident_threshold} loading={busy === "th"} onClick={() => put("th", { auto_incident_threshold: threshold })}>{tr("Save")}</Button>
                 </div>

@@ -45,7 +45,7 @@ export default function CommandCenter() {
         <div className="flex flex-col justify-center gap-3 rounded-xl border border-ink-700 bg-ink-900 p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
           <div className="text-base font-semibold text-ink-100">{tr("Got something suspicious?")}</div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/scam-analyzer" className="inline-flex items-center gap-2 rounded-lg bg-volt px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800"><ShieldAlert className="h-4 w-4" /> {tr("Check a message or link")}</Link>
+            <Link href="/scam-analyzer" className="inline-flex items-center gap-2 rounded-lg bg-honey px-4 py-2 text-sm font-semibold text-hive shadow-sm hover:bg-honey-deep"><ShieldAlert className="h-4 w-4" /> {tr("Check a message or link")}</Link>
             <Link href="/email-security" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><Mail className="h-4 w-4" /> {tr("Check an email")}</Link>
             <Link href="/forensics" className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-ink-200 ring-1 ring-ink-600 hover:bg-ink-800"><FileSearch className="h-4 w-4" /> {tr("Check a file")}</Link>
           </div>

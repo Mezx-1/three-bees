@@ -7,6 +7,7 @@ import { LiveConnections } from "@/components/LiveConnections";
 import { broadcastRefresh, Button, Card, cn, EmptyState, ErrorBox, fmtTime, inputCls, Label, PageHeader, Pill, ScanBar, SeverityBadge, SimBadge, StatusDot, timeAgo, useApi, useToast } from "@/components/ui";
 import { apiGet, apiSend } from "@/lib/api";
 import { useI18n, tr } from "@/lib/i18n";
+import { useDemoLabels } from "@/lib/prefs";
 import type { Device, EndpointEvent } from "@/lib/types";
 
 const PRESETS = [
@@ -69,14 +70,15 @@ export default function Endpoints() {
   };
 
   const d = detail.data;
+  const showSim = useDemoLabels();
   return (
     <div className="space-y-5">
       <PageHeader title={t("nav_endpoints")} subtitle={tr("Device inventory, endpoint telemetry ingestion and endpoint risk")} icon={Cpu}
         actions={<Button onClick={() => setShowAdd(!showAdd)}><Plus className="h-4 w-4" /> {tr("Register device")}</Button>} />
 
-      <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+      {showSim && <div className="rounded-lg border border-ink-700 bg-ink-850 px-3 py-2 text-xs text-ink-300">
         {tr("Seeded devices are simulated inventory for the demo. Real devices appear only when the consent-based 3B agent registers. 3B does not record screens, calls, keystrokes or passwords.")}
-      </div>
+      </div>}
 
       {showAdd && (
         <Card title={tr("Register device (inventory)")}>
@@ -123,8 +125,8 @@ export default function Endpoints() {
                 </div>}>
                 <div className="flex flex-wrap items-center gap-3 text-sm"><StatusDot s={d.status} /><span className="text-ink-300">{tr("Risk")} <b className="font-mono">{d.risk_score}</b>/100</span>{sourceLabel(d.source)}<span className="text-xs text-ink-400">{tr("Owner:")} {d.owner_email || "—"}</span></div>
                 {d.status === "isolation_recommended" && <p className="mt-2 text-xs text-high">{tr("Isolation recommended. 3B does not control the network in the MVP — isolate via EDR/NAC.")}</p>}
-                <div className="mt-4">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-ink-400"><Zap className="h-3.5 w-3.5 text-violet-700" /> {tr("Inject simulated event")}</div>
+                {showSim && <div className="mt-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-ink-400"><Zap className="h-3.5 w-3.5 text-volt" /> {tr("Inject simulated event")}</div>
                   <div className="flex flex-wrap gap-2">
                     {PRESETS.map((p) => (
                       <Button key={p.key} className="text-xs" loading={busy === p.key} onClick={() => act(p.key, async () => {
@@ -133,7 +135,7 @@ export default function Endpoints() {
                       })}>{tr(p.label)}</Button>
                     ))}
                   </div>
-                </div>
+                </div>}
               </Card>
               <Card title={`${tr("Event timeline")} (${d.events.length})`}>
                 {d.events.length === 0 ? <EmptyState title={tr("No events from this device")} icon={Terminal}>{tr("Events arrive from the 3B agent, or inject a simulated event above.")}</EmptyState> : (

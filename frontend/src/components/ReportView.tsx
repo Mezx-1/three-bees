@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { tr, trf, useI18n } from "@/lib/i18n";
 import type { Analysis, Finding } from "@/lib/types";
-import { Button, Card, cn, fmtTime, Pill, ScoreRing, SeverityBadge, SourceBadge, Tabs } from "./ui";
+import { Button, Card, cn, fmtTime, Pill, ScoreRing, SeverityBadge, SimBadge, SourceBadge, Tabs } from "./ui";
 
 function FindingRow({ f }: { f: Finding }) {
   return (
@@ -280,7 +280,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
         <span>{tr("Confidence:")} {tr(`confidence_${a.confidence}`)}</span>
         <span className="capitalize">· {tr(a.kind)}</span>
         {a.kind === "email" && <span className="capitalize">· {tr("Status:")} {tr(a.status)}</span>}
-        {a.demo && <Pill className="text-violet-700">{tr("demo data")}</Pill>}
+        {a.demo && <SimBadge label="demo data" />}
         <span>· {fmtTime(a.created_at)}</span>
         {a.incident_id && <Link className="text-volt hover:underline" href={`/incidents/${a.incident_id}`}>· {tr("Incident")} {a.incident_id}</Link>}
         <Button variant="subtle" className="ms-auto" onClick={() => setShowDetails(!showDetails)} aria-expanded={showDetails}>

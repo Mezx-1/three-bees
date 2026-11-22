@@ -108,7 +108,7 @@ export default function Forensics() {
                 <SeverityBadge s={a.severity} />
                 <span className="w-12 shrink-0 text-xs capitalize text-ink-400">{a.kind}</span>
                 <Link href={`/analyses/${a.id}`} className="min-w-0 flex-1 truncate font-mono text-ink-100 hover:text-volt">{a.title}</Link>
-                {a.quarantined_file && <Pill className="text-violet-700">{tr("quarantined")}</Pill>}
+                {a.quarantined_file && <Pill>{tr("quarantined")}</Pill>}
                 <span className="font-mono text-xs">{a.risk_score}</span>
                 <span className="w-16 text-end text-xs text-ink-400">{timeAgo(a.created_at)}</span>
               </li>

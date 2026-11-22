@@ -88,7 +88,7 @@ export default function IncidentDetail({ params }: { params: Promise<{ id: strin
                 <li key={e.id} className="relative">
                   <span className={cn("absolute -start-[25px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-ink-900", EVENT_COLOR[e.type] || "bg-ink-400")} />
                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-400"><span className="font-semibold">{e.type}</span><span>{fmtTime(e.created_at)}</span><span>· {e.actor}</span></div>
-                  <p className={cn("mt-0.5 text-sm", e.type === "correlation" ? "text-sky-700" : e.type === "escalation" ? "text-rose-700" : "text-ink-200")}>{e.message}</p>
+                  <p className={cn("mt-0.5 text-sm", e.type === "correlation" ? "text-azure" : e.type === "escalation" ? "text-rose-700" : "text-ink-200")}>{e.message}</p>
                 </li>
               ))}
             </ol>

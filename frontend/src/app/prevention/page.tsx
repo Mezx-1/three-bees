@@ -59,7 +59,7 @@ export default function Prevention() {
                       <td className="pe-3 font-mono text-xs">{i.sightings}</td>
                       <td className="pe-3 text-xs">
                         {i.malicious ? <span className="text-crit">{tr("malicious")}</span> : <span className="text-ink-300">{tr("not flagged")}</span>}
-                        {i.reviewed && <span className="ms-2 text-safe">{tr("reviewed")}</span>}{i.blocked && <span className="ms-2 text-violet-700">{tr("blocked")}</span>}
+                        {i.reviewed && <span className="ms-2 text-safe">{tr("reviewed")}</span>}{i.blocked && <span className="ms-2 text-crit">{tr("blocked")}</span>}
                       </td>
                       <td className="whitespace-nowrap text-end">
                         <Button variant="ghost" className="h-7 !px-2 text-xs" loading={busy === `m-${i.value}`} onClick={() => act(`m-${i.value}`, () => apiSend("/api/indicators/review", "POST", { type: i.type, value: i.value, verdict: "malicious" }))}><XCircle className="h-3.5 w-3.5 text-crit" /> {tr("Malicious")}</Button>

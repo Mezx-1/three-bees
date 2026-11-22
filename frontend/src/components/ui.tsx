@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { AlertTriangle, CheckCircle2, FlaskConical, Info, Loader2, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { locale, tr, trf } from "@/lib/i18n";
+import { useDemoLabels } from "@/lib/prefs";
 import type { Severity } from "@/lib/types";
 
 export const cn = clsx;
@@ -31,9 +32,17 @@ export const SEV_STYLE: Record<string, string> = {
 };
 export const SEV_HEX: Record<string, string> = { critical: "#d92d20", high: "#e04f16", medium: "#dc6803", low: "#079455", info: "#98a2b3" };
 
+/** Pointy-top hexagon points for an SVG polygon. */
+export function hexPoints(cx: number, cy: number, r: number) {
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    return `${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`;
+  }).join(" ");
+}
+
 export function Card({ className, children, title, action, subtitle }: { className?: string; children: React.ReactNode; title?: React.ReactNode; action?: React.ReactNode; subtitle?: React.ReactNode }) {
   return (
-    <section className={cn("rounded-xl border border-ink-700 bg-ink-900 shadow-[0_1px_2px_rgba(16,24,40,0.05)]", className)}>
+    <section className={cn("rounded-xl border border-ink-700 bg-ink-900 shadow-[0_1px_2px_rgba(14,23,38,0.06)]", className)}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-3 border-b border-ink-700/70 px-4 py-3">
           <div>
@@ -51,7 +60,7 @@ export function Card({ className, children, title, action, subtitle }: { classNa
 type BtnVariant = "primary" | "ghost" | "danger" | "subtle" | "success" | "warn";
 export function Button({ variant = "subtle", loading, className, children, disabled, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; loading?: boolean }) {
   const v: Record<BtnVariant, string> = {
-    primary: "bg-volt text-white hover:bg-blue-800 font-medium shadow-sm",
+    primary: "bg-honey text-hive hover:bg-honey-deep font-semibold shadow-sm",
     ghost: "bg-transparent text-ink-300 hover:bg-ink-800 hover:text-ink-100",
     subtle: "bg-ink-900 text-ink-200 hover:bg-ink-800 ring-1 ring-inset ring-ink-600 shadow-sm",
     danger: "bg-crit text-white hover:bg-red-700",
@@ -62,7 +71,7 @@ export function Button({ variant = "subtle", loading, className, children, disab
     <button
       {...rest}
       disabled={disabled || loading}
-      className={cn("inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-volt", v[variant], className)}
+      className={cn("inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey", v[variant], className)}
     >
       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
       {children}
@@ -79,16 +88,18 @@ export function Pill({ children, className, title }: { children: React.ReactNode
 }
 
 export function SimBadge({ label = "Simulated" }: { label?: string }) {
+  const show = useDemoLabels();
+  if (!show) return null;
   label = tr(label);
   return (
-    <Pill className="bg-violet-50 text-violet-700 ring-violet-200" title={tr("Generated for demonstration — not real telemetry")}>
+    <Pill className="bg-ink-800 text-ink-300 ring-ink-600" title={tr("Generated for demonstration — not real telemetry")}>
       <FlaskConical className="h-3 w-3" /> {label}
     </Pill>
   );
 }
 
 const SOURCE_STYLE: Record<string, [string, string]> = {
-  verified: ["Confirmed", "bg-azure/15 text-sky-700 ring-azure/40"],
+  verified: ["Confirmed", "bg-azure/10 text-azure ring-azure/30"],
   heuristic: ["Pattern", "bg-ink-800 text-ink-300 ring-ink-600"],
   intel: ["External source", "bg-teal-50 text-teal-700 ring-teal-200"],
   ai: ["AI opinion", "bg-slate-100 text-slate-600 ring-slate-300"],
@@ -99,8 +110,8 @@ export function SourceBadge({ s }: { s: string }) {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  open: "text-crit", investigating: "text-warn", contained: "text-sky-700", resolved: "text-safe", false_positive: "text-ink-300",
-  new: "text-ink-200", suspicious: "text-warn", quarantined: "text-violet-700", safe: "text-safe", reported: "text-sky-700",
+  open: "text-crit", investigating: "text-warn", contained: "text-azure", resolved: "text-safe", false_positive: "text-ink-300",
+  new: "text-ink-200", suspicious: "text-warn", quarantined: "text-ink-100", safe: "text-safe", reported: "text-azure",
   healthy: "text-safe", at_risk: "text-warn", compromised: "text-crit", isolation_recommended: "text-high", offline: "text-ink-400",
 };
 export function StatusDot({ s }: { s: string }) {
@@ -113,17 +124,18 @@ export function StatusDot({ s }: { s: string }) {
 }
 
 export function ScoreRing({ score, severity, size = 116 }: { score: number; severity: string; size?: number }) {
-  const r = 46;
-  const c = 2 * Math.PI * r;
+  // A honeycomb cell that fills clockwise from the top as the risk rises.
   const color = SEV_HEX[severity] || SEV_HEX.info;
+  const pts = hexPoints(55, 55, 48);
   return (
     <div className="relative" style={{ width: size, height: size }} role="img" aria-label={trf("Risk score {score} of 100", { score })}>
-      <svg viewBox="0 0 110 110" className="h-full w-full -rotate-90">
-        <circle cx="55" cy="55" r={r} fill="none" stroke="#eef1f5" strokeWidth="9" />
-        <circle cx="55" cy="55" r={r} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * score) / 100} style={{ transition: "stroke-dashoffset 0.9s ease" }} />
+      <svg viewBox="0 0 110 110" className="h-full w-full">
+        <polygon points={pts} fill="none" stroke="#eef0f4" strokeWidth="8" strokeLinejoin="round" />
+        <polygon points={pts} fill="none" stroke={color} strokeWidth="8" strokeLinejoin="round" pathLength={100}
+          strokeDasharray="100" strokeDashoffset={100 - Math.max(0, Math.min(100, score))} style={{ transition: "stroke-dashoffset 0.9s ease" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-semibold tabular-nums" style={{ color }}>{score}</span>
+        <span className="font-display text-3xl font-semibold tabular-nums" style={{ color }}>{score}</span>
         <span className="text-xs text-ink-400">{tr("out of 100")}</span>
       </div>
     </div>
@@ -133,7 +145,7 @@ export function ScoreRing({ score, severity, size = 116 }: { score: number; seve
 export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex items-center gap-2 text-sm text-ink-300">
-      <Loader2 className="h-4 w-4 animate-spin text-volt" /> {label || tr("Loading…")}
+      <Loader2 className="h-4 w-4 animate-spin text-honey-deep" /> {label || tr("Loading…")}
     </div>
   );
 }
@@ -167,12 +179,13 @@ export function PageHeader({ title, subtitle, icon: Icon, actions }: { title: st
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="flex items-center gap-3">
         {Icon && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-volt">
-            <Icon className="h-5 w-5 text-volt" />
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+            <svg viewBox="0 0 44 44" className="absolute inset-0 h-full w-full" aria-hidden="true"><polygon points={hexPoints(22, 22, 21)} fill="var(--color-hive)" /></svg>
+            <Icon className="relative h-5 w-5 text-honey" />
           </div>
         )}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-100">{title}</h1>
+          <h1 className="text-2xl font-semibold text-ink-100">{title}</h1>
           {subtitle && <p className="text-sm text-ink-300">{subtitle}</p>}
         </div>
       </div>
@@ -181,7 +194,7 @@ export function PageHeader({ title, subtitle, icon: Icon, actions }: { title: st
   );
 }
 
-export const inputCls = "w-full rounded-lg border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 shadow-sm placeholder:text-ink-500 focus:border-volt focus:outline-none focus:ring-1 focus:ring-volt";
+export const inputCls = "w-full rounded-lg border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 shadow-sm placeholder:text-ink-500 focus:border-honey-deep focus:outline-none focus:ring-2 focus:ring-honey/40";
 
 export function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-ink-200">{children}</label>;
@@ -192,7 +205,7 @@ export function Tabs<T extends string>({ value, onChange, items }: { value: T; o
     <div role="tablist" className="inline-flex flex-wrap gap-1 rounded-lg bg-ink-800 p-1">
       {items.map((it) => (
         <button key={it.value} role="tab" aria-selected={value === it.value} onClick={() => onChange(it.value)}
-          className={cn("rounded-md px-3 py-1.5 text-sm transition", value === it.value ? "bg-ink-900 font-medium text-ink-100 shadow-sm" : "text-ink-300 hover:text-ink-100")}>
+          className={cn("rounded-md px-3 py-1.5 text-sm transition", value === it.value ? "bg-hive font-medium text-white shadow-sm" : "text-ink-300 hover:text-ink-100")}>
           {it.label}
         </button>
       ))}
@@ -203,12 +216,12 @@ export function Tabs<T extends string>({ value, onChange, items }: { value: T; o
 export function Stat({ label, value, icon: Icon, tone = "default", hint }: { label: string; value: React.ReactNode; icon?: any; tone?: "default" | "crit" | "warn" | "safe" | "volt"; hint?: string }) {
   const tones = { default: "text-ink-100", crit: "text-crit", warn: "text-warn", safe: "text-safe", volt: "text-volt" };
   return (
-    <div className="rounded-xl border border-ink-700 bg-ink-900 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
+    <div className="rounded-xl border border-ink-700 bg-ink-900 p-4 shadow-[0_1px_2px_rgba(14,23,38,0.06)]">
       <div className="flex items-center justify-between text-sm text-ink-400">
         {label}
         {Icon && <Icon className="h-4 w-4 text-ink-400" />}
       </div>
-      <div className={cn("mt-2 text-3xl font-semibold tabular-nums", tones[tone])}>{value}</div>
+      <div className={cn("font-display mt-2 text-3xl font-semibold tabular-nums", tones[tone])}>{value}</div>
       {hint && <div className="mt-1 text-xs text-ink-400">{hint}</div>}
     </div>
   );

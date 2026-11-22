@@ -114,7 +114,7 @@ export default function ScamAnalyzer() {
             {samples.map((s) => (
               <li key={s.key}>
                 <button onClick={() => { setFile(null); setChannel(s.channel); setText(s.text); setResult(null); setErr(null); }}
-                  className="w-full rounded-lg border border-ink-700 p-3 text-start text-sm hover:border-volt hover:bg-blue-50/40">
+                  className="w-full rounded-lg border border-ink-700 p-3 text-start text-sm hover:border-honey hover:bg-wax/60">
                   <span className="mb-1 block text-xs font-medium capitalize text-volt">{s.channel === "call" ? tr("Phone call") : s.channel}</span>
                   <span dir="auto" className="line-clamp-2 text-ink-300">{s.text}</span>
                 </button>

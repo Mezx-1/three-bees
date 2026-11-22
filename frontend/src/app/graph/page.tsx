@@ -8,13 +8,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, EmptyState, ErrorBox, inputCls, PageHeader, Pill, ScanBar, SEV_HEX, SeverityBadge, SimBadge, useApi } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import { useI18n, tr } from "@/lib/i18n";
+import { useDemoLabels } from "@/lib/prefs";
 
 const TYPE_META: Record<string, { icon: any; color: string; col: number; label: string }> = {
   incident: { icon: Siren, color: "#d92d20", col: 0, label: "Incident" },
-  email: { icon: Mail, color: "#2563eb", col: 1, label: "Email" },
-  message: { icon: Mail, color: "#2563eb", col: 1, label: "Message" },
-  file: { icon: FileCode2, color: "#2563eb", col: 1, label: "File" },
-  image: { icon: FileCode2, color: "#2563eb", col: 1, label: "Image" },
+  email: { icon: Mail, color: "#a15c07", col: 1, label: "Email" },
+  message: { icon: Mail, color: "#a15c07", col: 1, label: "Message" },
+  file: { icon: FileCode2, color: "#a15c07", col: 1, label: "File" },
+  image: { icon: FileCode2, color: "#a15c07", col: 1, label: "Image" },
   url: { icon: Link2, color: "#b54708", col: 2, label: "URL" },
   domain: { icon: Globe2, color: "#b54708", col: 2, label: "Domain" },
   ip: { icon: NetIcon, color: "#b54708", col: 2, label: "IP" },
@@ -31,13 +32,14 @@ function EntityNode({ data }: NodeProps) {
   const d = data as any;
   const meta = d.meta;
   const Icon = meta.icon;
+  const showSim = useDemoLabels();
   return (
     <div className="rounded-lg border bg-ink-900 px-2.5 py-2 shadow-sm" style={{ borderColor: d.malicious || d.severity === "critical" ? "#d92d20" : meta.color + "88", minWidth: 170, maxWidth: 220 }}>
       <Handle type="target" position={Position.Left} style={{ background: meta.color, width: 6, height: 6 }} />
       <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
         <Icon className="h-3.5 w-3.5" /> {tr(meta.label)}
         {d.malicious && <span className="ms-auto rounded bg-crit/20 px-1 text-[9px] text-crit">{tr("malicious")}</span>}
-        {d.simulated && <span className="ms-auto rounded bg-violet-100 px-1 text-[9px] text-violet-700">{tr("sim")}</span>}
+        {showSim && d.simulated && <span className="ms-auto rounded bg-ink-800 px-1 text-[9px] text-ink-400">{tr("sim")}</span>}
       </div>
       <div className="mt-0.5 break-all font-mono text-[11px] leading-snug text-ink-100">{d.label}</div>
       {d.severity && <div className="mt-1 h-1 rounded" style={{ background: SEV_HEX[d.severity] }} />}

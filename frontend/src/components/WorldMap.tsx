@@ -28,7 +28,7 @@ export function WorldMap({ points }: { points: MapPoint[] }) {
           const xy = project([p.lon, p.lat]);
           if (!xy) return null;
           const r = 4 + 10 * Math.sqrt(p.count / max);
-          const color = p.max_risk >= 60 ? "#d92d20" : p.max_risk >= 30 ? "#dc6803" : "#2563eb";
+          const color = p.max_risk >= 60 ? "#d92d20" : p.max_risk >= 30 ? "#dc6803" : "#a15c07";
           return (
             <g key={i} onMouseEnter={() => setHover(p)} onMouseLeave={() => setHover(null)} className="cursor-pointer">
               <circle cx={xy[0]} cy={xy[1]} r={r} fill={color} fillOpacity={0.25} stroke={color} strokeWidth={1.5} />

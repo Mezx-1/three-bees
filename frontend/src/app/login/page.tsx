@@ -30,11 +30,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl border border-ink-700 bg-ink-900 p-8 shadow-sm" noValidate>
+    <div className="hive-pattern flex min-h-screen items-center justify-center px-4">
+      <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl bg-ink-900 p-8 shadow-2xl shadow-black/30" noValidate>
         <div className="flex flex-col items-center gap-2 text-center">
           <BeeMark className="h-14 w-14" />
-          <div className="text-2xl font-bold text-ink-100">Three Bees</div>
+          <div className="font-display text-2xl font-semibold text-ink-100" style={{ fontVariationSettings: '"HEXP" 60' }}>Three Bees</div>
           <div className="text-sm text-ink-400">{tr("Sign in to the security center")}</div>
         </div>
         <div>

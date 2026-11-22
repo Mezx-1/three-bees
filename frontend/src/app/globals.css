@@ -1,31 +1,50 @@
 @import "tailwindcss";
 
 /*
-  Light theme. The `ink` scale runs from page background (950) to primary text (100):
+  Three Bees theme: a navy "hive" frame with honey as the single accent.
+  The `ink` scale runs from page background (950) to primary text (100):
   950 page · 900 card · 850 input/inset · 800 hover · 700 border · 600 strong border/track
   500 placeholder · 400 muted text · 300 secondary text · 200 body text · 100 headings
 */
 @theme {
-  --color-ink-950: #f4f6f8;
+  --color-ink-950: #f2f4f7;
   --color-ink-900: #ffffff;
-  --color-ink-850: #f8fafc;
-  --color-ink-800: #eef1f5;
-  --color-ink-700: #e2e7ee;
-  --color-ink-600: #d0d7e1;
-  --color-ink-500: #98a2b3;
-  --color-ink-400: #667085;
-  --color-ink-300: #475467;
-  --color-ink-200: #344054;
-  --color-ink-100: #101828;
-  --color-volt: #1d4ed8;
-  --color-volt-dim: #1e40af;
-  --color-azure: #2563eb;
+  --color-ink-850: #f8f9fb;
+  --color-ink-800: #eef0f4;
+  --color-ink-700: #e1e5ec;
+  --color-ink-600: #cdd3dd;
+  --color-ink-500: #98a1b0;
+  --color-ink-400: #636d7e;
+  --color-ink-300: #444e5f;
+  --color-ink-200: #2e3747;
+  --color-ink-100: #0e1726;
+  /* brand */
+  --color-hive: #0e1726;      /* sidebar, headings */
+  --color-comb: #1b2840;      /* sidebar hover */
+  --color-honey: #f4a62a;     /* accent: primary buttons, active marks, focus */
+  --color-honey-deep: #e08e0b;
+  --color-wax: #fff4dc;       /* honey tint for selected surfaces */
+  --color-volt: #a15c07;      /* readable honey for links and accent text */
+  --color-volt-dim: #7c4705;
+  --color-azure: #1f5fbf;
   --color-crit: #d92d20;
   --color-high: #e04f16;
   --color-warn: #b54708;
   --color-safe: #067647;
   --font-sans: var(--font-plex), var(--font-plex-ar), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-readex), var(--font-plex-ar), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-jb), ui-monospace, monospace;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Faint honeycomb texture for the navy sidebar. */
+.hive-pattern {
+  background-color: var(--color-hive);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='48.5' viewBox='0 0 28 48.5'%3E%3Cpath d='M14 0 28 8.08v16.17L14 32.33 0 24.25V8.08zM14 32.33v16.17' fill='none' stroke='%23f4a62a' stroke-opacity='0.07' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 28px 48.5px;
 }
 
 html,
@@ -35,7 +54,7 @@ body {
 }
 
 ::selection {
-  background: rgba(29, 78, 216, 0.18);
+  background: rgba(244, 166, 42, 0.28);
 }
 
 * {
@@ -52,8 +71,8 @@ body {
   position: absolute;
   inset: 0;
   width: 40%;
-  background: var(--color-volt);
-  opacity: 0.55;
+  background: var(--color-honey);
+  opacity: 0.9;
   animation: indeterminate 1.3s ease-in-out infinite;
 }
 

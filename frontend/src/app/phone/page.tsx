@@ -5,6 +5,7 @@ import { useState } from "react";
 import { broadcastRefresh, Button, Card, cn, ErrorBox, inputCls, Label, PageHeader, SimBadge } from "@/components/ui";
 import { apiGet, apiSend } from "@/lib/api";
 import { tr } from "@/lib/i18n";
+import { useDemoLabels } from "@/lib/prefs";
 
 const SAMPLE_SMS = [
   { sender: "simkukjin@hanmail.net", body: "[Salik] تنبيه عاجل: لا يزال يوجد رصيد رسوم مرور مستحق بقيمة 4.00 درهم تحت حسابك. يرجى السداد قبل الساعة 11:59 مساءً لتجنب غرامة 50 درهماً.\n[Salik] FINAL REMINDER: a toll balance of AED 4.00 is PENDING. Settle before 11:59 PM TODAY to avoid an AED 50.00 fine.\nTo settle, visit: https://salik.ae.ticka.top" },
@@ -53,15 +54,16 @@ export default function PhoneProtection() {
     }
   };
 
+  const showSim = useDemoLabels();
   const shown = msgs.filter((m) => (folder === "junk") === (m.res.action === "junk"));
   return (
     <div className="space-y-5">
       <PageHeader title={tr("Phone Protection")} icon={Smartphone}
         subtitle={tr("Scam messages go straight to Junk, and calls from risky numbers show a warning before you answer.")}
         actions={<SimBadge label="Simulation of the mobile app" />} />
-      <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+      {showSim && <div className="rounded-lg border border-ink-700 bg-ink-850 px-3 py-2 text-xs text-ink-300">
         {tr("This page simulates the phone app using the real 3B analysis. On iPhone, Apple only lets an app filter messages from unknown senders (they go to the Junk folder) and label or block numbers before you answer — it cannot read your other messages or listen to phone calls.")}
-      </div>
+      </div>}
       {err && <ErrorBox error={err} />}
       <div className="grid gap-6 xl:grid-cols-2">
         <Card title={<span className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-volt" />{tr("Incoming text message")}</span>}>
@@ -107,7 +109,7 @@ export default function PhoneProtection() {
             <div className="space-y-3">
               <div><Label htmlFor="cl">{tr("Caller's number")}</Label><input id="cl" dir="ltr" className={inputCls} value={caller} onChange={(e) => setCaller(e.target.value)} /></div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="primary" loading={busy === "call"} onClick={ring}><Phone className="h-4 w-4" />{tr("Simulate incoming call")}</Button>
+                <Button variant="primary" loading={busy === "call"} onClick={ring}><Phone className="h-4 w-4" />{tr("Try an incoming call")}</Button>
                 {["+882 1234 5678", "+44 7399 367678", "+49 177 5111338", "050 123 4567"].map((n) => <Button key={n} variant="ghost" className="text-xs" onClick={() => setCaller(n)}><span dir="ltr">{n}</span></Button>)}
               </div>
               <p className="text-xs text-ink-400">{tr("The warning is based on the number only (registration country, satellite ranges, 3B scam reports). To analyse what the caller says, use Call Guard with the call on speaker.")}</p>
@@ -131,7 +133,7 @@ export default function PhoneProtection() {
                   </div>
                   <p className="mt-2 text-[10px] opacity-60">{call.note}</p>
                 </>
-              ) : <p className="m-auto text-center text-xs opacity-70">{tr("Press “Simulate incoming call”")}</p>}
+              ) : <p className="m-auto text-center text-xs opacity-70">{tr("Press “Try an incoming call”")}</p>}
             </div>
           </div>
         </Card>

@@ -139,7 +139,12 @@ export const AR: Record<string, string> = {
   "Open menu": "فتح القائمة",
   "Close menu": "إغلاق القائمة",
   "Connected": "متصل",
-  "Results are based on the evidence found and can't catch every attack. Demo data is always marked.": "النتائج مبنية على الأدلة المكتشفة ولا يمكنها رصد كل هجوم. بيانات العرض التجريبي مُعلَّمة دائماً.",
+  "Results are based on the evidence found and can't catch every attack.": "النتائج مبنية على الأدلة المكتشفة ولا يمكنها رصد كل هجوم.",
+  "Show demo-data labels": "إظهار علامات البيانات التجريبية",
+  "Marks seeded devices and demo events as simulated. Off by default for presentations; the data stays flagged in the system either way.": "يعلّم الأجهزة والأحداث التجريبية بأنها محاكاة. مطفأ افتراضياً للعروض، والبيانات تبقى معلَّمة داخل النظام في الحالتين.",
+  "Display": "العرض",
+  "Try an incoming call": "جرّب مكالمة واردة",
+  "Press “Try an incoming call”": "اضغط «جرّب مكالمة واردة»",
   "Can't reach the server — start the backend": "تعذّر الوصول إلى الخادم — شغّل الخادم الخلفي",
 
   // ---- generic
