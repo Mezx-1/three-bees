@@ -25,6 +25,25 @@ AR_HOURS = {"واحدة": 1, "الواحدة": 1, "وحدة": 1, "اثنين": 2
             "الحادية عشرة": 11, "ثنعش": 12, "اطنعش": 12, "اثنا عشر": 12, "اثني عشر": 12, "الثانية عشر": 12, "الثانية عشرة": 12}
 EN_HOURS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
             "eleven": 11, "twelve": 12}
+EN_UNITS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9}
+EN_TEENS = {"ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17,
+            "eighteen": 18, "nineteen": 19}
+EN_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50}
+_U = "|".join(EN_UNITS)
+# Spoken minutes after the hour: "four oh three", "seven fifteen", "five forty five", "six thirty".
+EN_MIN_RE = (r"(?P<min>(?:oh|o)\s+(?:" + _U + r")|(?:" + "|".join(EN_TEENS) + r")|(?:" + "|".join(EN_TENS) + r")(?:[\s-]+(?:" + _U + r"))?)\b")
+EN_LEAD = r"(?:it'?s|it is|the time is|time is|time now is|now it'?s|right now it'?s)\s*(?:now\s*)?(?:around\s*|about\s*|almost\s*|nearly\s*)?"
+
+
+def _en_minutes(s: str | None) -> int:
+    if not s:
+        return 0
+    words = re.split(r"[\s-]+", s.lower())
+    if words[0] in ("oh", "o"):
+        return EN_UNITS.get(words[1], 0)
+    return EN_TEENS.get(words[0], 0) + EN_TENS.get(words[0], 0) + (EN_UNITS.get(words[1], 0) if len(words) > 1 else 0)
+
+
 WEEKDAYS = {  # Python weekday(): Monday=0
     0: ["الاثنين", "الإثنين", "monday"], 1: ["الثلاثاء", "tuesday"], 2: ["الأربعاء", "الاربعاء", "wednesday"],
     3: ["الخميس", "thursday"], 4: ["الجمعة", "friday"], 5: ["السبت", "saturday"], 6: ["الأحد", "الاحد", "sunday"],
@@ -92,7 +111,7 @@ def extract_time_claims(text: str) -> list[tuple[int, int, str]]:
     out: list[tuple[int, int, str]] = []
     # digits: "الساعة 12", "الساعة الآن 12:30", "it's 12", "the time is 3:15 pm"
     for m in re.finditer(r"(?:الساعة|الساعه|ساعة)\s*(?:الآن|الان|هلأ|هلق|هسا|حاليا|حالياً|عندي|عندنا|بالإمارات|في الإمارات)?\s*(\d{1,2})(?:[:.](\d{2}))?"
-                         r"|\b(?:it'?s|it is|the time is|time is|time now is)\s*(?:now\s*)?(\d{1,2})(?:[:.](\d{2}))?\s*(?:am|pm|o'?clock)?", text, re.I):
+                         r"|\b" + EN_LEAD + r"(\d{1,2})(?:[:.](\d{2}))?\s*(?:am|pm|a\.m\.|p\.m\.|o'?clock)?", text, re.I):
         h = int(m.group(1) or m.group(3))
         mi = int(m.group(2) or m.group(4) or 0)
         out.append((h, mi, m.group(0).strip()))
@@ -103,9 +122,8 @@ def extract_time_claims(text: str) -> list[tuple[int, int, str]]:
             mi = 30 if "نص" in tail else 15 if tail.startswith("وربع") or tail.startswith("والربع") else -15 if "ربع" in tail else 0
             out.append((h, mi, m.group(0).strip()))
     for word, h in EN_HOURS.items():
-        for m in re.finditer(r"\b(?:it'?s\s+)?" + word + r"\s+o'?clock\b|\b(?:it'?s|it is)\s+" + word + r"(?:\s+thirty|\s+fifteen)?\b", text, re.I):
-            mi = 30 if "thirty" in m.group(0).lower() else 15 if "fifteen" in m.group(0).lower() else 0
-            out.append((h, mi, m.group(0).strip()))
+        for m in re.finditer(r"\b(?:it'?s\s+)?" + word + r"\s+o'?clock\b|\b" + EN_LEAD + word + r"\b(?:[\s-]+" + EN_MIN_RE + r")?", text, re.I):
+            out.append((h, _en_minutes(m.group("min")), m.group(0).strip()))
     return out
 
 

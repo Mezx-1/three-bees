@@ -52,7 +52,7 @@ PATTERNS: list[Pattern] = [
         "Asks the reader to share an OTP, PIN or verification code. Legitimate organisations never ask for these.",
         42, "high", ["otp_theft", "credential_theft"],
         [r"\b(otp|one[- ]time (password|code|pin))\b", r"\bverification code\b", r"\b(share|send|provide|tell|give|enter|confirm)\b.{0,40}\b(code|pin)\b",
-         r"\b6[- ]digit code\b", r"\bsecurity code\b", r"\bcvv\b",
+         r"\b6[- ]digit code\b", r"\bcode\b[^.?!]{0,40}\b(sms|text message)\b", r"\b(sms|text) code\b", r"\bsecurity code\b", r"\bcvv\b",
          r"رمز التحقق", r"الرمز السري", r"كلمة المرور المؤقتة", r"رمز (OTP|التفعيل)",
          r"(عطني|عطيني|اعطني|أعطني|اعطيني|ابعتلي|ابعثلي|ارسلي|ارسل لي|أرسل لي|قولي|قول لي|اقرالي|اقرا لي|اقرأ لي|خبرني|تعطيني|تقرالي)\s+(ال)?(رمز|كود|كوود|الرمز|الكود)",
          r"(الرمز|الكود|الرقم|الأرقام|الارقام) (اللي|الي|الذي) (وصلك|راح يوصلك|بيوصلك|بيجيك|جاك|وصل لك)", r"(رمز|كود) (على|في|ع) (جوالك|تلفونك|موبايلك|هاتفك)",
@@ -94,8 +94,9 @@ PATTERNS: list[Pattern] = [
         [r"\b(ceo|cfo|managing director|chairman|director general)\b", r"\b(police|ministry|government|customs|court|prosecution)\b",
          r"\b(it (support|department|helpdesk|team)|helpdesk|system administrator|security team)\b",
          r"\b(bank|central bank) (security|team|department|officer)\b",
+         r"\b(i am|i'm|we are|we're|this is|calling( you)?)\b[^.?!]{0,20}\bfrom\b[^.?!]{0,40}\bbank\b", r"\bfrom (the |your )?bank\b",
          r"الشرطة", r"وزارة", r"النيابة", r"المدير التنفيذي", r"البنك المركزي", r"الدعم الفني",
-         r"شرطة", r"قسم (الحماية|الأمن|الامن|الاحتيال|مكافحة)", r"من (البنك|بنك)", r"(الملازم|ملازم|النقيب|نقيب|الرائد|رائد|المقدم|العقيد|ضابط)"],
+         r"شرطة", r"قسم (الحماية|الأمن|الامن|الاحتيال|مكافحة)", r"من (البنك|بنك)b", r"(الملازم|ملازم|النقيب|نقيب|الرائد|رائد|المقدم|العقيد|ضابط)"],
     ),
     Pattern(
         "reward", "Too-good-to-be-true reward",
@@ -132,6 +133,17 @@ PATTERNS: list[Pattern] = [
         "A 'you missed a call' notice from an unknown sender is a common trick to make you call back a premium-rate or scam number (wangiri).",
         20, "medium", ["vishing", "payment_fraud"],
         [r"\bmissed\s+\d*\s*call(\(s\))?s?\b", r"\bcall(\(s\))? from \+\d", r"\blast call\b", r"مكالمة فائتة", r"مكالمات فائتة"],
+    ),
+    Pattern(
+        "account_pretext", "Card or account 'problem' pretext",
+        "Claims your card or account needs an update, verification or has suspicious activity — the usual opening of a bank-impersonation call.",
+        18, "medium", ["vishing", "impersonation"],
+        [r"\b(visa|master ?card|credit card|debit card|bank card|atm card|card|account)\b[^.?!]{0,25}\b(needs?|requires?|must)\b[^.?!]{0,12}\b(update|updating|updated|verification|verified|activation|activated|renewal|renewed|reactivat\w*)\b",
+         r"\b(update|verify|activate|reactivate|renew|unblock)\b[^.?!]{0,8}\b(your|the) (visa|master ?card|card|account|bank details)\b",
+         r"\bwe (have )?(received|detected|noticed|found|got)\b[^.?!]{0,30}\b(in our system|on our system|suspicious|unusual)\b",
+         r"\b(suspicious|unusual|unauthori[sz]ed) (activity|transaction|login|payment)\b",
+         r"(تحديث|تحديث بيانات|تفعيل|تجديد) (بطاقتك|البطاقة|حسابك|الحساب|بياناتك|بيانات البطاقة)",
+         r"(بطاقتك|البطاقة|حسابك) (تحتاج|بحاجة|يحتاج|لازم|محتاجة|محتاج)", r"(وصلنا|ظهر عندنا|طلع عندنا)[^.؟!]{0,20}(النظام|السيستم|نظامنا)"],
     ),
     Pattern(
         "voice_pretext", "Call-based pretext",
@@ -192,6 +204,12 @@ def analyze_text(text: str, channel: str = "message") -> tuple[list[Finding], di
             "Authority figure asking for a code",
             "Someone claiming to be the police, a bank or an official department asks for a one-time code. Real officials never do this.",
             "content", "high", 30, "heuristic", ["otp_theft", "impersonation", "vishing"],
+        ))
+    if {"account_pretext", "otp"} <= keys:
+        findings.append(Finding(
+            "Card or account 'problem' used to ask for a code",
+            "The caller says your card or account needs attention and then asks for the code sent by SMS. That code would let them take over the card.",
+            "content", "high", 28, "heuristic", ["otp_theft", "vishing"],
         ))
     if {"threat", "credentials"} <= keys or {"urgency", "credentials"} <= keys:
         findings.append(Finding(

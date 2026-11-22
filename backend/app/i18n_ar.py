@@ -140,6 +140,12 @@ EXACT: dict[str, str] = {
     "Authority figure asking for a code": "جهة رسمية تطلب رمز التحقق",
     "Someone claiming to be the police, a bank or an official department asks for a one-time code. Real officials never do this.":
         "شخص يدّعي أنه من الشرطة أو البنك أو جهة رسمية يطلب رمز تحقق لمرة واحدة. الجهات الحقيقية لا تطلب ذلك أبداً.",
+    "Card or account 'problem' pretext": "ذريعة «مشكلة» في البطاقة أو الحساب",
+    "Claims your card or account needs an update, verification or has suspicious activity — the usual opening of a bank-impersonation call.":
+        "يدّعي أن بطاقتك أو حسابك يحتاج تحديثاً أو تحققاً أو أن فيه نشاطاً مشبوهاً — وهي البداية المعتادة لمكالمات انتحال صفة البنك.",
+    "Card or account 'problem' used to ask for a code": "«مشكلة» في البطاقة لطلب رمز التحقق",
+    "The caller says your card or account needs attention and then asks for the code sent by SMS. That code would let them take over the card.":
+        "المتصل يقول إن بطاقتك أو حسابك يحتاج إجراء، ثم يطلب الرمز الذي يصلك برسالة نصية. هذا الرمز يمكّنه من الاستيلاء على البطاقة.",
     "Pressure combined with credential request": "ضغط مقترن بطلب بيانات الدخول",
     "Urgency or threats paired with a login/password request strongly matches credential-phishing kits.":
         "الاستعجال أو التهديد مع طلب تسجيل الدخول/كلمة المرور يطابق بقوة أدوات تصيّد بيانات الدخول.",
