@@ -3,7 +3,7 @@
 import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Footprints, Globe2, Link2, Mail, Paperclip, ScanText, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { tr, trf, useI18n } from "@/lib/i18n";
+import { getLang, tr, trf, useI18n } from "@/lib/i18n";
 import { useSimpleMode } from "@/lib/prefs";
 import { speak, stopSpeaking, useHasVoice } from "@/lib/speak";
 import type { Analysis, Finding } from "@/lib/types";
@@ -343,7 +343,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-400">
         <SeverityBadge s={a.severity} />
-        <span>{tr("Confidence:")} {tr(`confidence_${a.confidence}`)}</span>
+        <span>{tr("Confidence:")} {getLang() === "ar" ? tr(`confidence_${a.confidence}`) : a.confidence}</span>
         <span className="capitalize">· {tr(a.kind)}</span>
         {a.kind === "email" && <span className="capitalize">· {tr("Status:")} {tr(a.status)}</span>}
         {a.demo && <SimBadge label="demo data" />}
