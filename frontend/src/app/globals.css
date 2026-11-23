@@ -96,3 +96,8 @@ body {
   color: #344054 !important;
 }
 .react-flow__controls .react-flow__controls-button:hover { background: #eef1f5 !important; }
+
+/* Simple mode: everything a size larger (Tailwind sizes are in rem). */
+html.simple {
+  font-size: 118.75%;
+}

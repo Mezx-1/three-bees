@@ -4,7 +4,8 @@ import { Hand, MessageCircleQuestion, Mic, PhoneCall, ShieldCheck, Square, Uploa
 import { useEffect, useRef, useState } from "react";
 import { AnalysisActions } from "@/components/AnalysisActions";
 import { FileDrop } from "@/components/FileDrop";
-import { NextSteps, ReportView, verdictOf } from "@/components/ReportView";
+import { NextSteps, ReportView, SimpleVerdict, verdictOf } from "@/components/ReportView";
+import { useSimpleMode } from "@/lib/prefs";
 import { broadcastRefresh, Button, Card, cn, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, ScoreRing, Tabs, useApi } from "@/components/ui";
 import { apiGet, apiSend, apiUpload } from "@/lib/api";
 import { tr, trf } from "@/lib/i18n";
@@ -181,6 +182,7 @@ export default function CallGuard() {
   const v = result ? verdictOf(result.risk_score) : null;
   const feats = result?.report?.call?.features || {};
   const caller = result?.report?.call?.caller;
+  const simple = useSimpleMode();
   return (
     <div className="space-y-5">
       <PageHeader title={tr("Call Guard")} icon={PhoneCall}
@@ -252,7 +254,9 @@ export default function CallGuard() {
         </Card>
       </div>
 
-      {(live || lines.length > 0) && result && v && (
+      {simple && (live || lines.length > 0) && result && <SimpleVerdict a={result} />}
+
+      {!simple && (live || lines.length > 0) && result && v && (
         <div className={cn("grid gap-4 rounded-xl border p-5 lg:grid-cols-[auto_1fr_1fr]", v.tone)}>
           <ScoreRing score={result.risk_score} severity={result.severity} size={104} />
           <div>

@@ -1,11 +1,12 @@
 "use client";
 
-import { Activity, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
+import { Accessibility, Activity, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiGet, apiSend, getMe, getToken, type Me, setSession } from "@/lib/api";
 import { DictKey, useI18n, tr } from "@/lib/i18n";
+import { setSimpleMode, useSimpleMode } from "@/lib/prefs";
 import { BeeMark } from "./BeeMark";
 import { SearchBox } from "./SearchBox";
 import { cn, hexPoints } from "./ui";
@@ -53,6 +54,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [offline, setOffline] = useState(false);
   const isLogin = path.startsWith("/login");
+  const simple = useSimpleMode();
+  useEffect(() => { document.documentElement.classList.toggle("simple", simple); }, [simple]);
 
   useEffect(() => {
     if (isLogin) return;
@@ -136,14 +139,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-crit"><Activity className="h-3.5 w-3.5" /> {tr("Can't reach the server — start the backend")}</span>
           )}
           <div className="ms-auto flex items-center gap-2">
+            <button onClick={() => setSimpleMode(!simple)} aria-pressed={simple}
+              className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm ring-1", simple ? "bg-honey text-hive ring-honey" : "text-ink-300 ring-ink-600 hover:bg-ink-800")}>
+              <Accessibility className="h-4 w-4" /> <span className="hidden whitespace-nowrap md:inline">{tr("Simple mode")}</span>
+            </button>
             <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800" aria-label={tr("Switch language")}>
               {lang === "en" ? "العربية" : tr("English")}
             </button>
             {me && (
-              <span className="hidden text-sm text-ink-300 sm:inline">{me.full_name} · <span className="text-ink-400">{tr(me.role)}</span></span>
+              <span className="hidden whitespace-nowrap text-sm text-ink-300 xl:inline">{me.full_name} · <span className="text-ink-400">{tr(me.role)}</span></span>
             )}
             <button onClick={signOut} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800">
-              <LogOut className="h-4 w-4" /> {tr("Sign out")}
+              <LogOut className="h-4 w-4" /> <span className="hidden whitespace-nowrap md:inline">{tr("Sign out")}</span>
             </button>
           </div>
         </header>

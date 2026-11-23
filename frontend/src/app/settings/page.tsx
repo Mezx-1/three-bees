@@ -6,7 +6,7 @@ import { DemoScenario } from "@/components/DemoScenario";
 import { broadcastRefresh, Button, Card, fmtTime, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, useApi, useToast } from "@/components/ui";
 import { API_URL, apiGet, apiSend } from "@/lib/api";
 import { tr, trf, useI18n } from "@/lib/i18n";
-import { setDemoLabels, useDemoLabels } from "@/lib/prefs";
+import { setDemoLabels, setSimpleMode, useDemoLabels, useSimpleMode } from "@/lib/prefs";
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [threshold, setThreshold] = useState(60);
   const [busy, setBusy] = useState<string | null>(null);
   const demoLabels = useDemoLabels();
+  const simple = useSimpleMode();
   useEffect(() => { if (st.data) setThreshold(st.data.auto_incident_threshold); }, [st.data]);
   const role = meQ.data?.role;
   const isAnalyst = role === "admin" || role === "analyst";
@@ -97,6 +98,13 @@ export default function SettingsPage() {
                 <p className="mt-0.5 text-xs text-ink-400">{tr("Marks seeded devices and demo events as simulated. Off by default for presentations; the data stays flagged in the system either way.")}</p>
               </div>
               <Toggle checked={demoLabels} onChange={setDemoLabels} label={tr("Show demo-data labels")} />
+            </div>
+            <div className="mt-4 flex items-start justify-between gap-4 border-t border-ink-700 pt-4 text-sm">
+              <div>
+                <div className="font-medium text-ink-100">{tr("Simple mode")}</div>
+                <p className="mt-0.5 text-xs text-ink-400">{tr("Bigger text and one clear answer for each check, with a button that reads it aloud. Good for older family members.")}</p>
+              </div>
+              <Toggle checked={simple} onChange={setSimpleMode} label={tr("Simple mode")} />
             </div>
           </Card>
           <Card title={tr("Pair a device")} subtitle={tr("One-time code for the 3B iPhone app or a laptop agent. Valid for 15 minutes.")}>

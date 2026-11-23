@@ -112,6 +112,20 @@ export const AR: Record<string, string> = {
   "Police report draft": "مسودة بلاغ للشرطة",
   "Prepare police report": "جهّز بلاغاً",
   "More": "المزيد",
+  "Simple mode": "وضع مبسّط",
+  "Bigger text and one clear answer for each check, with a button that reads it aloud. Good for older family members.":
+    "خط أكبر وجواب واحد واضح لكل فحص، مع زر يقرأ النتيجة بصوت. مناسب لكبار السن في العائلة.",
+  "Scam": "احتيال",
+  "Be careful": "انتبه",
+  "Looks safe": "يبدو آمناً",
+  "Do not press any link, do not give any code and do not send any money.": "لا تضغط على أي رابط، ولا تعطِ أي رمز، ولا تحوّل أي مبلغ.",
+  "Don't reply until you check with the organisation yourself, on a number you already know.":
+    "لا ترد حتى تتأكد من الجهة بنفسك، على رقم تعرفه مسبقاً.",
+  "We found no signs of danger. Still, never share codes or passwords.": "لم نجد علامات خطر. ومع ذلك، لا تشارك الرموز أو كلمات المرور أبداً.",
+  "Reason:": "السبب:",
+  "Read it to me": "اقرأ لي النتيجة",
+  "To hear the result read aloud, add an Arabic voice in Windows: Settings → Time & language → Speech.":
+    "لسماع النتيجة بصوت، أضف صوتاً عربياً في ويندوز: الإعدادات ← الوقت واللغة ← الكلام.",
   "Ask the caller": "اسأل المتصل",
   "Ask, then stay quiet while the caller answers. The questions change with what the caller says.":
     "اسأل، ثم اصمت حتى يجيب المتصل. تتغيّر الأسئلة حسب ما يقوله المتصل.",

@@ -1,9 +1,11 @@
 "use client";
 
-import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Footprints, Globe2, Link2, Mail, Paperclip, ScanText } from "lucide-react";
+import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Footprints, Globe2, Link2, Mail, Paperclip, ScanText, Volume2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { tr, trf, useI18n } from "@/lib/i18n";
+import { useSimpleMode } from "@/lib/prefs";
+import { speak, stopSpeaking, useHasVoice } from "@/lib/speak";
 import type { Analysis, Finding } from "@/lib/types";
 import { Button, Card, cn, fmtTime, Pill, ScoreRing, SeverityBadge, SimBadge, SourceBadge, Tabs } from "./ui";
 
@@ -290,13 +292,51 @@ export function NextSteps({ next, compact, className }: { next?: { note: string;
   );
 }
 
+const SIMPLE = {
+  danger: { word: "Scam", say: "Do not press any link, do not give any code and do not send any money." },
+  suspicious: { word: "Be careful", say: "Don't reply until you check with the organisation yourself, on a number you already know." },
+  clear: { word: "Looks safe", say: "We found no signs of danger. Still, never share codes or passwords." },
+};
+
+/** Simple mode: one big word, one sentence, one reason — and a button that reads it aloud. */
+export function SimpleVerdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
+  const { lang } = useI18n();
+  const level = a.risk_score >= 60 ? "danger" : a.risk_score >= 30 ? "suspicious" : "clear";
+  const v = VERDICT[level];
+  const s = SIMPLE[level];
+  const reason = level !== "clear" ? a.report?.findings.find((f) => f.weight > 0)?.title : undefined;
+  const Icon = v.icon;
+  const text = [tr(s.word), tr(s.say), reason ? `${tr("Reason:")} ${reason}` : ""].filter(Boolean).join(". ");
+  const hasVoice = useHasVoice(lang);
+  useEffect(() => () => stopSpeaking(), []);
+  return (
+    <section className={cn("rounded-2xl border-2 p-6 text-center", v.tone)} role={level === "danger" ? "alert" : undefined}>
+      <Icon className={cn("mx-auto h-16 w-16", v.text)} />
+      <div className={cn("mt-2 font-display text-5xl font-bold", v.text)}>{tr(s.word)}</div>
+      <p className="mx-auto mt-3 max-w-xl text-xl text-ink-100">{tr(s.say)}</p>
+      {reason && <p className="mt-2 text-lg text-ink-300">{tr("Reason:")} {reason}</p>}
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+        {hasVoice && (
+          <Button className="px-5 py-3 text-lg" onClick={() => speak(text, lang)}><Volume2 className="h-5 w-5" /> {tr("Read it to me")}</Button>
+        )}
+        {actions}
+      </div>
+      {!hasVoice && lang === "ar" && (
+        <p className="mt-3 text-xs text-ink-400">{tr("To hear the result read aloud, add an Arabic voice in Windows: Settings → Time & language → Speech.")}</p>
+      )}
+    </section>
+  );
+}
+
 export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
   const { t } = useI18n();
+  const simple = useSimpleMode();
   const r = a.report!;
   const [showDetails, setShowDetails] = useState(false);
   const [tab, setTab] = useState<"all" | "verified" | "heuristic" | "ai">("all");
   const lists = { all: r.findings, verified: [...r.verified_findings], heuristic: r.heuristic_findings, ai: r.ai_findings };
   const ai = r.ai;
+  if (simple) return <div className="fade-up"><SimpleVerdict a={a} actions={actions} /></div>;
   return (
     <div className="fade-up space-y-4">
       <Verdict a={a} actions={actions} />
