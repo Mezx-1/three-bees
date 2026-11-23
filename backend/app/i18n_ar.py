@@ -227,6 +227,26 @@ EXACT: dict[str, str] = {
         "يدّعي أن بطاقتك أو حسابك يحتاج تحديثاً أو تحققاً أو أن فيه نشاطاً مشبوهاً — وهي البداية المعتادة لمكالمات انتحال صفة البنك.",
     "Card or account 'problem' used to ask for a code": "«مشكلة» في البطاقة لطلب رمز التحقق",
     "Bank or official says your account has a problem": "بنك أو جهة رسمية تدّعي وجود مشكلة في حسابك",
+    "Asks you to approve a notification or request": "يطلب منك الموافقة على إشعار أو طلب",
+    "Tells you to confirm or approve a notification, prompt or request — approving it in your banking app is what sends the money.":
+        "يطلب منك تأكيد أو الموافقة على إشعار أو طلب — والموافقة عليه في تطبيق البنك هي ما يحوّل المال.",
+    "Account 'problem' used to make you approve a request": "«مشكلة» في الحساب لدفعك إلى الموافقة على طلب",
+    "The caller says your account is at risk and asks you to approve a notification. Real banks never ask you to approve a payment to stop one.":
+        "يقول المتصل إن حسابك في خطر ويطلب منك الموافقة على إشعار. البنوك الحقيقية لا تطلب أبداً الموافقة على دفعة لإيقاف دفعة.",
+    "The request may have been approved": "يبدو أن الطلب تمت الموافقة عليه",
+    "After the caller asked for a notification to be approved, someone on the call said they approved it. If that was a payment, call your bank now — it can sometimes still be stopped.":
+        "بعد أن طلب المتصل الموافقة على إشعار، قال أحد طرفي المكالمة إنه وافق عليه. إذا كان ذلك دفعة، اتصل ببنكك الآن — فقد يمكن إيقافها أحياناً.",
+    "The payment you approved may already be on its way — they may call back to “reverse” it and ask you to approve more.":
+        "قد تكون الدفعة التي وافقت عليها في طريقها الآن — وقد يعاود الاتصال بحجة «إلغائها» ويطلب منك الموافقة على المزيد.",
+    "Approving the notification is what sends the money.": "الموافقة على الإشعار هي ما يحوّل المال.",
+    "Call your bank now on the number printed on your card and ask them to stop the transaction. Approve nothing else.":
+        "اتصل ببنكك الآن على الرقم المطبوع على بطاقتك واطلب إيقاف العملية. لا توافق على أي شيء آخر.",
+    "They will ask you to approve the notification in your banking app — that approval is what sends the money to them.":
+        "سيطلب منك الموافقة على الإشعار في تطبيق البنك — وهذه الموافقة هي ما يحوّل المال إليه.",
+    "A real bank blocks a suspicious payment itself; it never asks you to approve one.": "البنك الحقيقي يوقف الدفعة المشبوهة بنفسه، ولا يطلب منك الموافقة عليها أبداً.",
+    "Never approve a notification you did not start yourself. Hang up and call your bank.": "لا توافق أبداً على إشعار لم تبدأه بنفسك. أنهِ المكالمة واتصل ببنكك.",
+    "Why would approving a payment stop a payment?": "كيف توقف الموافقةُ على دفعةٍ دفعةً أخرى؟",
+    "A real bank blocks a suspicious payment itself. It never asks you to approve one.": "البنك الحقيقي يوقف الدفعة المشبوهة بنفسه، ولا يطلب منك الموافقة عليها أبداً.",
     "Someone claiming to be a bank or an official body says your card or account needs action. This is how most bank-impersonation scams open.":
         "شخص يدّعي أنه من بنك أو جهة رسمية يقول إن بطاقتك أو حسابك يحتاج إجراء. هكذا تبدأ معظم عمليات انتحال صفة البنوك.",
     "The caller says your card or account needs attention and then asks for the code sent by SMS. That code would let them take over the card.":

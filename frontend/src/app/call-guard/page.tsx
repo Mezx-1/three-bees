@@ -59,13 +59,17 @@ function playAlarm() {
   }
 }
 
-function CodeAlarm() {
+function CodeAlarm({ kind }: { kind: "code" | "approval" }) {
+  const title = kind === "code" ? "Stop! Don't give the code" : "Call your bank now!";
+  const body = kind === "code"
+    ? "A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card."
+    : "Someone on the call said they approved the request. If it was a payment, hang up and call your bank now — it can sometimes still be stopped.";
   return (
     <div role="alert" className="flex items-center gap-4 rounded-xl border-2 border-crit bg-crit p-5 text-white shadow-lg motion-safe:animate-pulse">
       <Hand className="h-12 w-12 shrink-0" />
       <div>
-        <div className="text-2xl font-bold">{tr("Stop! Don't give the code")}</div>
-        <p className="mt-1 text-sm text-white/90">{tr("A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card.")}</p>
+        <div className="text-2xl font-bold">{tr(title)}</div>
+        <p className="mt-1 text-sm text-white/90">{tr(body)}</p>
       </div>
     </div>
   );
@@ -93,9 +97,10 @@ export default function CallGuard() {
   useEffect(() => () => stopLive(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const codeSpoken = !!result?.report?.call?.code_spoken;
+  const approvalGiven = !!result?.report?.call?.approval_given;
   useEffect(() => {
-    if (codeSpoken) playAlarm();
-  }, [codeSpoken]);
+    if (codeSpoken || approvalGiven) playAlarm();
+  }, [codeSpoken, approvalGiven]);
 
   const sendChunk = async (blob: Blob) => {
     if (!sessionRef.current || blob.size < 2000) return;
@@ -188,7 +193,8 @@ export default function CallGuard() {
       <PageHeader title={tr("Call Guard")} icon={PhoneCall}
         subtitle={tr("Is the person on the phone a scammer? 3B listens to what they say and how they say it, and checks their number.")} />
 
-      {codeSpoken && <CodeAlarm />}
+      {codeSpoken && <CodeAlarm kind="code" />}
+      {approvalGiven && !codeSpoken && <CodeAlarm kind="approval" />}
 
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <Card>

@@ -472,6 +472,17 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
                     "After the caller asked for a code, a number that looks like a one-time code was heard. "
                     "If it was your code, the caller can now use it — call your bank immediately.",
                     "claims", "critical", 60, "verified", ["otp_theft", "vishing"], evidence=", ".join(masked)))
+        if "approval" in art.get("matched_patterns", {}):
+            from .claims import find_approval_given
+
+            said = find_approval_given(transcript)
+            if said:
+                extra["call"]["approval_given"] = True
+                findings.append(Finding(
+                    "The request may have been approved",
+                    "After the caller asked for a notification to be approved, someone on the call said they approved it. "
+                    "If that was a payment, call your bank now — it can sometimes still be stopped.",
+                    "claims", "critical", 55, "verified", ["payment_fraud", "vishing"], evidence=said))
         from .questions import suggest
 
         extra["call"]["questions"] = suggest(transcript, claims, art.get("matched_patterns", {}))

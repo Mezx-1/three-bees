@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import shutil
 import subprocess
 import tempfile
@@ -22,6 +23,7 @@ from .risk import Finding
 log = logging.getLogger("threeb.voice")
 SR = 16000
 STT_MODEL = os.getenv("THREEB_STT_MODEL", "small")  # small: much better Arabic, ~4 s per 8 s chunk on a laptop CPU
+LANGUAGES = ("ar", "en")  # languages a call is transcribed in
 
 
 def decode_audio(data: bytes, suffix: str = ".webm") -> np.ndarray:
@@ -59,10 +61,31 @@ def transcribe(pcm: np.ndarray) -> dict:
         return {"available": False, "text": "", "language": None}
     if len(pcm) < SR * 0.5:
         return {"available": True, "text": "", "language": None}
+    with _STT_LOCK:  # one transcription at a time: live chunks queue instead of fighting for the CPU
+        return _transcribe(pcm)
+
+
+_STT_LOCK = threading.Lock()
+
+
+def _transcribe(pcm: np.ndarray) -> dict:
     try:
-        segments, info = _model().transcribe(pcm, beam_size=1, vad_filter=True, condition_on_previous_text=False)
+        model = _model()
+        # Calls here are in Arabic or English. Short, noisy chunks are often mis-detected as another language
+        # (e.g. Persian), which turns the words into nonsense — so pick the more likely of the two.
+        lang, prob = None, None
+        try:
+            _, _, probs = model.detect_language(pcm, vad_filter=True)
+            scores = {code: p for code, p in probs if code in LANGUAGES}
+            if scores:
+                lang = max(scores, key=scores.get)
+                prob = scores[lang]
+        except Exception:
+            log.debug("language detection failed; letting whisper decide", exc_info=True)
+        segments, info = model.transcribe(pcm, beam_size=1, vad_filter=True, condition_on_previous_text=False, language=lang)
         text = " ".join(s.text.strip() for s in segments).strip()
-        return {"available": True, "text": text, "language": info.language, "language_probability": round(info.language_probability, 2)}
+        return {"available": True, "text": text, "language": info.language,
+                "language_probability": round(prob if prob is not None else info.language_probability, 2)}
     except Exception as exc:
         log.exception("transcription failed")
         return {"available": True, "text": "", "language": None, "error": f"Transcription failed: {exc.__class__.__name__}"}

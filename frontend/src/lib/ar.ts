@@ -136,6 +136,9 @@ export const AR: Record<string, string> = {
   "This draft is not sent anywhere. Review it, then report through the Abu Dhabi Police app or Aman (8002626).":
     "هذه المسودة لا تُرسل إلى أي جهة. راجعها، ثم أبلغ عبر تطبيق شرطة أبوظبي أو خدمة أمان (8002626).",
   "Stop! Don't give the code": "توقّف! لا تعطِه الرمز",
+  "Call your bank now!": "اتصل ببنكك الآن!",
+  "Someone on the call said they approved the request. If it was a payment, hang up and call your bank now — it can sometimes still be stopped.":
+    "قال أحد طرفي المكالمة إنه وافق على الطلب. إذا كانت دفعة، أنهِ المكالمة واتصل ببنكك الآن — فقد يمكن إيقافها أحياناً.",
   "A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card.":
     "سُمع رقم يشبه رمز التحقق بعد أن طلب المتصل رمزاً. إذا كان رمزك، أنهِ المكالمة واتصل ببنكك الآن لإيقاف البطاقة.",
   "What the scammer will likely try next": "الخطوة التالية المتوقعة من المحتال",

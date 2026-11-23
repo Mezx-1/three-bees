@@ -28,6 +28,7 @@ PATTERNS: list[Pattern] = [
         "Message pressures the reader to act immediately, a classic tactic to prevent careful verification.",
         14, "medium", ["social_engineering"],
         [r"\burgent(ly)?\b", r"\bimmediately\b", r"\bwithin (24|48|12|2|1) ?(hours?|hrs?|minutes?)\b", r"\bact now\b",
+         r"\bdo ?n[o']?t (hang up|disconnect|end the call|put the phone down)\b", r"\bstay on the line\b",
          r"\bas soon as possible\b", r"\basap\b", r"\blast (chance|warning|notice)\b", r"\bexpires? (today|soon|in)\b",
          r"\bfinal (notice|reminder|warning)\b", r"\btoday only\b", r"\bdeadline\b",
          r"عاجل", r"فورا|فوراً", r"خلال \d+ ساعة", r"آخر فرصة", r"تنبيه نهائي",
@@ -151,6 +152,15 @@ PATTERNS: list[Pattern] = [
         14, "medium", ["vishing"],
         [r"\bcall (us|this number|immediately|back) (on|at)?\b", r"\b(our|an) (agent|officer) will call you\b", r"اتصل (بنا|على الرقم)"],
     ),
+    Pattern(
+        "approval", "Asks you to approve a notification or request",
+        "Tells you to confirm or approve a notification, prompt or request — approving it in your banking app is what sends the money.",
+        34, "high", ["payment_fraud", "vishing"],
+        [r"\b(confirm|approve|accept|allow)\b (the |this |that |our |a )?(request|notification|prompt|verification request|transaction request)\b",
+         r"\b(you should have|you will|you'll|you have|you've) (have )?(just )?receive[d]? (a|the|our) (verification |security )?(notification|request|prompt)\b",
+         r"\b(press|tap|click|select) (on )?[\"“']?(approve|accept|confirm|allow|yes)\b",
+         r"(وافق|اضغط موافق|أكّد|أكد|اكد|اقبل) (على )?(الطلب|الإشعار|الاشعار|العملية)", r"(راح يوصلك|بيوصلك|وصلك|يوصلك) (إشعار|اشعار|طلب)"],
+    ),
 ]
 
 BRANDS = [
@@ -211,7 +221,13 @@ def analyze_text(text: str, channel: str = "message") -> tuple[list[Finding], di
             "The caller says your card or account needs attention and then asks for the code sent by SMS. That code would let them take over the card.",
             "content", "high", 28, "heuristic", ["otp_theft", "vishing"],
         ))
-    elif {"account_pretext", "authority"} <= keys:
+    if "approval" in keys and keys & {"authority", "account_pretext"}:
+        findings.append(Finding(
+            "Account 'problem' used to make you approve a request",
+            "The caller says your account is at risk and asks you to approve a notification. Real banks never ask you to approve a payment to stop one.",
+            "content", "high", 30, "heuristic", ["payment_fraud", "vishing"],
+        ))
+    elif {"account_pretext", "authority"} <= keys and "otp" not in keys:
         findings.append(Finding(
             "Bank or official says your account has a problem",
             "Someone claiming to be a bank or an official body says your card or account needs action. This is how most bank-impersonation scams open.",

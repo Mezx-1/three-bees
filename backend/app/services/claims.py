@@ -265,3 +265,23 @@ def find_spoken_codes(text: str) -> list[dict]:
         last = e
     redacted_text = "".join(redacted) + text[last:]
     return [{"masked": _mask(d), "length": len(d), "redacted_text": redacted_text} for _, _, d in hits]
+
+
+# ---------------------------------------------------------------- approving a push request during a call
+
+_APPROVED = re.compile(
+    r"\b(?:i(?:'ve| have)?|ok(?:ay)?,? i(?:'ve| have)?|yes,? i(?:'ve| have)?)\s+(?:just\s+|already\s+)?"
+    r"(?:confirmed|approved|accepted|allowed|pressed (?:it|approve|accept|confirm|yes)|clicked (?:it|approve|accept|confirm|yes)|done it)\b"
+    r"|(?:أكدت|اكدت|أكّدت|وافقت|ضغطت موافق|ضغطت على موافق|قبلت الطلب|سويت تأكيد)", re.I)
+
+
+def find_approval_given(text: str) -> str | None:
+    """The phrase in which someone says they approved the request, if it comes after a request to approve one."""
+    from .text_analyzer import PATTERNS
+
+    appr = next(p for p in PATTERNS if p.key == "approval")
+    starts = [m.end() for rx in appr.regexes for m in re.finditer(rx, text, re.I)]
+    if not starts:
+        return None
+    m = _APPROVED.search(text, min(starts))
+    return m.group(0).strip() if m else None

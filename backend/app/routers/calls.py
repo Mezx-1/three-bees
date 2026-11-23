@@ -11,6 +11,7 @@ import uuid
 
 import numpy as np
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -60,10 +61,12 @@ async def analyze_call(audio: UploadFile | None = File(default=None), caller_num
         if data:
             suffix = "." + (audio.filename.rsplit(".", 1)[-1].lower() if "." in audio.filename else "webm")
             try:
-                pcm = voice.decode_audio(data, suffix)
+                # Decoding and speech-to-text take seconds of CPU: run them off the event loop so the
+                # server keeps answering other requests (the page, the next live chunk) meanwhile.
+                pcm = await run_in_threadpool(voice.decode_audio, data, suffix)
             except RuntimeError as exc:
                 raise HTTPException(422, str(exc))
-            stt = voice.transcribe(pcm)
+            stt = await run_in_threadpool(voice.transcribe, pcm)
             chunk_text = stt.get("text", "")
 
     ctx = build_context(db)
@@ -85,8 +88,8 @@ async def analyze_call(audio: UploadFile | None = File(default=None), caller_num
             full_pcm = pcm
     if transcript and transcript.strip():
         full_text = (full_text + "\n" + transcript.strip()).strip()
-    feats = voice.acoustic_features(full_pcm, words=len(full_text.split()) or None) if full_pcm is not None else {}
-    res = pipeline.run_call(full_text, caller_number, feats, stt or voice.stt_status(), ctx)
+    feats = await run_in_threadpool(voice.acoustic_features, full_pcm, words=len(full_text.split()) or None) if full_pcm is not None else {}
+    res = await run_in_threadpool(pipeline.run_call, full_text, caller_number, feats, stt or voice.stt_status(), ctx)
 
     if sess is not None and sess["analysis_id"]:
         a = db.get(Analysis, sess["analysis_id"])

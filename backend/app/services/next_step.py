@@ -12,6 +12,16 @@ NOTE = "Predicted from the scam pattern, not a certainty."
 
 # (id, condition on (titles, tags), step, why, advice)
 _RULES = [
+    ("approved",
+     lambda t, g: "The request may have been approved" in t,
+     "The payment you approved may already be on its way — they may call back to “reverse” it and ask you to approve more.",
+     "Approving the notification is what sends the money.",
+     "Call your bank now on the number printed on your card and ask them to stop the transaction. Approve nothing else."),
+    ("approve",
+     lambda t, g: "Asks you to approve a notification or request" in t and "The request may have been approved" not in t,
+     "They will ask you to approve the notification in your banking app — that approval is what sends the money to them.",
+     "A real bank blocks a suspicious payment itself; it never asks you to approve one.",
+     "Never approve a notification you did not start yourself. Hang up and call your bank."),
     ("code_used",
      lambda t, g: "A code may have been said during the call" in t,
      "They will use the code straight away to log in or approve a payment — then may call back asking for “one more code to cancel it”.",
@@ -19,7 +29,8 @@ _RULES = [
      "Call your bank now on the number printed on your card and block the card. Never give a second code."),
     ("ask_code",
      lambda t, g: ("Card or account 'problem' pretext" in t or "Authority impersonation cues" in t)
-                  and "Request for one-time password (OTP) / verification code" not in t,
+                  and "Request for one-time password (OTP) / verification code" not in t
+                  and "Asks you to approve a notification or request" not in t,
      "They will ask for the code sent to you by SMS, or your card number and CVV, “to verify” or “to stop the transaction”.",
      "An account “problem” from a bank or official caller is the usual set-up before asking for a code.",
      "No bank or government body asks for a code by phone or message. Hang up and call the official number yourself."),

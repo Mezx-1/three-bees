@@ -24,6 +24,8 @@ Q = {
                  "A real bank always says yes. A scammer says it is urgent or that the line will be lost."),
     "card_digits": ("What are the last four digits of my card?",
                     "Your bank can see this. A scammer usually can't — and never read your own digits to them."),
+    "why_approve": ("Why would approving a payment stop a payment?",
+                    "A real bank blocks a suspicious payment itself. It never asks you to approve one."),
     "why_code": ("Why do you need a code that the bank itself sent to me?",
                  "Banks never ask for the code they send. Any answer here is a reason to hang up."),
     "badge": ("What is your full name and badge number? I will call the station to confirm.",
@@ -51,6 +53,8 @@ def suggest(transcript: str, claims: list[dict], matched_patterns: dict, limit: 
     official = bool(orgs & OFFICIAL) or bool(re.search(r"\bpolice\b|ministry|court|شرطة|الشرطة|وزارة|النيابة|محكمة", text))
     courier = bool(orgs & COURIERS) or "delivery" in keys
     order: list[str] = []
+    if "approval" in keys:
+        order.append("why_approve")
     if "otp" in keys:
         order.append("why_code")
     if bank:
