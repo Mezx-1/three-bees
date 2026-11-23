@@ -1,6 +1,6 @@
 "use client";
 
-import { Hand, Mic, PhoneCall, ShieldCheck, Square, Upload } from "lucide-react";
+import { Hand, MessageCircleQuestion, Mic, PhoneCall, ShieldCheck, Square, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnalysisActions } from "@/components/AnalysisActions";
 import { FileDrop } from "@/components/FileDrop";
@@ -230,21 +230,25 @@ export default function CallGuard() {
             {busy && <ScanBar />}
           </div>
         </Card>
-        <Card title={<span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-safe" />{tr("How it works")}</span>}>
-          <ul className="space-y-2 text-sm text-ink-300">
-            <li>• {tr("Words: speech is turned into text on this computer and checked for scam tactics (OTP requests, fake police/bank, threats, secrecy).")}</li>
-            <li>• {tr("Tone: speaking speed, pauses, pitch and loudness changes — weak signals only.")}</li>
-            <li>• {tr("Number: where the number is registered and whether it is a known scam number. Caller ID can be faked.")}</li>
-            <li>• {tr("Audio is never saved or sent to the cloud.")}</li>
-            <li className="pt-2 font-medium text-ink-100">{tr("Questions that expose scammers:")}</li>
-            <li>• «{tr("What time is it where you are now?")}»</li>
-            <li>• «{tr("What day is it today?")}»</li>
-            <li>• «{tr("Which company are you from, and what is its official number?")}»</li>
-            <li className="text-xs text-ink-400">{tr("3B can't tell voices apart — ask, then stay quiet while the caller answers.")}</li>
+        <Card title={<span className="flex items-center gap-2"><MessageCircleQuestion className="h-4 w-4 text-volt" />{tr("Ask the caller")}</span>}>
+          <ul className="space-y-3">
+            {(result?.report?.call?.questions || st?.questions || []).map((q: any) => (
+              <li key={q.id} className="rounded-lg bg-wax/70 p-3">
+                <p dir="auto" className="font-medium text-ink-100">«{q.question}»</p>
+                <p className="mt-1 text-xs text-ink-400">{q.listen_for}</p>
+              </li>
+            ))}
           </ul>
-          <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
-            <Pill className={st?.speech_to_text?.available ? "text-safe" : "text-crit"}>{tr("Speech-to-text")}: {st?.speech_to_text?.available ? st.speech_to_text.engine : tr("not installed")}</Pill>
-          </div>
+          <p className="mt-3 text-xs text-ink-400">{tr("Ask, then stay quiet while the caller answers. The questions change with what the caller says.")}</p>
+          <details className="mt-3 text-sm text-ink-300">
+            <summary className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-ink-400"><ShieldCheck className="h-3.5 w-3.5" />{tr("How it works")}</summary>
+            <ul className="mt-2 space-y-1.5 text-xs">
+              <li>• {tr("Words: speech is turned into text on this computer and checked for scam tactics (OTP requests, fake police/bank, threats, secrecy).")}</li>
+              <li>• {tr("Number: where the number is registered and whether it is a known scam number. Caller ID can be faked.")}</li>
+              <li>• {tr("Audio is never saved or sent to the cloud.")}</li>
+            </ul>
+            <Pill className={cn("mt-2 text-xs", st?.speech_to_text?.available ? "text-safe" : "text-crit")}>{tr("Speech-to-text")}: {st?.speech_to_text?.available ? st.speech_to_text.engine : tr("not installed")}</Pill>
+          </details>
         </Card>
       </div>
 

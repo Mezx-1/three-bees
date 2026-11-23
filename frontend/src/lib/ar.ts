@@ -112,6 +112,9 @@ export const AR: Record<string, string> = {
   "Police report draft": "مسودة بلاغ للشرطة",
   "Prepare police report": "جهّز بلاغاً",
   "More": "المزيد",
+  "Ask the caller": "اسأل المتصل",
+  "Ask, then stay quiet while the caller answers. The questions change with what the caller says.":
+    "اسأل، ثم اصمت حتى يجيب المتصل. تتغيّر الأسئلة حسب ما يقوله المتصل.",
   "Copy": "نسخ",
   "Copied": "تم النسخ",
   "Download": "تنزيل",

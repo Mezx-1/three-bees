@@ -143,6 +143,37 @@ EXACT: dict[str, str] = {
     "A code may have been said during the call": "يبدو أن رمزاً قيل خلال المكالمة",
     "After the caller asked for a code, a number that looks like a one-time code was heard. If it was your code, the caller can now use it — call your bank immediately.":
         "بعد أن طلب المتصل رمزاً، سُمع رقم يشبه رمز التحقق. إذا كان رمزك، فبإمكان المتصل استخدامه الآن — اتصل ببنكك فوراً.",
+    # --- questions that expose a scam caller
+    "What time is it where you are right now?": "كم الساعة عندك الآن؟",
+    "Someone really in the UAE answers at once. 3B checks the answer against the real UAE time.":
+        "من يتصل فعلاً من الإمارات يجيب فوراً. يقارن 3B الجواب بالوقت الحقيقي في الإمارات.",
+    "Which company are you from, and what is its official number?": "من أي جهة أنت، وما رقمها الرسمي؟",
+    "3B checks the name against known UAE organisations. Look the number up yourself — never use one they give.":
+        "يقارن 3B الاسم بالجهات الإماراتية المعروفة. ابحث عن الرقم بنفسك — لا تستخدم رقماً يعطيك إياه.",
+    "Can I hang up and call you back on the number printed on my card?": "هل أستطيع إنهاء المكالمة والاتصال بكم على الرقم المطبوع على بطاقتي؟",
+    "A real bank always says yes. A scammer says it is urgent or that the line will be lost.":
+        "البنك الحقيقي يوافق دائماً. المحتال يقول إن الأمر عاجل أو إن الفرصة ستضيع.",
+    "What are the last four digits of my card?": "ما آخر أربعة أرقام من بطاقتي؟",
+    "Your bank can see this. A scammer usually can't — and never read your own digits to them.":
+        "بنكك يعرفها. المحتال غالباً لا يعرفها — ولا تقرأ أرقامك له أبداً.",
+    "Why do you need a code that the bank itself sent to me?": "لماذا تحتاج رمزاً أرسله البنك نفسه إليّ؟",
+    "Banks never ask for the code they send. Any answer here is a reason to hang up.":
+        "البنوك لا تطلب أبداً الرمز الذي ترسله. أي جواب هنا سبب كافٍ لإنهاء المكالمة.",
+    "What is your full name and badge number? I will call the station to confirm.": "ما اسمك الكامل ورقمك العسكري؟ سأتصل بالمركز للتأكد.",
+    "Real officers give these and let you call back. Scammers threaten or hurry you.":
+        "الموظف الحقيقي يعطيك ذلك ويسمح لك بالتحقق. المحتال يهدد أو يستعجلك.",
+    "Can I pay this through the official app instead?": "هل أستطيع الدفع عبر التطبيق الرسمي بدلاً من ذلك؟",
+    "Real fines can always be paid in the official app or website. Scammers insist on a transfer or gift cards.":
+        "الغرامات الحقيقية تُدفع دائماً عبر التطبيق أو الموقع الرسمي. المحتال يصرّ على التحويل أو بطاقات الهدايا.",
+    "What is the tracking number? I will check it in the courier's app.": "ما رقم التتبع؟ سأتحقق منه في تطبيق شركة التوصيل.",
+    "A real courier gives it and the app shows the parcel. A scammer pushes a link or a fee.":
+        "شركة التوصيل الحقيقية تعطيك الرقم ويظهر في التطبيق. المحتال يرسل رابطاً أو يطلب رسوماً.",
+    "Why do I have to pay anything to receive a prize?": "لماذا عليّ أن أدفع أي شيء لأستلم جائزة؟",
+    "Real prizes never cost money to collect.": "الجوائز الحقيقية لا تتطلب دفع أي مبلغ لاستلامها.",
+    "Why would a company need control of my phone?": "لماذا تحتاج أي جهة إلى التحكم بهاتفي؟",
+    "No bank or official body asks you to install remote-access apps.": "لا يطلب أي بنك أو جهة رسمية تثبيت تطبيقات التحكم عن بُعد.",
+    "What day is it today?": "ما هو اليوم؟",
+    "Another fact 3B can check against the real UAE date.": "معلومة أخرى يتحقق منها 3B بمقارنتها بتاريخ اليوم في الإمارات.",
     # --- scammer's next step
     "Predicted from the scam pattern, not a certainty.": "توقّع مبني على نمط الاحتيال، وليس أمراً مؤكداً.",
     "They will use the code straight away to log in or approve a payment — then may call back asking for “one more code to cancel it”.":
@@ -777,7 +808,7 @@ def translate(s: str, depth: int = 0) -> str:
 
 DISPLAY_KEYS = {"title", "detail", "summary", "message", "result", "classification", "threat_categories", "recommended_actions",
                 "limitations", "score_note", "social_engineering_techniques", "recommended_response", "text", "security_status_text",
-                "reason", "error", "label", "note", "evidence", "reasons", "advice", "step", "why", "actual", "said", "observed", "inferred", "label_text"}
+                "reason", "error", "label", "note", "evidence", "reasons", "advice", "step", "why", "question", "listen_for", "actual", "said", "observed", "inferred", "label_text"}
 
 
 def translate_obj(obj, key: str | None = None):

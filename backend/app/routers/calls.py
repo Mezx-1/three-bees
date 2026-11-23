@@ -35,7 +35,9 @@ def _gc() -> None:
 
 @router.get("/status")
 def call_status():
-    return {"speech_to_text": voice.stt_status(), "ffmpeg": bool(__import__("shutil").which("ffmpeg")),
+    from ..services.questions import default_questions
+
+    return {"questions": default_questions(), "speech_to_text": voice.stt_status(), "ffmpeg": bool(__import__("shutil").which("ffmpeg")),
             "stores_audio": False, "cloud_upload": False}
 
 

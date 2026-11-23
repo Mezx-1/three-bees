@@ -472,7 +472,13 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
                     "After the caller asked for a code, a number that looks like a one-time code was heard. "
                     "If it was your code, the caller can now use it — call your bank immediately.",
                     "claims", "critical", 60, "verified", ["otp_theft", "vishing"], evidence=", ".join(masked)))
+        from .questions import suggest
+
+        extra["call"]["questions"] = suggest(transcript, claims, art.get("matched_patterns", {}))
     else:
+        from .questions import default_questions
+
+        extra["call"]["questions"] = default_questions()
         limitations.append("No speech was transcribed yet, so the conversation content was not analysed.")
     if stt and not stt.get("available", True):
         limitations.append("Speech-to-text is not installed; type what the caller said into the transcript box.")
