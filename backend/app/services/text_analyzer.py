@@ -211,6 +211,12 @@ def analyze_text(text: str, channel: str = "message") -> tuple[list[Finding], di
             "The caller says your card or account needs attention and then asks for the code sent by SMS. That code would let them take over the card.",
             "content", "high", 28, "heuristic", ["otp_theft", "vishing"],
         ))
+    elif {"account_pretext", "authority"} <= keys:
+        findings.append(Finding(
+            "Bank or official says your account has a problem",
+            "Someone claiming to be a bank or an official body says your card or account needs action. This is how most bank-impersonation scams open.",
+            "content", "medium", 16, "heuristic", ["impersonation", "vishing"],
+        ))
     if {"threat", "credentials"} <= keys or {"urgency", "credentials"} <= keys:
         findings.append(Finding(
             "Pressure combined with credential request",

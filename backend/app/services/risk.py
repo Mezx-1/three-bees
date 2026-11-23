@@ -134,6 +134,11 @@ def build_report(
         "limitations": limitations,
         "score_note": "Risk score is an indicator built from the listed evidence, not a calibrated probability of fraud.",
     }
+    from .next_step import predict  # local import: next_step depends on this module
+
+    nxt = predict(findings, score)
+    if nxt:
+        report["next_steps"] = nxt
     if extra:
         report.update(extra)
     return report

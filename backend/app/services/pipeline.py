@@ -459,6 +459,19 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
                 f.tags.append("vishing")
         findings += tf
         extra["text_analysis"] = art
+        if "otp" in art.get("matched_patterns", {}):
+            from .claims import find_spoken_codes
+
+            codes = find_spoken_codes(transcript)
+            if codes:
+                masked = [c["masked"] for c in codes]
+                extra["call"]["code_spoken"] = True
+                extra["call"]["transcript"] = codes[-1]["redacted_text"]
+                findings.append(Finding(
+                    "A code may have been said during the call",
+                    "After the caller asked for a code, a number that looks like a one-time code was heard. "
+                    "If it was your code, the caller can now use it — call your bank immediately.",
+                    "claims", "critical", 60, "verified", ["otp_theft", "vishing"], evidence=", ".join(masked)))
     else:
         limitations.append("No speech was transcribed yet, so the conversation content was not analysed.")
     if stt and not stt.get("available", True):

@@ -1,10 +1,10 @@
 "use client";
 
-import { Mic, PhoneCall, ShieldCheck, Square, Upload } from "lucide-react";
+import { Hand, Mic, PhoneCall, ShieldCheck, Square, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnalysisActions } from "@/components/AnalysisActions";
 import { FileDrop } from "@/components/FileDrop";
-import { ReportView, verdictOf } from "@/components/ReportView";
+import { NextSteps, ReportView, verdictOf } from "@/components/ReportView";
 import { broadcastRefresh, Button, Card, cn, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, ScoreRing, Tabs, useApi } from "@/components/ui";
 import { apiGet, apiSend, apiUpload } from "@/lib/api";
 import { tr, trf } from "@/lib/i18n";
@@ -37,6 +37,39 @@ function ClaimsPanel({ claims }: { claims: any[] }) {
   );
 }
 
+/** Three short alarm tones, generated in the browser (no sound file, nothing sent anywhere). */
+function playAlarm() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    [0, 0.35, 0.7].forEach((t) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.25);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.27);
+    });
+    setTimeout(() => ctx.close(), 1500);
+  } catch {
+    /* audio unavailable: the visual alarm still shows */
+  }
+}
+
+function CodeAlarm() {
+  return (
+    <div role="alert" className="flex items-center gap-4 rounded-xl border-2 border-crit bg-crit p-5 text-white shadow-lg motion-safe:animate-pulse">
+      <Hand className="h-12 w-12 shrink-0" />
+      <div>
+        <div className="text-2xl font-bold">{tr("Stop! Don't give the code")}</div>
+        <p className="mt-1 text-sm text-white/90">{tr("A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card.")}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function CallGuard() {
   const [mode, setMode] = useState<"live" | "upload">("live");
   const [consent, setConsent] = useState(false);
@@ -57,6 +90,11 @@ export default function CallGuard() {
   const liveRef = useRef(false);
 
   useEffect(() => () => stopLive(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const codeSpoken = !!result?.report?.call?.code_spoken;
+  useEffect(() => {
+    if (codeSpoken) playAlarm();
+  }, [codeSpoken]);
 
   const sendChunk = async (blob: Blob) => {
     if (!sessionRef.current || blob.size < 2000) return;
@@ -148,6 +186,8 @@ export default function CallGuard() {
       <PageHeader title={tr("Call Guard")} icon={PhoneCall}
         subtitle={tr("Is the person on the phone a scammer? 3B listens to what they say and how they say it, and checks their number.")} />
 
+      {codeSpoken && <CodeAlarm />}
+
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <Card>
           <div className="space-y-4">
@@ -216,6 +256,7 @@ export default function CallGuard() {
             <p className="mt-1 text-sm text-ink-200">{result.risk_score >= 30 ? result.classification : tr("No scam signs so far — keep listening carefully.")}</p>
             <ul className="mt-2 space-y-1 text-sm text-ink-200">{result.report!.findings.filter((f) => f.weight > 0).slice(0, 4).map((f, i) => <li key={i}>• {f.title}</li>)}</ul>
             {result.risk_score >= 60 && <p className="mt-2 text-sm font-medium text-crit">{tr("Advice: do not share any code, password or card number. Hang up and call the official number yourself.")}</p>}
+            <NextSteps next={result.report?.next_steps} compact className="mt-3" />
           </div>
           <div className="space-y-3 text-sm">
             <ClaimsPanel claims={result.report?.call?.claims || []} />

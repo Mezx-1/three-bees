@@ -4,6 +4,7 @@ Audio is processed in memory and on local temp storage only; it is never stored 
 """
 from __future__ import annotations
 
+import re
 import threading
 import time
 import uuid
@@ -104,7 +105,8 @@ async def analyze_call(audio: UploadFile | None = File(default=None), caller_num
         db.commit()
     db.refresh(a)
     out = ser_analysis(a, full=True)
-    out["chunk_text"] = chunk_text
+    # Once a code has been heard, never echo its digits back to the screen.
+    out["chunk_text"] = re.sub(r"[0-9٠-٩]", "•", chunk_text) if res.report.get("call", {}).get("code_spoken") else chunk_text
     out["session_id"] = session_id
     return out
 

@@ -201,3 +201,67 @@ def check_claims(text: str, caller_region: str | None = None, caller_is_uae: boo
                 "It may be a small company, a mishearing, or an invented name — ask for the official number and call back yourself.",
                 "claims", "medium", 18, "heuristic", ["impersonation"], evidence=name))
     return findings, claims
+
+
+# ---------------------------------------------------------------- codes read out during a call
+
+_AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
+_EN_DIGIT_WORDS = {"zero": "0", "oh": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6",
+                   "seven": "7", "eight": "8", "nine": "9"}
+_AR_DIGIT_WORDS = {"صفر": "0", "واحد": "1", "وحدة": "1", "اثنين": "2", "اثنان": "2", "ثنين": "2", "اتنين": "2", "ثلاثة": "3", "ثلاث": "3",
+                   "تلاتة": "3", "تلات": "3", "أربعة": "4", "اربعة": "4", "اربع": "4", "أربع": "4", "خمسة": "5", "خمس": "5", "ستة": "6",
+                   "ست": "6", "سبعة": "7", "سبع": "7", "ثمانية": "8", "ثمانيه": "8", "تمانية": "8", "ثمان": "8", "تسعة": "9", "تسع": "9"}
+_SEP = r"[\s,،\-–]{0,3}"
+_DIGIT_RUN = re.compile(r"\d(?:" + _SEP + r"\d)*")
+_WORD_RUN = re.compile(r"(?<![\w؀-ۿ])(?:(?:" + "|".join(sorted(_EN_DIGIT_WORDS, key=len, reverse=True)) + r")[\s,،\-–]+){3,7}(?:"
+                       + "|".join(sorted(_EN_DIGIT_WORDS, key=len, reverse=True)) + r")(?![\w])", re.I)
+_AR_WORD_RUN = re.compile(r"(?<![؀-ۿ])(?:(?:" + "|".join(sorted(_AR_DIGIT_WORDS, key=len, reverse=True)) + r")[\s,،\-–]+(?:و\s*)?){3,7}(?:"
+                          + "|".join(sorted(_AR_DIGIT_WORDS, key=len, reverse=True)) + r")(?![؀-ۿ])")
+_MONEY = re.compile(r"(aed|dhs?|dirhams?|usd|\$|%|درهم|دراهم|ريال|دولار|بالمية|بالمئة)", re.I)
+
+
+def _code_request_end(text: str) -> int | None:
+    from .text_analyzer import PATTERNS
+
+    otp = next(p for p in PATTERNS if p.key == "otp")
+    ends = [m.end() for rx in otp.regexes for m in re.finditer(rx, text, re.I)]
+    return min(ends) if ends else None
+
+
+def _mask(code: str) -> str:
+    return code[:2] + "•" * (len(code) - 4) + code[-2:] if len(code) > 4 else code[0] + "••" + code[-1]
+
+
+def find_spoken_codes(text: str) -> list[dict]:
+    """Numbers of 4–8 digits heard AFTER someone asked for a code (digits, Arabic-Indic digits, or digit words).
+
+    Times (4:03), money amounts and longer numbers such as phone numbers are ignored. Each hit carries a masked
+    form and the transcript with every hit masked, so the code itself is not stored."""
+    start = _code_request_end(text)
+    if start is None:
+        return []
+    norm = text.translate(_AR_DIGITS)
+    hits: list[tuple[int, int, str]] = []
+    for m in _DIGIT_RUN.finditer(norm, start):
+        digits = re.sub(r"\D", "", m.group(0))
+        before, after = norm[max(0, m.start() - 12):m.start()], norm[m.end():m.end() + 12]
+        if not 4 <= len(digits) <= 8 or _MONEY.search(before + " " + after) or re.match(r"\s*[:.]\s*\d", after) \
+                or re.search(r"(?:[:+]|\d[.:])\s*$", before) \
+                or (len(digits) == 4 and re.search(r"(?:\b(?:at|in|by|year|since|until)|سنة|عام|الساعة|ساعة)\s*$", before, re.I)):
+            continue
+        hits.append((m.start(), m.end(), digits))
+    for rx, table in ((_WORD_RUN, _EN_DIGIT_WORDS), (_AR_WORD_RUN, _AR_DIGIT_WORDS)):
+        for m in rx.finditer(norm, start):
+            words = [w for w in re.split(r"[\s,،\-–]+", m.group(0)) if w and w != "و"]
+            digits = "".join(table.get(w.lower().removeprefix("و") if w.lower() not in table else w.lower(), "") for w in words)
+            if 4 <= len(digits) <= 8:
+                hits.append((m.start(), m.end(), digits))
+    if not hits:
+        return []
+    hits.sort()
+    redacted, last = [], 0
+    for s, e, d in hits:
+        redacted.append(text[last:s] + _mask(d))
+        last = e
+    redacted_text = "".join(redacted) + text[last:]
+    return [{"masked": _mask(d), "length": len(d), "redacted_text": redacted_text} for _, _, d in hits]

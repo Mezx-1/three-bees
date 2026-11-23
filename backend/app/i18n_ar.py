@@ -140,10 +140,64 @@ EXACT: dict[str, str] = {
     "Authority figure asking for a code": "جهة رسمية تطلب رمز التحقق",
     "Someone claiming to be the police, a bank or an official department asks for a one-time code. Real officials never do this.":
         "شخص يدّعي أنه من الشرطة أو البنك أو جهة رسمية يطلب رمز تحقق لمرة واحدة. الجهات الحقيقية لا تطلب ذلك أبداً.",
+    "A code may have been said during the call": "يبدو أن رمزاً قيل خلال المكالمة",
+    "After the caller asked for a code, a number that looks like a one-time code was heard. If it was your code, the caller can now use it — call your bank immediately.":
+        "بعد أن طلب المتصل رمزاً، سُمع رقم يشبه رمز التحقق. إذا كان رمزك، فبإمكان المتصل استخدامه الآن — اتصل ببنكك فوراً.",
+    # --- scammer's next step
+    "Predicted from the scam pattern, not a certainty.": "توقّع مبني على نمط الاحتيال، وليس أمراً مؤكداً.",
+    "They will use the code straight away to log in or approve a payment — then may call back asking for “one more code to cancel it”.":
+        "سيستخدم الرمز فوراً للدخول أو لاعتماد دفعة — وقد يعاود الاتصال طالباً «رمزاً آخر لإلغاء العملية».",
+    "A one-time code is all they need to take over the card or account.": "رمز التحقق هو كل ما يحتاجه للاستيلاء على البطاقة أو الحساب.",
+    "Call your bank now on the number printed on your card and block the card. Never give a second code.":
+        "اتصل ببنكك الآن على الرقم المطبوع على بطاقتك وأوقف البطاقة. لا تعطِ رمزاً ثانياً أبداً.",
+    "They will ask for the code sent to you by SMS, or your card number and CVV, “to verify” or “to stop the transaction”.":
+        "سيطلب الرمز الذي يصلك برسالة نصية، أو رقم بطاقتك ورمز CVV، بحجة «التحقق» أو «إيقاف العملية».",
+    "An account “problem” from a bank or official caller is the usual set-up before asking for a code.":
+        "ادعاء وجود «مشكلة» في الحساب من بنك أو جهة رسمية هو التمهيد المعتاد قبل طلب الرمز.",
+    "No bank or government body asks for a code by phone or message. Hang up and call the official number yourself.":
+        "لا يطلب أي بنك أو جهة حكومية رمزاً عبر الهاتف أو الرسائل. أنهِ المكالمة واتصل بالرقم الرسمي بنفسك.",
+    "Once they have the code they will log in or approve a payment immediately, often while keeping you on the line.":
+        "بمجرد حصوله على الرمز سيدخل إلى حسابك أو يعتمد دفعة فوراً، وغالباً وهو يُبقيك على الخط.",
+    "They asked for a code — the code is the key to your account.": "طلب رمزاً — والرمز هو مفتاح حسابك.",
+    "Do not read out any code. If you already did, call your bank at once and block the card.":
+        "لا تقرأ أي رمز. إذا قرأته، اتصل ببنكك فوراً وأوقف البطاقة.",
+    "They will ask for a small “processing”, “customs” or “delivery” fee — or your card details — to release the prize.":
+        "سيطلب رسوماً صغيرة «للمعالجة» أو «للجمارك» أو «للتوصيل» — أو بيانات بطاقتك — لتسليم الجائزة.",
+    "Fake prizes are always followed by a fee or a request for card details.": "الجوائز الوهمية يتبعها دائماً طلب رسوم أو بيانات البطاقة.",
+    "A real prize never costs money to collect. Do not pay or share card details.": "الجائزة الحقيقية لا تتطلب دفع مال لاستلامها. لا تدفع ولا تشارك بيانات بطاقتك.",
+    "A link to pay a small redelivery fee; the page then asks for your card details and the code from your bank.":
+        "رابط لدفع رسوم إعادة توصيل صغيرة؛ ثم تطلب الصفحة بيانات بطاقتك والرمز من بنكك.",
+    "Delivery problems are the most common pretext for card-stealing pages in the UAE.": "مشاكل التوصيل هي الذريعة الأكثر شيوعاً لصفحات سرقة البطاقات في الإمارات.",
+    "Check the parcel only in the courier's official app or website, typed in yourself.": "تحقق من الشحنة فقط عبر التطبيق أو الموقع الرسمي لشركة التوصيل، بكتابة العنوان بنفسك.",
+    "They will demand immediate payment of a “fine” — by transfer, gift cards or crypto — and tell you not to hang up or tell anyone.":
+        "سيطالب بدفع «غرامة» فوراً — بتحويل أو بطاقات هدايا أو عملات رقمية — ويطلب منك ألا تنهي المكالمة أو تخبر أحداً.",
+    "Threats from someone claiming authority are meant to rush you into paying.": "التهديد من شخص يدّعي صفة رسمية هدفه دفعك للدفع بسرعة.",
+    "Police and courts never collect fines by phone. End the call and check through the official app or 8002626 (Aman).":
+        "الشرطة والمحاكم لا تحصّل الغرامات عبر الهاتف. أنهِ المكالمة وتحقق عبر التطبيق الرسمي أو 8002626 (أمان).",
+    "The page or caller will ask for your username and password, then the code from your phone — after that they take over the account.":
+        "ستطلب الصفحة أو المتصل اسم المستخدم وكلمة المرور، ثم الرمز من هاتفك — وبعدها يستولي على الحساب.",
+    "Asking you to “verify” or “update” your account leads to a fake login page.": "طلب «التحقق» أو «تحديث» حسابك يقود إلى صفحة دخول مزيفة.",
+    "Open the official app or website yourself. Never sign in from a link or attachment.": "افتح التطبيق أو الموقع الرسمي بنفسك. لا تسجّل الدخول أبداً من رابط أو مرفق.",
+    "After you install the app they will control your phone or computer and open your banking app while you watch.":
+        "بعد تثبيت التطبيق سيتحكم بهاتفك أو حاسوبك ويفتح تطبيق البنك أمام عينيك.",
+    "Remote-access apps give the caller full control of the device.": "تطبيقات التحكم عن بُعد تمنح المتصل سيطرة كاملة على الجهاز.",
+    "Do not install anything a caller asks for. If you did, disconnect from the internet and uninstall it.":
+        "لا تثبّت أي شيء يطلبه المتصل. إذا ثبّته، افصل الإنترنت واحذفه.",
+    "If the attachment is opened it may run code that steals saved passwords or lets the attacker in remotely.":
+        "إذا فُتح المرفق فقد يشغّل كوداً يسرق كلمات المرور المحفوظة أو يُدخل المهاجم عن بُعد.",
+    "The file is built to run code, not to be read.": "الملف مصمم لتشغيل كود، لا للقراءة.",
+    "Do not open it. If it was opened, disconnect the device and report it to IT.": "لا تفتحه. إذا فُتح، افصل الجهاز عن الشبكة وأبلغ قسم تقنية المعلومات.",
+    "They will push for the transfer to be made today, ask you to keep it confidential and to use new bank details.":
+        "سيضغط لإتمام التحويل اليوم، ويطلب منك إبقاء الأمر سرياً واستخدام بيانات بنكية جديدة.",
+    "Payment requests with urgency or secrecy are how invoice and CEO fraud work.": "طلبات الدفع المستعجلة أو السرية هي أسلوب احتيال الفواتير وانتحال صفة المدير.",
+    "Confirm any payment or new bank details by calling a number you already know.": "تأكد من أي دفعة أو بيانات بنكية جديدة بالاتصال على رقم تعرفه مسبقاً.",
     "Card or account 'problem' pretext": "ذريعة «مشكلة» في البطاقة أو الحساب",
     "Claims your card or account needs an update, verification or has suspicious activity — the usual opening of a bank-impersonation call.":
         "يدّعي أن بطاقتك أو حسابك يحتاج تحديثاً أو تحققاً أو أن فيه نشاطاً مشبوهاً — وهي البداية المعتادة لمكالمات انتحال صفة البنك.",
     "Card or account 'problem' used to ask for a code": "«مشكلة» في البطاقة لطلب رمز التحقق",
+    "Bank or official says your account has a problem": "بنك أو جهة رسمية تدّعي وجود مشكلة في حسابك",
+    "Someone claiming to be a bank or an official body says your card or account needs action. This is how most bank-impersonation scams open.":
+        "شخص يدّعي أنه من بنك أو جهة رسمية يقول إن بطاقتك أو حسابك يحتاج إجراء. هكذا تبدأ معظم عمليات انتحال صفة البنوك.",
     "The caller says your card or account needs attention and then asks for the code sent by SMS. That code would let them take over the card.":
         "المتصل يقول إن بطاقتك أو حسابك يحتاج إجراء، ثم يطلب الرمز الذي يصلك برسالة نصية. هذا الرمز يمكّنه من الاستيلاء على البطاقة.",
     "Pressure combined with credential request": "ضغط مقترن بطلب بيانات الدخول",
@@ -723,7 +777,7 @@ def translate(s: str, depth: int = 0) -> str:
 
 DISPLAY_KEYS = {"title", "detail", "summary", "message", "result", "classification", "threat_categories", "recommended_actions",
                 "limitations", "score_note", "social_engineering_techniques", "recommended_response", "text", "security_status_text",
-                "reason", "error", "label", "note", "evidence", "reasons", "advice", "actual", "said", "observed", "inferred", "label_text"}
+                "reason", "error", "label", "note", "evidence", "reasons", "advice", "step", "why", "actual", "said", "observed", "inferred", "label_text"}
 
 
 def translate_obj(obj, key: str | None = None):

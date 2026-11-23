@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Globe2, Link2, Mail, Paperclip, ScanText } from "lucide-react";
+import { AlertOctagon, CheckCircle2, ChevronDown, FileWarning, Footprints, Globe2, Link2, Mail, Paperclip, ScanText } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { tr, trf, useI18n } from "@/lib/i18n";
@@ -259,8 +259,34 @@ function Verdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
           </div>
         </div>
       )}
+      <NextSteps next={r.next_steps} className="mt-4" />
       {actions && <div className="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">{actions}</div>}
     </section>
+  );
+}
+
+type NextStep = { id: string; step: string; why: string; advice: string };
+
+/** The scammer's likely next move, predicted from the tactics already seen. */
+export function NextSteps({ next, compact, className }: { next?: { note: string; items: NextStep[] }; compact?: boolean; className?: string }) {
+  if (!next?.items?.length) return null;
+  const items = compact ? next.items.slice(0, 1) : next.items;
+  return (
+    <div className={cn("rounded-lg border border-honey/40 bg-wax/70 p-3", className)}>
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-100">
+        <Footprints className="h-4 w-4 text-volt" />{tr("What the scammer will likely try next")}
+      </h3>
+      <ul className="mt-2 space-y-2.5 text-sm">
+        {items.map((s) => (
+          <li key={s.id}>
+            <p className="font-medium text-ink-100">{s.step}</p>
+            {!compact && <p className="mt-0.5 text-xs text-ink-400">{s.why}</p>}
+            <p className="mt-1 flex gap-1.5 text-ink-200"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" />{s.advice}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs italic text-ink-400">{next.note}</p>
+    </div>
   );
 }
 

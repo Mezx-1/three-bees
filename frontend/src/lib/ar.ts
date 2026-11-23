@@ -104,6 +104,10 @@ export const AR: Record<string, string> = {
   "No scam signs so far — keep listening carefully.": "لا توجد علامات احتيال حتى الآن — استمر في الانتباه.",
   "Advice: do not share any code, password or card number. Hang up and call the official number yourself.": "نصيحة: لا تشارك أي رمز أو كلمة مرور أو رقم بطاقة. أنهِ المكالمة واتصل بالرقم الرسمي بنفسك.",
   "Live transcript": "النص المباشر",
+  "Stop! Don't give the code": "توقّف! لا تعطِه الرمز",
+  "A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card.":
+    "سُمع رقم يشبه رمز التحقق بعد أن طلب المتصل رمزاً. إذا كان رمزك، أنهِ المكالمة واتصل ببنكك الآن لإيقاف البطاقة.",
+  "What the scammer will likely try next": "الخطوة التالية المتوقعة من المحتال",
   "Caller and voice": "المتصل والصوت",
   "Number": "الرقم",
   "Registered to": "مسجّل لدى",
