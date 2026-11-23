@@ -7,7 +7,24 @@ import { useEffect, useState } from "react";
 import { apiGet, apiSend, getMe, getToken, type Me, setSession } from "@/lib/api";
 import { DictKey, useI18n, tr } from "@/lib/i18n";
 import { BeeMark } from "./BeeMark";
+import { SearchBox } from "./SearchBox";
 import { cn, hexPoints } from "./ui";
+
+// Extra words people might type to find a page (English + Arabic).
+const PAGE_KEYWORDS: Record<string, string> = {
+  "/": "dashboard home overview الرئيسية لوحة",
+  "/scam-analyzer": "message sms whatsapp link url text screenshot رسالة رابط واتساب صورة نص احتيال",
+  "/call-guard": "call phone voice listen microphone otp code مكالمة صوت متصل ميكروفون رمز",
+  "/phone": "number caller iphone رقم جوال آيفون",
+  "/email-security": "email mail eml phishing attachment إيميل بريد مرفق تصيد",
+  "/forensics": "file image pdf attachment qr ملف صورة مرفق",
+  "/endpoints": "laptop device computer agent firewall لابتوب جهاز حاسوب",
+  "/network": "ip domain dns network عنوان دومين شبكة",
+  "/graph": "graph map links correlation مخطط ربط خريطة",
+  "/incidents": "incident case report police حادثة بلاغ قضية شرطة",
+  "/prevention": "block blocklist prevent حظر منع",
+  "/settings": "settings language users demo إعدادات لغة مستخدمين",
+};
 
 const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[] }[] = [
   { section: "section_detect", items: [
@@ -114,13 +131,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-ink-700 bg-ink-900/95 px-4 py-2.5">
           <button className="rounded-md p-1.5 text-ink-300 hover:bg-ink-800 lg:hidden" aria-label={tr("Open menu")} onClick={() => setOpen(true)}><Menu className="h-5 w-5" /></button>
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {offline ? (
-              <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 font-medium text-crit"><Activity className="h-3.5 w-3.5" /> {tr("Can't reach the server — start the backend")}</span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-ink-400"><span className="h-2 w-2 rounded-full bg-green-500" /> {tr("Connected")}</span>
-            )}
-          </div>
+          <SearchBox pages={NAV.flatMap((s) => s.items).map((it) => ({ href: it.href, label: t(it.key), icon: it.icon, keywords: PAGE_KEYWORDS[it.href] || "" }))} />
+          {offline && (
+            <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-crit"><Activity className="h-3.5 w-3.5" /> {tr("Can't reach the server — start the backend")}</span>
+          )}
           <div className="ms-auto flex items-center gap-2">
             <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className="rounded-lg px-2.5 py-1.5 text-sm text-ink-300 ring-1 ring-ink-600 hover:bg-ink-800" aria-label={tr("Switch language")}>
               {lang === "en" ? "العربية" : tr("English")}

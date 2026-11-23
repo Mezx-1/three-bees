@@ -254,12 +254,12 @@ function Verdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
           <div>
             <h3 className="text-sm font-semibold text-ink-100">{tr("What to do")}</h3>
             <ul className="mt-1.5 space-y-1 text-sm text-ink-200">
-              {r.recommended_actions.slice(0, 3).map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" />{x}</li>)}
+              {r.recommended_actions.slice(0, 2).map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-safe" />{x}</li>)}
             </ul>
           </div>
         </div>
       )}
-      <NextSteps next={r.next_steps} className="mt-4" />
+      <NextSteps next={r.next_steps} compact className="mt-4" />
       {actions && <div className="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">{actions}</div>}
     </section>
   );

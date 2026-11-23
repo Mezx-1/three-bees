@@ -1,17 +1,20 @@
 "use client";
 
 import { tr } from "@/lib/i18n";
-import { Download, FileJson, Flag, MailCheck, MailWarning, ShieldBan, Siren, Trash2, Undo2 } from "lucide-react";
+import { Download, FileJson, FileText, Flag, MailCheck, MailWarning, MoreHorizontal, ShieldBan, Siren, Trash2, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiSend, download } from "@/lib/api";
 import type { Analysis } from "@/lib/types";
+import { PoliceReport } from "./PoliceReport";
 import { broadcastRefresh, Button, useToast } from "./ui";
 
 export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: Analysis) => void }) {
   const toast = useToast();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [showReport, setShowReport] = useState(false);
+  const [more, setMore] = useState(false);
 
   const act = async (key: string, fn: () => Promise<void>) => {
     setBusy(key);
@@ -39,6 +42,10 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
 
   return (
     <>
+      {a.risk_score >= 30 && (
+        <Button variant="primary" onClick={() => setShowReport(true)}><FileText className="h-4 w-4" /> {tr("Prepare police report")}</Button>
+      )}
+      {showReport && <PoliceReport id={a.id} onClose={() => setShowReport(false)} />}
       {a.kind === "email" && (
         <>
           {a.status !== "quarantined" ? (
@@ -70,9 +77,13 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
           toast("ok", r.message);
         })}><ShieldBan className="h-4 w-4" /> {tr("Block")} {d}</Button>
       ))}
-      <Button variant="ghost" loading={busy === "html"} onClick={() => act("html", () => download(`/api/analyses/${a.id}/export?format=html`, `${a.id}.html`))}><Download className="h-4 w-4" /> {tr("Report")}</Button>
-      <Button variant="ghost" loading={busy === "json"} onClick={() => act("json", () => download(`/api/analyses/${a.id}/export?format=json`, `${a.id}.json`))}><FileJson className="h-4 w-4" /> {tr("JSON")}</Button>
-      <Button variant="ghost" className="text-crit" loading={busy === "del"} onClick={() => {
+      <div className="relative">
+        <Button variant="ghost" onClick={() => setMore(!more)} aria-expanded={more}><MoreHorizontal className="h-4 w-4" /> {tr("More")}</Button>
+        {more && (
+          <div className="absolute bottom-full start-0 z-20 mb-1 flex w-48 flex-col gap-0.5 rounded-lg border border-ink-700 bg-white p-1 shadow-lg" onClick={() => setMore(false)}>
+      <Button variant="ghost" className="justify-start" loading={busy === "html"} onClick={() => act("html", () => download(`/api/analyses/${a.id}/export?format=html`, `${a.id}.html`))}><Download className="h-4 w-4" /> {tr("Report")}</Button>
+      <Button variant="ghost" className="justify-start" loading={busy === "json"} onClick={() => act("json", () => download(`/api/analyses/${a.id}/export?format=json`, `${a.id}.json`))}><FileJson className="h-4 w-4" /> {tr("JSON")}</Button>
+      <Button variant="ghost" className="justify-start text-crit" loading={busy === "del"} onClick={() => {
         if (!window.confirm(tr("Delete this local 3B record? This does not affect any external mailbox."))) return;
         act("del", async () => {
           const r = await apiSend(`/api/analyses/${a.id}`, "DELETE");
@@ -80,6 +91,9 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
           router.push("/");
         });
       }}><Trash2 className="h-4 w-4" /> {tr("Delete record")}</Button>
+          </div>
+        )}
+      </div>
     </>
   );
 }

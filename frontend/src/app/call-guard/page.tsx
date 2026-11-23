@@ -255,7 +255,6 @@ export default function CallGuard() {
             <div className={cn("text-2xl font-semibold", v.text)}>{tr(v.label)}</div>
             <p className="mt-1 text-sm text-ink-200">{result.risk_score >= 30 ? result.classification : tr("No scam signs so far — keep listening carefully.")}</p>
             <ul className="mt-2 space-y-1 text-sm text-ink-200">{result.report!.findings.filter((f) => f.weight > 0).slice(0, 4).map((f, i) => <li key={i}>• {f.title}</li>)}</ul>
-            {result.risk_score >= 60 && <p className="mt-2 text-sm font-medium text-crit">{tr("Advice: do not share any code, password or card number. Hang up and call the official number yourself.")}</p>}
             <NextSteps next={result.report?.next_steps} compact className="mt-3" />
           </div>
           <div className="space-y-3 text-sm">
