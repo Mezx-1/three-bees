@@ -35,3 +35,4 @@ docs/demo/*.mp4
 
 # Benchmark datasets (downloaded by the script, verified by SHA-256)
 backend/benchmarks/data/
+backend/benchmarks/results/url_predictions.csv
