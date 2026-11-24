@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+from datetime import datetime, timezone
 import ipaddress
 import json
 import re
@@ -340,3 +341,98 @@ def police_report(aid: str, x_3b_lang: str | None = Header(default=None), db: Se
     audit(db, user.username, "analysis.police_report", aid, {})
     db.commit()
     return {"title": L("Police report draft"), "sections": sections, "body": "\n".join(lines), "footer": footer}
+
+
+# ---------------------------------------------------------------- evidence pack + takedown request
+
+def _evidence(a: Analysis, db: Session) -> dict:
+    """Everything an investigator needs to act on a flagged link, with sources and UTC timestamps."""
+    import hashlib
+
+    from ..models import Indicator
+
+    r = a.report or {}
+    urls = []
+    main = r.get("url") if isinstance(r.get("url"), dict) else None
+    if main:
+        intel = r.get("intel") or {}
+        urls.append({"url": main.get("url"), "host": main.get("host"), "registered_domain": main.get("registered_domain"),
+                     "official_domain": bool(main.get("official")), "redirect_chain": (main.get("deep") or {}).get("redirects"),
+                     "final_url": (main.get("deep") or {}).get("final_url"), "page_title": (intel.get("expansion") or {}).get("title"),
+                     "dns": (intel.get("dns") or {}).get("records"), "dns_queried_at": (intel.get("dns") or {}).get("queried_at"),
+                     "rdap": intel.get("rdap"), "reputation": intel.get("reputation")})
+    for u in r.get("urls") or []:
+        urls.append({"url": u.get("url"), "host": u.get("host"), "registered_domain": u.get("registered_domain"), "score": u.get("score"),
+                     "redirect_chain": ((u.get("info") or {}).get("deep") or {}).get("redirects"), "rdap": (u.get("intel") or {}).get("rdap"),
+                     "dns": ((u.get("intel") or {}).get("dns") or {}).get("records")})
+    inds = db.scalars(select(Indicator).where(Indicator.analysis_id == a.id)).all()
+    pack = {
+        "evidence_type": "3B link / message evidence pack",
+        "analysis_id": a.id, "kind": a.kind, "title": a.title,
+        "analysed_at_utc": a.created_at.isoformat() if a.created_at else None,
+        "risk_score": a.risk_score, "risk_level": (r.get("risk_level") or a.severity.upper()), "classification": a.classification,
+        "assessment_status": r.get("assessment_status"), "verdict_basis": r.get("verdict_basis"),
+        "findings": [{"title": f["title"], "detail": f["detail"], "source": f["source"], "severity": f["severity"], "evidence": f.get("evidence")}
+                     for f in r.get("findings", []) if f.get("weight", 0) > 0],
+        "links": urls,
+        "indicators": [{"type": i.type, "value": i.value, "role": i.role} for i in inds],
+        "screenshot": "Not captured: 3B does not render pages (safety). Take a screenshot in an isolated browser if needed.",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(), "generated_by": "Three Bees (3B) prototype",
+        "note": "Automated findings for investigators. Heuristic findings are indicators, not proof. Verified/intel findings cite their source.",
+    }
+    body = json.dumps(pack, sort_keys=True, ensure_ascii=False, default=str)
+    pack["sha256_of_pack"] = hashlib.sha256(body.encode()).hexdigest()
+    return pack
+
+
+@router.get("/analyses/{aid}/evidence-pack")
+def evidence_pack(aid: str, db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
+    a = db.get(Analysis, aid)
+    if not a:
+        raise HTTPException(404, "Analysis not found")
+    audit(db, user.username, "analysis.evidence_pack", aid)
+    db.commit()
+    return JSONResponse(_evidence(a, db), headers={"Content-Disposition": f"attachment; filename=3b-evidence-{aid}.json"})
+
+
+@router.get("/analyses/{aid}/takedown")
+def takedown(aid: str, db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
+    """A plain-text takedown / abuse request for the registrar and host. 3B never sends it; an investigator does."""
+    a = db.get(Analysis, aid)
+    if not a:
+        raise HTTPException(404, "Analysis not found")
+    p = _evidence(a, db)
+    link = next((l for l in p["links"] if l.get("url")), {})
+    rd = link.get("rdap") or {}
+    reasons = "\n".join(f"  - {f['title']} [{f['source']}]" + (f" — {f['evidence']}" if f.get("evidence") else "") for f in p["findings"][:10])
+    chain = " -> ".join(c["url"] for c in (link.get("redirect_chain") or [])) or "not followed"
+    ips = ", ".join((link.get("dns") or {}).get("A", [])) or "not resolved"
+    text = f"""Subject: Abuse report - suspected phishing / fraud: {link.get('registered_domain') or link.get('host') or a.title}
+
+To: {rd.get('abuse_email') or '[registrar abuse contact]'}   (registrar: {rd.get('registrar') or 'unknown'})
+
+We are reporting a suspected fraudulent website impersonating a UAE organisation or targeting UAE residents.
+
+URL:               {link.get('url') or a.title}
+Final destination: {link.get('final_url') or link.get('url') or '-'}
+Redirect chain:    {chain}
+Domain:            {link.get('registered_domain') or '-'}  (registered {rd.get('registered') or 'unknown'}, age {rd.get('age_days', 'unknown')} days)
+IP addresses:      {ips}
+First analysed:    {p['analysed_at_utc']} (UTC)
+Risk:              {p['risk_score']}/100 ({p['risk_level']}) - {p['assessment_status'] or ''}
+
+Why it was flagged:
+{reasons or '  - see attached evidence pack'}
+
+Evidence pack: analysis {a.id}, SHA-256 {p['sha256_of_pack']}
+
+Please review and suspend the domain / hosting if it violates your acceptable-use policy.
+[Name, organisation, contact]
+
+-- Drafted by Three Bees (3B). Review before sending; 3B does not send this request.
+"""
+    from fastapi.responses import PlainTextResponse
+
+    audit(db, user.username, "analysis.takedown_draft", aid)
+    db.commit()
+    return PlainTextResponse(text, headers={"Content-Disposition": f"attachment; filename=3b-takedown-{aid}.txt"})

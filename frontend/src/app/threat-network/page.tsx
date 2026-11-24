@@ -82,6 +82,8 @@ export default function ThreatNetwork() {
         )}
       </Card>
 
+      <LookalikeWatch />
+
       <Card title={tr("Shared indicators")} subtitle={tr("Only Suspicious (warn) and Verified (block-eligible) are sent to devices, as hashes. A report alone is never enough to verify.")}
         action={<div className="flex gap-2">
           <select className={cn(inputCls, "w-40")} value={status} onChange={(e) => setStatus(e.target.value)} aria-label={tr("Status")}>
@@ -204,5 +206,61 @@ function Graph({ g }: { g: any }) {
         {Object.entries(NODE_COLOR).map(([k, c]) => <span key={k} className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />{tr(k)}</span>)}
       </div>
     </div>
+  );
+}
+
+/** Early detection: look-alike domains of UAE brands found in Certificate Transparency logs. */
+function LookalikeWatch() {
+  const toast = useToast();
+  const w = useApi<any>(() => apiGet("/api/network/watch"), []);
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    let n = 0, done = 0;
+    const errs: string[] = [];
+    for (const b of (w.data?.brands || []) as string[]) {  // one brand per request: certificate searches can be slow
+      try {
+        const r = await apiSend("/api/network/watch/run", "POST", { brands: [b] });
+        n += r.new_hits;
+        done += 1;
+        if (r.errors?.[b]) errs.push(`${b}: ${r.errors[b]}`);
+        w.reload(true);
+      } catch (e: any) { errs.push(`${b}: ${e.message}`); }
+    }
+    setBusy(false);
+    toast("ok", trf("Checked {b} brands · {n} new look-alike domains", { b: done, n }));
+    if (errs.length) toast("err", errs.slice(0, 3).join("; "));
+  };
+  const review = async (id: number, status: string) => {
+    try { await apiSend(`/api/network/watch/${id}`, "PATCH", { status }); w.reload(true); } catch (e: any) { toast("err", e.message); }
+  };
+  const hits: any[] = w.data?.hits || [];
+  return (
+    <Card title={tr("Look-alike domain watch")}
+      subtitle={tr("New HTTPS certificates for domains that contain UAE brand names (from public Certificate Transparency logs) — often visible before the first victim. Leads for review, not verdicts.")}
+      action={<Button variant="primary" loading={busy} onClick={run}><RefreshCw className="h-4 w-4" /> {tr("Check now")}</Button>}>
+      {w.error && <ErrorBox error={w.error} />}
+      {hits.length === 0 ? <p className="text-sm text-ink-400">{tr("No look-alike domains yet. Press Check now.")}</p> : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead><tr className="text-xs text-ink-400"><th className="py-2 text-start">{tr("Domain")}</th><th className="text-start">{tr("Brand")}</th><th className="text-start">{tr("Certificate issued")}</th><th className="text-start">{tr("Risk")}</th><th className="text-start">{tr("Why")}</th><th /></tr></thead>
+            <tbody className="divide-y divide-ink-700">
+              {hits.slice(0, 60).map((h) => (
+                <tr key={h.id}>
+                  <td className="py-2 font-mono text-xs text-ink-100" dir="ltr">{h.host}</td><td>{h.brand}</td>
+                  <td className="text-xs text-ink-400">{(h.cert_not_before || "").slice(0, 10)}</td>
+                  <td><span className={cn("rounded-full px-2 py-0.5 text-xs", h.score >= 60 ? "bg-red-50 text-crit" : h.score >= 30 ? "bg-amber-50 text-warn" : "bg-ink-800 text-ink-300")}>{h.score}</span></td>
+                  <td className="max-w-xs truncate text-xs text-ink-400" title={(h.reasons || []).join(" · ")}>{(h.reasons || []).join(" · ")}</td>
+                  <td className="space-x-1 whitespace-nowrap text-end rtl:space-x-reverse">
+                    {h.status === "flagged" ? <Pill>{tr("Flagged")}</Pill> : <Button onClick={() => review(h.id, "flagged")}>{tr("Flag")}</Button>}
+                    <Button variant="ghost" onClick={() => review(h.id, "dismissed")}>{tr("Dismiss")}</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }

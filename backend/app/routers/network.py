@@ -302,3 +302,45 @@ def stats(db: Session = Depends(get_db), user: User = Depends(current_user)):
 @router.post("/expire")
 def expire(db: Session = Depends(get_db), user: User = Depends(require("admin"))):
     return {"expired": collective.expire_stale(db)}
+
+
+# ---------------------------------------------------------------- look-alike domain watch (Certificate Transparency)
+
+@router.get("/watch")
+def watch_list(status: str = "new,flagged", db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
+    from ..models import WatchHit
+    from ..services import domain_watch
+
+    rows = db.scalars(select(WatchHit).where(WatchHit.status.in_(status.split(","))).order_by(WatchHit.score.desc(), WatchHit.first_seen.desc()).limit(300)).all()
+    return {"hits": [domain_watch.ser(h) for h in rows], "brands": domain_watch.WATCH_BRANDS}
+
+
+@router.post("/watch/run")
+def watch_run(body: dict = Body(default={}), db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
+    from ..services import domain_watch
+
+    res = domain_watch.scan(db, body.get("brands"))
+    audit(db, user.username, "network.watch_run", ",".join(res["brands"]), {"new": res["new_hits"]})
+    db.commit()
+    return res
+
+
+@router.patch("/watch/{hid}")
+def watch_review(hid: int, body: dict = Body(...), db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
+    from ..models import WatchHit
+    from ..services import domain_watch
+
+    h = db.get(WatchHit, hid)
+    if not h:
+        raise HTTPException(404, "Not found")
+    st = body.get("status")
+    if st not in ("flagged", "dismissed", "new"):
+        raise HTTPException(422, "status must be flagged, dismissed or new")
+    domain_watch.set_status(db, h, st)
+    if st == "flagged":  # becomes a shared warning (suspicious), never verified from a look-alike alone
+        ind = collective.get_or_create(db, "domain", h.registered_domain, category="phishing", by=user.username)
+        if ind.status in ("reported",):
+            collective.set_status(db, ind, "suspicious", user.username, f"Look-alike of '{h.brand}' found in certificate logs; flagged by analyst")
+    audit(db, user.username, f"network.watch_{st}", h.host)
+    db.commit()
+    return domain_watch.ser(h)

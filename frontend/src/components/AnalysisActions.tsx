@@ -83,6 +83,8 @@ export function AnalysisActions({ a, onChange }: { a: Analysis; onChange: (a: An
           <div className="absolute bottom-full start-0 z-20 mb-1 flex w-48 flex-col gap-0.5 rounded-lg border border-ink-700 bg-white p-1 shadow-lg" onClick={() => setMore(false)}>
       <Button variant="ghost" className="justify-start" loading={busy === "html"} onClick={() => act("html", () => download(`/api/analyses/${a.id}/export?format=html`, `${a.id}.html`))}><Download className="h-4 w-4" /> {tr("Report")}</Button>
       <Button variant="ghost" className="justify-start" loading={busy === "json"} onClick={() => act("json", () => download(`/api/analyses/${a.id}/export?format=json`, `${a.id}.json`))}><FileJson className="h-4 w-4" /> {tr("JSON")}</Button>
+      <Button variant="ghost" className="justify-start" loading={busy === "pack"} onClick={() => act("pack", () => download(`/api/analyses/${a.id}/evidence-pack`, `3b-evidence-${a.id}.json`))}><FileJson className="h-4 w-4" /> {tr("Evidence pack")}</Button>
+      <Button variant="ghost" className="justify-start" loading={busy === "td"} onClick={() => act("td", () => download(`/api/analyses/${a.id}/takedown`, `3b-takedown-${a.id}.txt`))}><Flag className="h-4 w-4" /> {tr("Takedown request")}</Button>
       <Button variant="ghost" className="justify-start text-crit" loading={busy === "del"} onClick={() => {
         if (!window.confirm(tr("Delete this local 3B record? This does not affect any external mailbox."))) return;
         act("del", async () => {

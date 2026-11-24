@@ -162,11 +162,25 @@ def url_subanalysis(url: str, ctx: Context, *, lookups: bool | None = None, repu
     findings, info = ua.analyze_url(url, blocklist=ctx.blocked_domains, org_domain=ctx.org_domain)
     if ua.normalize_url(url) in ctx.blocked_urls:
         findings.append(Finding("URL is on the 3B blocklist", "An analyst blocked this exact URL.", "url", "critical", 70, "verified", ["malicious_link"]))
+    from . import url_deep
+
+    findings += url_deep.static_findings(info)
     intel: dict = {}
     if lookups and info.get("host") and not info.get("ip_literal"):
         dns_info = ua.resolve_dns(info["host"])
         intel["dns"] = dns_info
         findings += ua.dns_findings(dns_info)
+        if reputation:  # deep checks only for the first links of a message (one request per redirect hop + one RDAP query)
+            exp = url_deep.expand(info.get("url", url))
+            reg_info = url_deep.rdap(info["registered_domain"]) if info.get("registered_domain") else None
+            intel["expansion"], intel["rdap"] = exp, reg_info
+            df, summary = url_deep.deep_findings(info, exp, reg_info)
+            findings += df
+            info["deep"] = summary
+    off = url_deep.official_adjust(findings, info)
+    if off:
+        findings.append(off)
+        info["official"] = True
     if lookups and reputation and info.get("host"):
         # Sends the URL to the configured reputation providers — only with external lookups switched on (with consent).
         rep = ti.check_url(info.get("url", url))

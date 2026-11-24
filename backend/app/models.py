@@ -461,3 +461,18 @@ class ProtectionEvent(Base):
     indicator_masked: Mapped[str] = mapped_column(String(200))
     reason: Mapped[str] = mapped_column(String(500))
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class WatchHit(Base):
+    """A look-alike domain found in Certificate Transparency logs. A lead for review, not a verdict."""
+    __tablename__ = "watch_hits"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    host: Mapped[str] = mapped_column(String(253), unique=True, index=True)
+    registered_domain: Mapped[str] = mapped_column(String(253), index=True)
+    brand: Mapped[str] = mapped_column(String(40), index=True)
+    cert_not_before: Mapped[str] = mapped_column(String(20), default="")
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    reasons: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(20), default="new")  # new | flagged | dismissed
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

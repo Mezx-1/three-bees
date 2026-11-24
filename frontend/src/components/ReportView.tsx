@@ -125,11 +125,28 @@ function UrlList({ urls }: { urls: any[] }) {
               <span className="break-all font-mono text-xs text-ink-100">{u.url}</span>
             </div>
             {u.findings?.length > 0 && <p className="mt-1 text-[11px] text-ink-400">{u.findings.map((f: Finding) => f.title).join(" · ")}</p>}
+            <DeepInfo deep={u.info?.deep} />
             {u.intel?.dns && <p className="mt-1 text-[11px] text-ink-400">{tr("DNS:")} {u.intel.dns.nxdomain ? "NXDOMAIN" : Object.entries(u.intel.dns.records || {}).map(([k, v]: any) => `${k} ${v.length}`).join(", ") || u.intel.dns.error || "no records"} · <span className="text-ink-500">{u.intel.dns.source} @ {fmtTime(u.intel.dns.queried_at)}</span></p>}
           </li>
         ))}
       </ul>
     </Collapse>
+  );
+}
+
+function DeepInfo({ deep }: { deep?: any }) {
+  if (!deep) return null;
+  const chain: any[] = deep.redirects || [];
+  const rd = deep.rdap || {};
+  return (
+    <div className="mt-1.5 space-y-0.5 text-[11px] text-ink-300">
+      {chain.length > 1 && <p>{tr("Where it really goes:")} <span className="font-mono" dir="ltr">{chain.map((c) => `${c.url} (${c.status})`).join(" → ")}</span></p>}
+      {(rd.registered || rd.error) && (
+        <p>{tr("Domain registered:")} {rd.registered ? `${String(rd.registered).slice(0, 10)} · ${trf("{n} days old", { n: rd.age_days })}` : rd.error}
+          {rd.registrar && <> · {tr("Registrar:")} {rd.registrar}</>}{rd.abuse_email && <> · {tr("Abuse contact:")} <span dir="ltr">{rd.abuse_email}</span></>}</p>
+      )}
+      {deep.fetch_error && <p className="text-ink-400">{deep.fetch_error}</p>}
+    </div>
   );
 }
 
@@ -442,7 +459,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
             </Card>
             {a.kind === "email" && <EmailDetails r={r} />}
             {["file", "image", "audio", "video"].includes(a.kind) && <FileDetails r={r} />}
-            <UrlList urls={r.urls} />
+            <UrlList urls={r.urls || (r.url?.url ? [{ url: r.url.url, score: a.risk_score, severity: a.severity, info: r.url, intel: r.intel, findings: [] }] : [])} />
             <IntelDetails r={r} />
           </div>
           <div className="space-y-4">

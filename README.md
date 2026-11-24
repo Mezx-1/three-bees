@@ -15,6 +15,16 @@ Every verdict shows which evidence is a **verified fact**, which is a **heuristi
 
 ---
 
+## ScamShield AI judging criteria — what 3B does for each
+
+| Criterion | What 3B does | Measured / where to see it |
+|---|---|---|
+| **Detection accuracy (30%)** | Link engine: look-alike and brand-on-wrong-domain checks (incl. country endings like `brand.com.xx`), punycode, free hosting/site-builder pages, hacked-WordPress paths, e-mail carried in the link, shorteners. **Follows redirects and meta-refresh hops** (no rendering) and reads the final page for password/card forms and brand titles. **Official UAE domains** (all `*.gov.ae`, TAMM, UAE PASS, banks, telcos, couriers) are recognised so real banks and government sites aren't flagged. Reputation from URLhaus / VirusTotal / Google Safe Browsing when keys are set. | Public benchmark, offline engine only (no redirects, no domain age, no APIs): **OpenPhish phishing URLs (held-out half) vs. 1,000 Tranco sites + 43 real UAE sites → precision 0.86, recall 0.68, false-positive rate 1.7 %, 0 false positives on the UAE government/bank list.** [`backend/benchmarks/results/URL_BENCHMARK.md`](backend/benchmarks/results/URL_BENCHMARK.md) |
+| **Early detection & coverage (25%)** | **Look-alike domain watch**: searches public Certificate Transparency logs for new HTTPS certificates on domains containing UAE brand names (ADCB, FAB, ENBD, TAMM, UAE PASS, Salik, police…) — usually before the first victim. **Domain age** from RDAP (registered < 30 days = high risk). Community reports + shared threat network warn other users as soon as several people report the same number, link or email. | Threat Network → *Look-alike domain watch*. Search-engine ads and Maps listings are **not** covered yet (see limits). |
+| **Explainability & actionability (20%)** | Every result: 0–100 score, risk level, warning, each reason with its source (verified / threat intel / heuristic / AI) and the phrases or facts behind it. **Evidence pack** (JSON with UTC timestamps, redirect chain, DNS, RDAP registrar + abuse contact, findings, SHA-256 of the pack) and a **takedown request** draft for the registrar; police-report draft. | Any analysis → More → *Evidence pack* / *Takedown request*. Screenshots of the scam page are not taken (3B never renders scam pages). |
+| **UAE relevance & innovation (15%)** | Arabic-first UI and reports; Arabic, Gulf/Levantine dialect and Arabizi in the intent engine; UAE brands (banks, TAMM, UAE PASS, Salik, traffic fines). Novel parts: **intent-based detection** (what the message asks you to do, not which words it uses), **Call Guard** fact-checking a live caller, **scam campaign graph** linking numbers, domains and messages, **126-method scam library**, optional LLM (Claude / Gemini) layer. | [`docs/DETECTION_ENGINE.md`](docs/DETECTION_ENGINE.md): 31-message test, sophisticated scams caught with keyword lists switched off. |
+| **Feasibility & presentation (10%)** | Runs live (web + public link), 124 automated tests, role-based access, audit log, privacy by design, honest limits listed below. Pilot path: police analysts use the Threat Network and evidence packs; residents use Report a Scam / Caller ID. | `pytest` (124 pass), [`docs/COLLECTIVE_PROTECTION.md`](docs/COLLECTIVE_PROTECTION.md) |
+
 ## 1. The problem
 
 Scams in the UAE reach people through every channel: fake Salik and parcel-fee SMS, calls from "the police" or "the bank" asking for an OTP, CEO-fraud emails, and malicious attachments. Victims usually have seconds to decide, and existing tools fail them in three ways:
@@ -105,7 +115,10 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · privacy: [docs/PRIV
 - Dynamic malware sandbox.
 - Deepfake-voice detection.
 - SSO.
-- URL reputation feeds (VirusTotal, Safe Browsing).
+- Search-engine ads and Google Maps listings (fake business pages, fake helpline numbers): not monitored yet. Fake helpline numbers reported by people do enter the shared phone list.
+- Screenshots of scam pages: 3B never renders scam pages; an investigator captures them in an isolated browser.
+- Android call-screening app and Gmail mailbox scanning (designs in docs/COLLECTIVE_PROTECTION.md).
+- URL reputation feeds run only with your own free keys (URLhaus, VirusTotal, Safe Browsing).
 
 **With more time**
 - Connect the entity check to an official UAE business registry.
@@ -113,7 +126,7 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · privacy: [docs/PRIV
 - Build a signed Windows service with ETW telemetry.
 - Add Microsoft Graph mail integration.
 - Publish the iPhone app through TestFlight.
-- Run a proper evaluation set of real (anonymised) UAE scam messages to measure precision and recall.
+- Run a proper evaluation set of real (anonymised) UAE scam messages and URLs from the police, to measure precision and recall on local data.
 
 ## 7. Build and run
 
@@ -152,7 +165,9 @@ Copy `backend/.env.example` to `backend/.env`.
 ### Tests
 ```bash
 cd backend
-python -m pytest tests -q        # 42 tests: end-to-end scenario, auth, agent safety, Arabic reports, claim checks, Arabic dialect
+python -m pytest tests -q        # 124 tests: detection suite, URL checks, shared network, auth, Arabic reports, calls…
+python benchmarks/run_url_benchmark.py   # URL precision/recall (download the public lists first, see the script header)
+python benchmarks/run_sms_benchmark.py   # SMS benchmark
 cd ../frontend
 npx tsc --noEmit && npm run lint
 ```

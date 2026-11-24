@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [me, setMe] = useState<Me | null>(null);
   const [offline, setOffline] = useState(false);
-  const isLogin = path.startsWith("/login");
+  const isLogin = path.startsWith("/login") || path.startsWith("/device");
   const simple = useSimpleMode();
   useEffect(() => { document.documentElement.classList.toggle("simple", simple); }, [simple]);
 
@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const active = (href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
 
-  if (isLogin) return <>{children}</>;
+  if (isLogin || path.startsWith("/device")) return <>{children}</>;
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-5" aria-label={tr("Main")}>

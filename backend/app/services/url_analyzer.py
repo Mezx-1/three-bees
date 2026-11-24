@@ -21,7 +21,7 @@ SUSPICIOUS_TLDS = {
 
 SHORTENERS = {
     "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly", "cutt.ly", "rb.gy", "shorturl.at", "tiny.cc",
-    "rebrand.ly", "s.id", "t.ly", "lnkd.in", "qrco.de", "bit.do",
+    "rebrand.ly", "s.id", "t.ly", "lnkd.in", "qrco.de", "bit.do", "u.gy", "shorturl.gg", "v.gd", "clck.ru", "x.gd", "urlz.fr",
 }
 
 # Brand keyword -> registered domains that legitimately belong to it.
@@ -49,6 +49,34 @@ OFFICIAL_DOMAINS: dict[str, list[str]] = {
     "uaepass": ["uaepass.ae"],
     "tamm": ["tamm.abudhabi"],
     "salik": ["salik.ae"],
+    "roblox": ["roblox.com", "rbxcdn.com"],
+    "facebook": ["facebook.com", "fb.com", "facebook.net", "fbcdn.net"],
+    "instagram": ["instagram.com", "cdninstagram.com"],
+    "steamcommunity": ["steamcommunity.com", "steampowered.com"],
+    "binance": ["binance.com"],
+    "coinbase": ["coinbase.com"],
+    "metamask": ["metamask.io"],
+    "walletconnect": ["walletconnect.com", "walletconnect.network", "walletconnect.org"],
+    "trustwallet": ["trustwallet.com"],
+    "opensea": ["opensea.io"],
+    "docusign": ["docusign.com", "docusign.net"],
+    "dropbox": ["dropbox.com", "dropboxusercontent.com"],
+    "adobe": ["adobe.com", "adobelogin.com"],
+    "linkedin": ["linkedin.com", "licdn.com"],
+    "telegram": ["telegram.org", "t.me"],
+    "tiktok": ["tiktok.com"],
+    "spotify": ["spotify.com"],
+    "midasbuy": ["midasbuy.com"],
+    "usps": ["usps.com"],
+    "fedex": ["fedex.com"],
+    "royalmail": ["royalmail.com"],
+    "auspost": ["auspost.com.au"],
+    "couriersplease": ["couriersplease.com.au"],
+    "bnpparibas": ["bnpparibas", "bnpparibas.com", "bnpparibas.fr"],
+    "wellsfargo": ["wellsfargo.com"],
+    "careem": ["careem.com"],
+    "rakbank": ["rakbank.ae"],
+    "adib": ["adib.ae"],
 }
 
 SENSITIVE_PATH_WORDS = ["login", "signin", "verify", "verification", "secure", "account", "update", "wallet", "otp", "password",
@@ -58,7 +86,8 @@ SENSITIVE_PATH_WORDS = ["login", "signin", "verify", "verification", "secure", "
 def registered_domain(host: str) -> str:
     host = host.lower().rstrip(".")
     parts = host.split(".")
-    if len(parts) >= 3 and ".".join(parts[-2:]) in MULTI_PART_SUFFIXES:
+    if len(parts) >= 3 and (".".join(parts[-2:]) in MULTI_PART_SUFFIXES
+                            or (len(parts[-1]) == 2 and parts[-2] in ("com", "net", "org", "co", "gov", "edu", "ac", "or", "ne", "go", "mil"))):
         return ".".join(parts[-3:])
     return ".".join(parts[-2:]) if len(parts) >= 2 else host
 
@@ -164,19 +193,35 @@ def analyze_url(raw: str, *, blocklist: set[str] | None = None, org_domain: str 
         host_flat = host.replace("-", "").replace(".", "")
         normalized_label = label.translate(HOMOGLYPHS).replace("-", "")
         for brand, officials in OFFICIAL_DOMAINS.items():
-            if reg in officials:
+            if reg in officials or tld == brand:
                 info["official_brand"] = brand
                 break
         else:
             for brand, officials in OFFICIAL_DOMAINS.items():
                 if brand in host_flat:
-                    findings.append(Finding(f"Brand name '{brand}' used on an unrelated domain",
-                                            f"The host contains '{brand}' but the registered domain is '{reg}', not an official domain ({', '.join(officials)}).",
-                                            "url", "high", 34, "heuristic", ["impersonation", "phishing"], evidence=host))
+                    sub_part = host[: -len(reg)] if host.endswith(reg) else ""
+                    own_infra = (label.startswith(brand) and "-" not in label and brand not in sub_part.replace("-", "").replace(".", "")
+                                 and tld in ("com", "net", "org", "io", "cloud", "dev", "app") and label != brand)
+                    if own_infra:  # e.g. googleapis.com, microsoftedgeinsider.com: usually the brand's own infrastructure
+                        findings.append(Finding(f"Domain starts with the brand name '{brand}'",
+                                                f"'{reg}' is not one of {brand}'s main domains. Many such domains belong to the brand itself; check before trusting it.",
+                                                "url", "low", 12, "heuristic", ["impersonation"], evidence=host))
+                    elif label == brand and tld in ("io", "dev", "app", "cloud", "net", "org", "com"):
+                        findings.append(Finding(f"Brand name '{brand}' with a different domain ending",
+                                                f"'{reg}' uses the name '{brand}' but isn't one of its main domains ({', '.join(officials)}). Brands own many such domains; check before trusting it.",
+                                                "url", "low", 14, "heuristic", ["impersonation"], evidence=host))
+                    elif label == brand:
+                        findings.append(Finding(f"Brand name '{brand}' on a different country or domain ending",
+                                                f"'{reg}' uses the exact name '{brand}' with an ending the brand doesn't use ({', '.join(officials)}).",
+                                                "url", "high", 40, "heuristic", ["impersonation", "phishing"], evidence=host))
+                    else:
+                        findings.append(Finding(f"Brand name '{brand}' used on an unrelated domain",
+                                                f"The host contains '{brand}' but the registered domain is '{reg}', not an official domain ({', '.join(officials)}).",
+                                                "url", "high", 34, "heuristic", ["impersonation", "phishing"], evidence=host))
                     break
-                official_labels = {o.split(".")[0] for o in officials}
+                official_labels = {brand}
                 for ol in official_labels:
-                    if len(ol) >= 4 and normalized_label != ol and _levenshtein(normalized_label, ol) <= (1 if len(ol) <= 5 else 2):
+                    if len(ol) >= 5 and len(normalized_label) >= len(ol) and normalized_label != ol and _levenshtein(normalized_label, ol) <= (1 if len(ol) <= 7 else 2):
                         findings.append(Finding(f"Look-alike of '{ol}'",
                                                 f"'{reg}' is visually close to the official '{ol}' domain (typosquatting/homoglyph).",
                                                 "url", "high", 38, "heuristic", ["impersonation", "phishing"], evidence=f"{reg} ≈ {ol}"))
