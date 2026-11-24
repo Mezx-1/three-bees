@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse, Response
 from .i18n_ar import translate_obj
 
 from .config import settings
-from .routers import analyze, auth, calls, dashboard, mobile, emails, endpoints, incidents, response, system
+from .routers import analyze, auth, calls, dashboard, mobile, emails, endpoints, incidents, reports, response, system
 from .seed import seed
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -61,5 +61,5 @@ async def unhandled(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": f"Internal error: {exc.__class__.__name__}. See server log."})
 
 
-for r in (auth.router, system.router, system.public_router, calls.router, mobile.router, dashboard.router, analyze.router, emails.router, endpoints.router, endpoints.agent_router, incidents.router, response.router):
+for r in (auth.router, system.router, system.public_router, calls.router, mobile.router, dashboard.router, analyze.router, emails.router, endpoints.router, endpoints.agent_router, incidents.router, response.router, reports.router):
     app.include_router(r)

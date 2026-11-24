@@ -32,3 +32,6 @@ dist/
 
 # Demo recordings (large, personal voices)
 docs/demo/*.mp4
+
+# Benchmark datasets (downloaded by the script, verified by SHA-256)
+backend/benchmarks/data/

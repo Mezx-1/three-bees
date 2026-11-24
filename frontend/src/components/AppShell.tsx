@@ -1,6 +1,6 @@
 "use client";
 
-import { Accessibility, Activity, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
+import { Accessibility, Activity, ClipboardList, FileWarning, GraduationCap, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,6 +25,9 @@ const PAGE_KEYWORDS: Record<string, string> = {
   "/incidents": "incident case report police حادثة بلاغ قضية شرطة",
   "/prevention": "block blocklist prevent حظر منع",
   "/settings": "settings language users demo إعدادات لغة مستخدمين",
+  "/report": "report scam complaint police بلاغ إبلاغ شكوى احتيال",
+  "/reports": "reports investigator cases demo data بلاغات تحقيق قضايا",
+  "/learn": "learn education quiz awareness توعية تعلم اختبار",
 };
 
 const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[] }[] = [
@@ -37,9 +40,12 @@ const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[
     { href: "/forensics", key: "nav_forensics", icon: FileSearch },
     { href: "/endpoints", key: "nav_endpoints", icon: Cpu },
     { href: "/network", key: "nav_network", icon: Globe2 },
+    { href: "/report", key: "nav_report", icon: FileWarning },
+    { href: "/learn", key: "nav_learn", icon: GraduationCap },
   ]},
   { section: "section_respond", items: [
     { href: "/graph", key: "nav_graph", icon: Network },
+    { href: "/reports", key: "nav_reports", icon: ClipboardList },
     { href: "/incidents", key: "nav_incidents", icon: Siren },
     { href: "/prevention", key: "nav_prevention", icon: ShieldCheck },
   ]},
@@ -80,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
   useEffect(() => setOpen(false), [path]);
 
-  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const active = (href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
 
   if (isLogin) return <>{children}</>;
 

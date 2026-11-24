@@ -84,3 +84,31 @@ Legend: ✅ working · 🧪 simulated (flagged in the system; UI labels via Sett
 | Server APIs: SMS classify, caller check, call-directory list, device pairing | ✅ tested |
 | iPhone app with SMS filter + Call Directory extensions | ✅ written, ⚠️ not yet compiled (needs Xcode on a Mac) |
 | Phone simulator page in the web app | ✅ |
+
+## Call Guard additions (November 2026)
+| Feature | Status |
+|---|---|
+| Red alarms with sound: code read out after a code request · request approved after an "approve the notification" request · any critical call | ✅ codes are masked in the stored transcript and on screen |
+| Scammer's next step and "Ask the caller" questions | ✅ rule-based, shown as predictions |
+| Call language choice (English / Arabic / auto) | ✅ a chosen language skips detection (≈2.5 s per 8 s chunk on a laptop CPU) |
+
+## Scam reports and investigators
+| Feature | Status | Notes |
+|---|---|---|
+| Report a Scam form (category, channel, number, link, message, description, date, amount, emirate, screenshot, contact) | ✅ | Reference `3B-UAE-YYYY-NNNNNN`; privacy acknowledgement required; says clearly it is **not** an official police complaint |
+| Screenshot evidence | ✅ | PNG/JPG/WEBP checked by content (not extension), 5 MB max, stored inert, served only to investigators, SHA-256 recorded; OCR runs locally |
+| Investigator dashboard `/reports` | ✅ | Totals, reports over time, by type, most-reported numbers and domains, filters and search; analyst/admin only (server-enforced) |
+| Review: status changes, notes, timeline | ✅ | Every view, status change, note, evidence view and print is in the audit log |
+| Potentially related reports | ✅ | Same phone number, same link host name, or ≥45 % word overlap; each link shows its method, score and explanation; worded as leads, never "confirmed network" |
+| Printable incident summary | ✅ | Browser Print → Save as PDF (no server-side PDF library) |
+| Demo data | 🧪 | **Load / Reset demo data** buttons: 24 fictional reports labelled `DEMO DATA — FICTIONAL — NOT REAL INCIDENTS`, example.com/.net/.org links, 00-prefix numbers; kept in a separate data mode and never mixed with submitted reports |
+| Learn About Scams | ✅ | 12 scam types (English + Arabic) with warning signs, safety tips, what to do, fictional examples; 5 quiz questions |
+| "Senior investigator" role | ⛔ | Roles are employee / analyst / admin |
+| URLhaus / PhishTank lookups | ⛔ | Not wired yet; VirusTotal hash lookup exists when a key is configured |
+
+## Measured accuracy (real run, not an estimate)
+`backend/benchmarks/run_sms_benchmark.py` runs the SMS text rules on the public UCI SMS Spam Collection (5,574 messages,
+SHA-256 checked). Latest run: at score ≥ 30, **precision 1.000, recall 0.048, false-positive rate 0.000** (36 of 747 spam
+flagged, 0 of 4,827 legitimate messages flagged). Spam ≠ scam: most of that dataset's spam is advertising, which 3B is
+not built to flag, and the data is English from 2012. Full table, confusion matrix and errors:
+[`backend/benchmarks/results/SMS_BENCHMARK.md`](../backend/benchmarks/results/SMS_BENCHMARK.md).

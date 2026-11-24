@@ -261,3 +261,39 @@ class AppSetting(Base):
     __tablename__ = "app_settings"
     key: Mapped[str] = mapped_column(String(80), primary_key=True)
     value: Mapped[str] = mapped_column(Text)
+
+
+class ScamReport(Base):
+    """A scam reported by a person. Not an official police complaint — 3B prepares, the person files.
+
+    data_mode separates the two kinds of records that must never be mixed: "user" (submitted through the
+    app) and "demo" (fictional records loaded with the Load demo data button)."""
+    __tablename__ = "scam_reports"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    reference: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    data_mode: Mapped[str] = mapped_column(String(10), default="user", index=True)  # user | demo
+    category: Mapped[str] = mapped_column(String(40), index=True)
+    channel: Mapped[str] = mapped_column(String(20), default="sms")  # sms|whatsapp|call|email|website|social|other
+    phone: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    domain: Mapped[str | None] = mapped_column(String(253), nullable=True, index=True)
+    message: Mapped[str] = mapped_column(Text, default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    incident_date: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD
+    amount_lost: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), default="AED")
+    emirate: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    contact: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="submitted", index=True)  # submitted|under_review|escalated|resolved|rejected
+    flagged: Mapped[bool] = mapped_column(Boolean, default=False)
+    risk_score: Mapped[int] = mapped_column(Integer, default=0)
+    severity: Mapped[str] = mapped_column(String(20), default="low")
+    analysis_id: Mapped[str | None] = mapped_column(ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
+    evidence_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    evidence_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    evidence_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes: Mapped[list] = mapped_column(JSON, default=list)  # [{by, at, text}]
+    history: Mapped[list] = mapped_column(JSON, default=list)  # [{by, at, status}]
+    reporter: Mapped[str] = mapped_column(String(80), default="anonymous")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

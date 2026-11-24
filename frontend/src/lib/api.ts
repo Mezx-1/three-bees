@@ -120,3 +120,10 @@ export async function fetchSampleFile(name: string): Promise<File> {
   const blob = await res.blob();
   return new File([blob], name, { type: blob.type });
 }
+
+/** Fetch an authenticated file (evidence image, printable report) and return a temporary object URL. */
+export async function apiBlobUrl(path: string): Promise<string> {
+  const res = await fetch(`${API_URL}${path}`, { headers: headers(), cache: "no-store" });
+  if (!res.ok) throw new ApiError(res.status, "Could not load the file");
+  return URL.createObjectURL(await res.blob());
+}
