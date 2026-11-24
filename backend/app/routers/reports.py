@@ -180,6 +180,9 @@ async def submit(request: Request, category: str = Form(...), channel: str = For
     else:
         raise HTTPException(503, "Could not allocate a reference number, please retry.")
     audit(db, user.username, "report.submit", r.reference, {"category": category})
+    from ..services import collective
+
+    collective.ingest_report(db, r)  # shared network: counts as one reporter; never verifies on its own
     db.commit()
     return {**ser(r, full=True), "disclaimer": DISCLAIMER}
 
@@ -354,6 +357,15 @@ def demo_load(db: Session = Depends(get_db), user: User = Depends(require("analy
                        history=[{"by": "demo", "at": iso(row["created_at"]), "status": "submitted"}]
                        + ([] if row["status"] == "submitted" else [{"by": "demo", "at": iso(row["created_at"] + timedelta(days=1)), "status": row["status"]}]))
         db.add(r)
+        db.flush()
+        from ..services import collective
+
+        r.reporter = f"demo:{r.reference}"  # each fictional report counts as a different fictional reporter
+        collective.ingest_report(db, r)
+        r.reporter = "demo"
+    from ..demo.phone_demo import load as load_phone_demo
+
+    load_phone_demo(db)
     audit(db, user.username, "report.demo_load", "", {"count": len(rows())})
     db.commit()
     return {"loaded": len(rows()), "message": "Demo data loaded."}
@@ -362,6 +374,15 @@ def demo_load(db: Session = Depends(get_db), user: User = Depends(require("analy
 @router.post("/demo/reset")
 def demo_reset(db: Session = Depends(get_db), user: User = Depends(require("analyst"))):
     n = db.execute(delete(ScamReport).where(ScamReport.data_mode == "demo")).rowcount
+    from ..models import IndicatorAppeal, IndicatorEvent, PhoneIntel, PhoneReport, ThreatIndicator
+
+    ids = [i for (i,) in db.execute(select(ThreatIndicator.id).where(ThreatIndicator.data_mode == "demo")).all()]
+    if ids:
+        db.execute(delete(IndicatorAppeal).where(IndicatorAppeal.indicator_id.in_(ids)))
+        db.execute(delete(IndicatorEvent).where(IndicatorEvent.indicator_id.in_(ids)))
+        db.execute(delete(ThreatIndicator).where(ThreatIndicator.id.in_(ids)))
+    db.execute(delete(PhoneReport).where(PhoneReport.data_mode == "demo"))
+    db.execute(delete(PhoneIntel).where(PhoneIntel.data_mode == "demo"))
     audit(db, user.username, "report.demo_reset", "", {"deleted": n})
     db.commit()
     return {"deleted": n, "message": "Demo data removed. User-submitted reports were not touched."}

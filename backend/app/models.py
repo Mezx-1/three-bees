@@ -297,3 +297,167 @@ class ScamReport(Base):
     reporter: Mapped[str] = mapped_column(String(80), default="anonymous")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+# ---------------------------------------------------------------- Scam Methods Knowledge Base
+class ScamMethod(Base):
+    """One known scam method. A knowledge source for the engine — never a rigid rule.
+
+    review_status: draft | needs_review | verified. Only a reviewer can mark Verified, and only with a source."""
+    __tablename__ = "scam_methods"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    category: Mapped[str] = mapped_column(String(40), index=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)  # full structured entry
+    review_status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    origin: Mapped[str] = mapped_column(String(20), default="seed")  # seed | admin | import | candidate
+    created_by: Mapped[str] = mapped_column(String(80), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class ScamMethodVersion(Base):
+    __tablename__ = "scam_method_versions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    method_id: Mapped[str] = mapped_column(String(40), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    review_status: Mapped[str] = mapped_column(String(20))
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    changed_by: Mapped[str] = mapped_column(String(80))
+    note: Mapped[str] = mapped_column(String(500), default="")
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CandidatePattern(Base):
+    """A possible new technique seen in a high-risk analysis with no close knowledge-base match.
+
+    Stays a candidate until a reviewer turns it into a Draft method — never auto-promoted."""
+    __tablename__ = "candidate_patterns"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    analysis_id: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    excerpt: Mapped[str] = mapped_column(Text, default="")  # redacted: digits/links/emails masked
+    intent: Mapped[dict] = mapped_column(JSON, default=dict)
+    risk_score: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | promoted | dismissed
+    method_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# ---------------------------------------------------------------- Phone intelligence (caller ID)
+class PhoneIntel(Base):
+    """phone_intelligence: one row per normalised E.164 number. Verified facts and community data kept apart."""
+    __tablename__ = "phone_intelligence"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    e164: Mapped[str] = mapped_column(String(20), index=True)
+    data_mode: Mapped[str] = mapped_column(String(10), default="user", index=True)  # user | demo
+    country_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    region: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    verified_business: Mapped[str | None] = mapped_column(String(200), nullable=True)  # set by an admin from a verified source only
+    verified_source: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    community_labels: Mapped[dict] = mapped_column(JSON, default=dict)  # {category: count}
+    report_count: Mapped[int] = mapped_column(Integer, default=0)
+    distinct_reporters: Mapped[int] = mapped_column(Integer, default=0)
+    review_status: Mapped[str] = mapped_column(String(20), default="unreviewed")  # unreviewed|confirmed_scam|legitimate|disputed
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_reported: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PhoneReport(Base):
+    """A community report about a phone number. Reporter identity is never shown to other users."""
+    __tablename__ = "phone_reports"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    e164: Mapped[str] = mapped_column(String(20), index=True)
+    data_mode: Mapped[str] = mapped_column(String(10), default="user", index=True)
+    category: Mapped[str] = mapped_column(String(40))
+    description: Mapped[str] = mapped_column(Text, default="")
+    reporter_key: Mapped[str] = mapped_column(String(64), index=True)  # sha256(user or anonymous client), never shown
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending | accepted | rejected
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+# ---------------------------------------------------------------- Collective protection network
+class ThreatIndicator(Base):
+    """Shared threat intelligence. status: reported -> suspicious -> verified; revoked / allowlisted.
+
+    A single report never reaches 'verified'. Only verified (block-eligible) and suspicious (warn-only)
+    indicators are distributed to clients, as SHA-256 hashes of the normalised value."""
+    __tablename__ = "threat_indicators"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    type: Mapped[str] = mapped_column(String(20), index=True)  # phone|email|email_domain|domain|url|ip|handle|payment
+    value: Mapped[str] = mapped_column(String(1000), index=True)
+    value_hash: Mapped[str] = mapped_column(String(64), index=True)
+    data_mode: Mapped[str] = mapped_column(String(10), default="user", index=True)
+    status: Mapped[str] = mapped_column(String(20), default="reported", index=True)
+    category: Mapped[str] = mapped_column(String(40), default="other")
+    confidence: Mapped[int] = mapped_column(Integer, default=10)  # 0-100, strength of evidence
+    reasons: Mapped[list] = mapped_column(JSON, default=list)  # [{at, by, text}]
+    report_count: Mapped[int] = mapped_column(Integer, default=0)
+    reporter_keys: Mapped[list] = mapped_column(JSON, default=list)  # hashed, for distinct counting
+    evidence_refs: Mapped[list] = mapped_column(JSON, default=list)  # report refs / analysis ids
+    campaign_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=0, index=True)  # sync version of last change
+    review_due: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class IndicatorEvent(Base):
+    """Append-only audit trail; its id is the global sync version."""
+    __tablename__ = "indicator_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    indicator_id: Mapped[int] = mapped_column(Integer, index=True)
+    action: Mapped[str] = mapped_column(String(30))
+    from_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    to_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    by: Mapped[str] = mapped_column(String(80))
+    note: Mapped[str] = mapped_column(String(1000), default="")
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class IndicatorAppeal(Base):
+    """False-positive report / appeal by a user or the owner of a number, email or domain."""
+    __tablename__ = "indicator_appeals"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    indicator_id: Mapped[int] = mapped_column(Integer, index=True)
+    reason: Mapped[str] = mapped_column(Text, default="")
+    contact: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    submitted_by: Mapped[str] = mapped_column(String(80), default="anonymous")
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | upheld | rejected
+    decision_note: Mapped[str] = mapped_column(String(1000), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ProtectionPrefs(Base):
+    __tablename__ = "protection_prefs"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    prefs: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class UserListEntry(Base):
+    """Personal blocked / trusted entries (numbers, emails, domains)."""
+    __tablename__ = "user_list_entries"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    list: Mapped[str] = mapped_column(String(10))  # blocked | trusted
+    type: Mapped[str] = mapped_column(String(20))
+    value: Mapped[str] = mapped_column(String(500))
+    note: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ProtectionEvent(Base):
+    """Something 3B warned about or blocked for this user (shown under 'Recent protection events')."""
+    __tablename__ = "protection_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    kind: Mapped[str] = mapped_column(String(20))  # warned | blocked | allowed_trusted
+    channel: Mapped[str] = mapped_column(String(20))  # call | sms | email | url | message
+    indicator_type: Mapped[str] = mapped_column(String(20))
+    indicator_masked: Mapped[str] = mapped_column(String(200))
+    reason: Mapped[str] = mapped_column(String(500))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)

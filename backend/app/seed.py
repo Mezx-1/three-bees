@@ -58,6 +58,10 @@ def ensure_passwords() -> None:
 def seed(reset_by: str = "system") -> None:
     Base.metadata.create_all(engine)
     _migrate()
+    from .services import knowledge
+
+    with SessionLocal() as db:
+        knowledge.seed(db)  # scam-methods library (only when empty)
     with SessionLocal() as db:
         if db.scalars(select(Organization)).first():
             db.close()

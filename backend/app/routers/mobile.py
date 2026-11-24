@@ -101,6 +101,20 @@ def _caller_verdict(db: Session, number: str) -> dict:
     n = info["normalized"]
     if db.scalars(select(BlockedIndicator).where(BlockedIndicator.type == "phone", BlockedIndicator.value == n)).first():
         findings.append(Finding("Number is on the 3B scam blocklist", "Reported as a scam number by an analyst.", "phone", "critical", 80, "verified", ["vishing"]))
+    from ..models import ThreatIndicator
+    from ..services import collective
+
+    try:
+        e164 = collective.normalize("phone", n)
+    except ValueError:
+        e164 = n
+    for s in db.scalars(select(ThreatIndicator).where(ThreatIndicator.type == "phone", ThreatIndicator.value == e164, ThreatIndicator.data_mode == "user")).all():
+        if s.status == "verified":
+            findings.append(Finding("On the 3B verified threat list", "Verified by an analyst or a trusted source. Opted-in devices warn about or block this number.",
+                                    "phone", "critical", 80, "verified", ["vishing"]))
+        elif s.status == "suspicious":
+            findings.append(Finding("On the 3B suspicious list (not verified)", "Several independent signals, awaiting analyst review. Devices show a warning only.",
+                                    "phone", "high", 35, "heuristic", ["vishing"]))
     seen = db.scalars(select(Indicator).where(Indicator.type == "phone", Indicator.value == n, Indicator.analysis_id.is_not(None))).all()
     bad = [a for a in (db.get(Analysis, i.analysis_id) for i in seen) if a and a.risk_score >= 60]
     if bad:
@@ -135,6 +149,14 @@ def call_directory(db: Session = Depends(get_db), who: str = Depends(mobile_call
         a = db.get(Analysis, i.analysis_id) if i.analysis_id else None
         if i.malicious or (a is not None and a.risk_score >= 60):  # numbers seen in high-risk calls / messages
             entries.setdefault(i.value, {"number": i.value, "label": "⚠️ 3B: likely scam", "block": False})
+    from ..models import ThreatIndicator
+
+    for s in db.scalars(select(ThreatIndicator).where(ThreatIndicator.type == "phone", ThreatIndicator.data_mode == "user",
+                                                      ThreatIndicator.status.in_(("verified", "suspicious")))).all():
+        if s.status == "verified":
+            entries[s.value] = {"number": s.value, "label": "⚠️ 3B: verified scam number", "block": True}
+        else:
+            entries.setdefault(s.value, {"number": s.value, "label": "⚠️ 3B: reported by several users", "block": False})
     return {"entries": sorted(entries.values(), key=lambda e: e["number"]),
             "prefix_warnings": [{"prefix": "+882", "label": "⚠️ 3B: satellite number"}, {"prefix": "+883", "label": "⚠️ 3B: satellite number"},
                                 {"prefix": "+881", "label": "⚠️ 3B: satellite number"}]}

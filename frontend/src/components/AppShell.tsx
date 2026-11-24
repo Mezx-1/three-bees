@@ -1,6 +1,6 @@
 "use client";
 
-import { Accessibility, Activity, ClipboardList, Plug, FileWarning, GraduationCap, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
+import { Accessibility, Activity, BookOpenCheck, ClipboardList, PhoneIncoming, Share2, ShieldHalf, Plug, FileWarning, GraduationCap, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -30,6 +30,10 @@ const PAGE_KEYWORDS: Record<string, string> = {
   "/report": "report scam complaint police بلاغ إبلاغ شكوى احتيال",
   "/reports": "reports investigator cases demo data بلاغات تحقيق قضايا",
   "/learn": "learn education quiz awareness توعية تعلم اختبار",
+  "/caller-id": "caller id who is calling number lookup truecaller country carrier من المتصل رقم كاشف هوية المتصل",
+  "/protection": "protection settings block trusted appeal mistake حماية حظر موثوق اعتراض خطأ",
+  "/threat-network": "threat network campaign shared blocklist indicators appeals شبكة حملة قائمة مشتركة مؤشرات",
+  "/scam-methods": "scam methods library knowledge techniques أساليب الاحتيال مكتبة معرفة",
 };
 
 const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[] }[] = [
@@ -37,6 +41,7 @@ const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[
     { href: "/", key: "nav_command", icon: LayoutDashboard },
     { href: "/scam-analyzer", key: "nav_scam", icon: ShieldAlert },
     { href: "/call-guard", key: "nav_calls", icon: PhoneCall },
+    { href: "/caller-id", key: "nav_callerid", icon: PhoneIncoming },
     { href: "/phone", key: "nav_phone", icon: Smartphone },
     { href: "/email-security", key: "nav_email", icon: Mail },
     { href: "/forensics", key: "nav_forensics", icon: FileSearch },
@@ -44,10 +49,13 @@ const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[
     { href: "/network", key: "nav_network", icon: Globe2 },
     { href: "/report", key: "nav_report", icon: FileWarning },
     { href: "/learn", key: "nav_learn", icon: GraduationCap },
+    { href: "/protection", key: "nav_protection", icon: ShieldHalf },
   ]},
   { section: "section_respond", items: [
     { href: "/graph", key: "nav_graph", icon: Network },
     { href: "/reports", key: "nav_reports", icon: ClipboardList },
+    { href: "/threat-network", key: "nav_threatnet", icon: Share2 },
+    { href: "/scam-methods", key: "nav_methods", icon: BookOpenCheck },
     { href: "/incidents", key: "nav_incidents", icon: Siren },
     { href: "/prevention", key: "nav_prevention", icon: ShieldCheck },
   ]},

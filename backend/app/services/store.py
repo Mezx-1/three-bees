@@ -64,7 +64,15 @@ def external_lookups_enabled(db: Session) -> bool:
 def build_context(db: Session) -> Context:
     org = db.scalars(select(Organization)).first()
     blocked = db.scalars(select(BlockedIndicator)).all()
+    from ..models import ScamReport
+    from . import collective, knowledge
+
+    knowledge.ensure_index(db)
+    templates = [(r.reference, r.category, r.message, r.data_mode) for r in db.scalars(
+        select(ScamReport).where(ScamReport.risk_score >= 30, ScamReport.status != "rejected").order_by(ScamReport.created_at.desc()).limit(500)).all()]
     return Context(
+        shared=collective.shared_map(db),
+        report_templates=templates,
         org_domain=org.domain if org else None,
         blocked_domains={b.value for b in blocked if b.type == "domain"},
         blocked_urls={b.value for b in blocked if b.type == "url"},
@@ -82,8 +90,30 @@ def safe_filename(name: str) -> str:
     return base or "file"
 
 
+def _redact(text: str) -> str:
+    text = re.sub(r"https?://\S+|www\.\S+", "[link]", text)
+    text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[email]", text)
+    return re.sub(r"\d", "#", text)[:600]
+
+
+def _maybe_candidate(db: Session, res: AnalysisResult) -> None:
+    """Keep a redacted excerpt of a high-risk message that matched no known method, for a reviewer to look at."""
+    from ..models import CandidatePattern
+
+    rep = res.report
+    intent = rep.get("intent")
+    if rep.get("risk_score", 0) < 60 or intent is None:
+        return
+    if any(s.get("similarity", 0) >= 0.45 for s in rep.get("similar_methods") or []):
+        return
+    text = rep.get("body_preview") or (rep.get("call") or {}).get("transcript") or res.title
+    db.add(CandidatePattern(excerpt=_redact(text or ""), intent={k: list(v) if isinstance(v, dict) else v for k, v in intent.items()},
+                            risk_score=rep["risk_score"]))
+
+
 def save_result(db: Session, res: AnalysisResult, actor: str, *, demo: bool = False, auto_incident: bool = True) -> Analysis:
     rep = res.report
+    _maybe_candidate(db, res)
     a = Analysis(kind=res.kind, title=res.title[:400], classification=rep["classification"], risk_score=rep["risk_score"],
                  severity=rep["severity"], confidence=rep["confidence"], report=rep, submitted_by=actor,
                  recipient=res.recipient, sha256=res.sha256, demo=demo,

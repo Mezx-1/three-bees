@@ -134,6 +134,7 @@ def build_report(
         "limitations": limitations,
         "score_note": "Risk score is an indicator built from the listed evidence, not a calibrated probability of fraud.",
     }
+    report.update(verdict(findings, score, severity))
     from .next_step import predict  # local import: next_step depends on this module
 
     nxt = predict(findings, score)
@@ -142,6 +143,29 @@ def build_report(
     if extra:
         report.update(extra)
     return report
+
+
+WARNINGS = {
+    "medium": "WARNING: This message contains suspicious characteristics. We recommend verifying the sender independently before taking any action.",
+    "high": "HIGH RISK: Several signs of a scam. Don't pay, share codes or personal details, or use the links until you have verified the sender through an official channel.",
+    "critical": "DANGER: This matches how scams work. Stop: don't pay, share codes or approve anything. Contact the organisation through its official number.",
+}
+BASIS = {"verified": "Verified technical checks", "intel": "Threat intelligence", "heuristic": "Heuristic and behaviour analysis", "ai": "AI analysis"}
+
+
+def verdict(findings: list[Finding], score: int, severity: str) -> dict:
+    """Warning tier, what the verdict rests on, and whether anything is actually confirmed."""
+    used = [f for f in findings if f.weight > 0]
+    basis = [BASIS[s] for s in ("ai", "intel", "verified", "heuristic") if any(f.source == s for f in used)]
+    confirmed = any(f.source in ("intel", "verified") and f.weight >= 60 and f.severity == "critical" for f in used)
+    if score < 30:
+        status = "No strong indicators found"
+    elif confirmed:
+        status = "Malicious indicator confirmed by a verified source"
+    else:
+        status = "Suspected — not confirmed"
+    return {"risk_level": severity.upper(), "warning": WARNINGS.get(severity), "verdict_basis": basis or ["No signals"],
+            "assessment_status": status, "confirmed": confirmed}
 
 
 def recommend(tags: list[str] | set[str], severity: str) -> list[str]:

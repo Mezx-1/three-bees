@@ -242,6 +242,13 @@ function Verdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
           <div className={cn("flex items-center gap-2 text-2xl font-semibold", v.text)}><Icon className="h-6 w-6" /> {tr(v.label)}</div>
           <p className="mt-1 text-base text-ink-100">{a.risk_score >= 30 ? r.classification : tr("Looks normal based on the checks we ran")}</p>
           <p className="mt-1 text-sm text-ink-300">{tr(v.advice)}</p>
+          {r.warning && <p className="mt-2 rounded-lg bg-white/60 px-3 py-2 text-sm font-medium text-ink-100 ring-1 ring-black/5">{r.warning}</p>}
+          {r.verdict_basis && (
+            <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-ink-400">
+              <span>{r.assessment_status}</span><span aria-hidden>·</span><span>{tr("Based on:")}</span>
+              {r.verdict_basis.map((b: string) => <Pill key={b}>{b}</Pill>)}
+            </p>
+          )}
           <p className="mt-2 truncate text-xs text-ink-400" title={a.title}>{a.title}</p>
         </div>
       </div>
@@ -264,6 +271,63 @@ function Verdict({ a, actions }: { a: Analysis; actions?: React.ReactNode }) {
       <NextSteps next={r.next_steps} compact className="mt-4" />
       {actions && <div className="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">{actions}</div>}
     </section>
+  );
+}
+
+const ASK_LABEL: Record<string, string> = {
+  move_money: "Send or pay money", share_secret: "Reveal a code or password", share_personal: "Give personal or ID details", open_link: "Act through a link",
+  install: "Install an app / share the screen", approve: "Approve a request in an app", call_back: "Call or message a number", switch_channel: "Move to another chat app",
+};
+const CLAIM_LABEL: Record<string, string> = {
+  bank: "A bank", government: "Government / police", delivery: "A delivery company", employer: "An employer / recruiter", tech_support: "Tech support",
+  telecom: "A telecom company", familiar: "Family or a friend", investment: "An investment opportunity", marketplace: "A buyer or seller",
+};
+const LEVER_LABEL: Record<string, string> = { fear: "Fear", urgency: "Urgency", greed: "Reward / profit", sympathy: "Sympathy", secrecy: "Secrecy", unsolicited: "Unexpected contact" };
+
+/** What the content asks you to do, who it claims to be, which pressure it uses — and similar known methods / reported campaigns. */
+function IntentCard({ r, score }: { r: any; score: number }) {
+  const it = r.intent;
+  const sims: any[] = (r.similar_methods || []).filter(() => score >= 30);
+  const camps: any[] = r.campaign_matches || [];
+  if (!it || (!Object.keys(it.asks || {}).length && !Object.keys(it.claimed_identity || {}).length && !sims.length && !camps.length)) return null;
+  const row = (label: string, keys: string[], map: Record<string, string>, tone: string) => keys.length > 0 && (
+    <div>
+      <div className="text-xs font-medium text-ink-400">{tr(label)}</div>
+      <div className="mt-1 flex flex-wrap gap-1.5">{keys.map((k) => <span key={k} className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", tone)}>{tr(map[k] || k)}</span>)}</div>
+    </div>
+  );
+  return (
+    <Card title={tr("What this message is trying to make you do")} subtitle={tr("Read from the meaning of the whole message, not from single words.")}>
+      <div className="grid gap-3 md:grid-cols-3">
+        {row("It asks you to", Object.keys(it.asks || {}), ASK_LABEL, "bg-red-50 text-crit")}
+        {row("It claims to be", Object.keys(it.claimed_identity || {}), CLAIM_LABEL, "bg-wax text-volt")}
+        {row("Pressure used", Object.keys(it.pressure || {}), LEVER_LABEL, "bg-amber-50 text-warn")}
+      </div>
+      {Object.keys(it.protective_asks || {}).length > 0 && <p className="mt-3 text-xs text-safe">{tr("It also contains protective advice (e.g. \"don't share this code\"), which lowers the risk.")}</p>}
+      {sims.length > 0 && (
+        <div className="mt-4 border-t border-ink-700 pt-3">
+          <div className="text-xs font-medium text-ink-400">{tr("Similar known scam methods")}</div>
+          <ul className="mt-1.5 space-y-1.5">
+            {sims.map((s) => (
+              <li key={s.id} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                <Link href={`/scam-methods?id=${s.id}`} className="font-medium text-volt hover:underline">{s.name}</Link>
+                <span className="text-xs text-ink-400">{Math.round(s.similarity * 100)}% · {s.explanation}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-xs text-ink-400">{tr("A similarity is a pointer for you, not proof. New scams can have no match and still be dangerous.")}</p>
+        </div>
+      )}
+      {camps.length > 0 && (
+        <div className="mt-4 border-t border-ink-700 pt-3">
+          <div className="text-xs font-medium text-ink-400">{tr("Matches messages already reported to 3B")}</div>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {camps.map((c) => <Pill key={c.reference}>{c.reference} · {Math.round(c.similarity * 100)}%{c.demo ? " · DEMO" : ""}</Pill>)}
+          </div>
+          <p className="mt-1.5 text-xs text-ink-400">{tr("Same script with different numbers or links. It does not prove the same person sent it.")}</p>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -340,6 +404,7 @@ export function ReportView({ a, actions }: { a: Analysis; actions?: React.ReactN
   return (
     <div className="fade-up space-y-4">
       <Verdict a={a} actions={actions} />
+      <IntentCard r={r} score={a.risk_score} />
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-400">
         <SeverityBadge s={a.severity} />

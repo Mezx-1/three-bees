@@ -26,6 +26,8 @@ class Context:
     known_bad_hashes: dict[str, str] = field(default_factory=dict)
     ai_enabled: bool = True
     external_lookups: bool = False
+    shared: dict = field(default_factory=dict)  # (type, value) -> shared-network status (collective.shared_map)
+    report_templates: list = field(default_factory=list)  # [(reference, category, message, data_mode)] from community reports
 
 
 @dataclass
@@ -46,6 +48,111 @@ def _ai_block(content: str, kind: str, findings: list[Finding], ctx: Context, im
         "available": res.get("available", False), "model": res.get("model"), "reason": res.get("reason"),
         "error": res.get("error"), "assessment": res.get("assessment"),
     }
+
+
+# ---------------------------------------------------------------- intent, knowledge base, shared intelligence
+
+def _shared_findings(ctx: Context, phones: list[str], emails: list[str], hosts: list[str], urls: list[str]) -> list[Finding]:
+    """Check identifiers in the content against the shared 3B threat network."""
+    from . import collective as col
+
+    out: list[Finding] = []
+    probes: list[tuple[str, str]] = []
+    for p in phones:
+        try:
+            probes.append(("phone", col.normalize("phone", p)))
+        except ValueError:
+            pass
+    for e in emails:
+        probes.append(("email", e.lower()))
+        dom = e.split("@")[-1].lower()
+        if dom not in col.FREE_MAIL:
+            probes.append(("email_domain", dom))
+    for h in hosts:
+        probes.append(("domain", h[4:] if h.startswith("www.") else h))
+    for u in urls:
+        try:
+            probes.append(("url", col.normalize("url", u)))
+        except ValueError:
+            pass
+    seen = set()
+    for t, v in probes:
+        info = ctx.shared.get((t, v))
+        if not info or (t, v) in seen:
+            continue
+        seen.add((t, v))
+        demo = " (DEMO data)" if info["demo"] else ""
+        shown = col.mask(t, v)
+        kind = t.replace("_", " ")
+        if info["status"] == "verified":
+            out.append(Finding(f"Known scam {kind} on the 3B shared list{demo}",
+                               f"{shown} was verified as malicious by an analyst or a trusted reputation provider ({info['category']}). Other users reported it before you.",
+                               "intel", "critical", 70, "intel", ["payment_fraud", "impersonation"], evidence=f"{shown} (confidence {info['confidence']}/100)"))
+        elif info["status"] == "suspicious":
+            out.append(Finding(f"Reported by several 3B users{demo}",
+                               f"{shown} was reported by {info['reports']} different users ({info['category']}). Not yet verified, so treat it as a warning, not proof.",
+                               "intel", "high", 34, "heuristic", ["social_engineering"], evidence=shown))
+        elif info["status"] == "reported":
+            out.append(Finding(f"Reported once to 3B{demo}", f"{shown} appears in a user report that has not been verified. On its own this proves nothing.",
+                               "intel", "low", 8, "heuristic", [], evidence=shown))
+        elif info["status"] == "allowlisted":
+            out.append(Finding("Known legitimate identifier", f"{shown} was reviewed and marked legitimate.", "intel", "info", 0, "verified", [], evidence=shown))
+    return out
+
+
+def _campaign_matches(text: str, ctx: Context) -> list[dict]:
+    """Community reports whose message is close to this one (message fingerprint), even with new numbers or links."""
+    from .report_links import text_similarity
+
+    rows = []
+    for ref, cat, msg, mode in ctx.report_templates:
+        if not msg or len(msg) < 25:
+            continue
+        sim = text_similarity(text, msg)
+        if sim >= 0.55:
+            rows.append({"reference": ref, "category": cat, "similarity": round(sim, 2), "demo": mode == "demo",
+                         "level": "strongly_related" if sim >= 0.8 else "potentially_related"})
+    rows.sort(key=lambda r: -r["similarity"])
+    return rows[:5]
+
+
+def intent_layer(text: str, ctx: Context, findings: list[Finding], extra: dict, limitations: list[str], *, has_link: bool = False,
+                 phones: list[str] | None = None, emails: list[str] | None = None, dampen: bool = True) -> None:
+    """Layers on top of the keyword checks: behaviour/intent, knowledge-base similarity, shared intel, campaign fingerprints."""
+    from . import intent_engine as ie, knowledge as kb
+
+    if not text.strip():
+        return
+    it = ie.read_intent(text)
+    note = ie.dampen_keyword_findings(findings, it) if dampen else None  # live calls: the opening comes before the request
+    if note:
+        limitations.append(note)
+    findings += ie.behaviour_findings(it, has_link=has_link)
+    extra["intent"] = it.to_dict()
+    similar = kb.match(text, it)
+    extra["similar_methods"] = similar
+    strong_behaviour = any(f.category == "behavior" and f.weight >= 30 for f in findings)
+    if similar and similar[0]["similarity"] >= 0.45 and strong_behaviour:
+        top = similar[0]
+        findings.append(Finding(f"Resembles a known scam method: {top['name']}",
+                                "This content behaves like a method in 3B's scam-methods library (see the similar methods list). Similarity is a pointer, not proof.",
+                                "behavior", "medium", 12, "heuristic", [], evidence=f"{top['id']} (similarity {int(top['similarity'] * 100)}%)"))
+    hosts = [u.get("host") for u in extra.get("urls", []) if u.get("host")]
+    urls = [u.get("url") for u in extra.get("urls", []) if u.get("url")]
+    findings += _shared_findings(ctx, phones or [], emails or [], hosts, urls)
+    camp = _campaign_matches(text, ctx)
+    extra["campaign_matches"] = camp
+    if camp:
+        c = camp[0]
+        demo = " (DEMO data)" if c["demo"] else ""
+        strong = c["level"] == "strongly_related"
+        findings.append(Finding(f"Matches a scam template already reported to 3B{demo}",
+                                f"This message is {int(c['similarity'] * 100)}% similar to report {c['reference']} ({c['category']}), even if numbers, links or some words differ. "
+                                "It shows the same script is in use, not that the same person sent it.",
+                                "behavior", "high" if strong else "medium", 30 if strong else 16,
+                                "heuristic", ["social_engineering"], evidence=", ".join(x["reference"] for x in camp[:3])))
+    if not any(f.weight >= 20 for f in findings) and not similar:
+        limitations.append("No close match in the scam-methods library. That doesn't make it safe: new techniques have no match yet.")
 
 
 # ---------------------------------------------------------------- URL / domain
@@ -164,12 +271,14 @@ def run_message(text: str, ctx: Context, channel: str = "message", title: str | 
         findings.append(Finding("Payment request with a link that imitates a known brand",
                                 "The message asks you to pay and sends you to a website pretending to be an official service — the pattern of fake toll, fine and parcel-fee scams.",
                                 "content", "high", 30, "heuristic", ["phishing", "payment_fraud"]))
+    limitations = ["Keyword checks only flag common scam wording; the intent layer reads what the message asks you to do, who it claims to be and how it pressures you.",
+                   "Sender identity of SMS/WhatsApp/chat messages cannot be verified from text alone."]
+    intent_layer(text, ctx, findings, extra, limitations, has_link=bool(extra.get("urls")),
+                 phones=artefacts["phone_numbers"], emails=artefacts.get("emails", []))
     if channel in ("call", "voice") and findings:
         for f in findings:
-            if f.category == "content" and "vishing" not in f.tags:
+            if f.category in ("content", "behavior") and "vishing" not in f.tags:
                 f.tags.append("vishing")
-    limitations = ["Text heuristics detect common scam techniques; novel or well-written scams may score low.",
-                   "Sender identity of SMS/WhatsApp/chat messages cannot be verified from text alone."]
     ai_f, ai_info = _ai_block(text, channel, findings, ctx)
     findings += ai_f
     extra["ai"] = ai_info
@@ -402,6 +511,8 @@ def run_email(raw: bytes | str, ctx: Context) -> AnalysisResult:
         extra["ocr_text"] = "\n---\n".join(ocr_texts)[:4000]
 
     _analyze_embedded("", ctx, findings, extra, inds, url_list=url_list)
+    intent_layer(f"{subject}\n{body}", ctx, findings, extra, limitations, has_link=bool(url_list),
+                 phones=art.get("phone_numbers", []), emails=[e for e in [meta.get("from_address"), meta.get("reply_to")] if e] + art.get("emails", []))
     if meta.get("from_address") and findings:
         # Sender is malicious-flagged when the overall email is high risk (set below).
         pass
@@ -494,6 +605,12 @@ def run_call(transcript: str, caller_number: str | None, features: dict | None, 
         from .questions import suggest
 
         extra["call"]["questions"] = suggest(transcript, claims, art.get("matched_patterns", {}))
+        n_before = len(findings)
+        intent_layer(transcript, ctx, findings, extra, limitations,
+                     phones=([caller_number] if caller_number and caller_number.strip() else []) + art.get("phone_numbers", []), dampen=False)
+        for f in findings[n_before:]:
+            if f.category == "behavior" and "vishing" not in f.tags:
+                f.tags.append("vishing")
     else:
         from .questions import default_questions
 
