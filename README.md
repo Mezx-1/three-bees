@@ -15,6 +15,8 @@ Every verdict shows which evidence is a **verified fact**, which is a **heuristi
 
 ---
 
+**Pitch:** talking points in English and Arabic — [docs/PITCH.md](docs/PITCH.md) · slides — [docs/presentation/ThreeBees_pitch.pptx](docs/presentation/ThreeBees_pitch.pptx)
+
 ## ScamShield AI judging criteria — what 3B does for each
 
 | Criterion | What 3B does | Measured / where to see it |
