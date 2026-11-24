@@ -48,6 +48,19 @@ class Settings:
     # Optional threat-intel providers. Absent key => provider reported as "not configured".
     virustotal_api_key: str | None = os.getenv("VIRUSTOTAL_API_KEY") or None
     abuseipdb_api_key: str | None = os.getenv("ABUSEIPDB_API_KEY") or None
+    urlhaus_auth_key: str | None = os.getenv("URLHAUS_AUTH_KEY") or None
+    google_safe_browsing_key: str | None = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY") or None
+
+    # Second AI provider (Google Gemini), used through the same safe interface as Claude.
+    gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or None
+    gemini_model: str = os.getenv("THREEB_GEMINI_MODEL", "gemini-2.5-flash")
+    ai_provider: str = os.getenv("THREEB_AI_PROVIDER", "claude")  # claude | gemini
+
+    # Cloudflare Turnstile (bot check on public forms). Without a secret the check is skipped and reported as such.
+    turnstile_secret_key: str | None = os.getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY") or None
+
+    # Firebase Authentication. Only the project ID is needed to verify sign-in tokens (Google's public keys).
+    firebase_project_id: str | None = os.getenv("FIREBASE_PROJECT_ID") or None
 
     rate_limit_per_minute: int = int(os.getenv("THREEB_RATE_LIMIT_PER_MINUTE", "60"))
 

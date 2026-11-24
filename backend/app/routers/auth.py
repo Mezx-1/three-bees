@@ -93,3 +93,61 @@ def create_pairing_code(body: PairIn, db: Session = Depends(get_db), user: User 
     audit(db, user.username, "pairing.code_created", body.purpose, {"expires_at": iso(expires)})
     db.commit()
     return {"code": code, "purpose": body.purpose, "expires_at": iso(expires)}
+
+
+# ---------------------------------------------------------------- Firebase sign-in
+
+class FirebaseIn(BaseModel):
+    id_token: str = Field(min_length=20, max_length=5000)
+
+
+@router.post("/auth/firebase", dependencies=[Depends(_login_limit)])
+def firebase_login(body: FirebaseIn, request: Request, db: Session = Depends(get_db)):
+    """Exchange a verified Firebase ID token for a 3B session.
+
+    The account is matched by its (verified) email. A first-time Firebase user gets the lowest role (employee);
+    only a 3B administrator can raise it. Nothing the browser sends decides the role."""
+    import re
+
+    from ..models import Organization
+    from ..services.cloud import FirebaseTokenError, verify_firebase_token
+
+    ip = request.client.host if request.client else None
+    try:
+        claims = verify_firebase_token(body.id_token)
+    except FirebaseTokenError as exc:
+        audit(db, "firebase", "auth.firebase_failed", "", {"reason": str(exc)}, ip=ip)
+        db.commit()
+        raise HTTPException(401, str(exc))
+    email = claims["email"].strip().lower()
+    user = db.scalars(select(User).where(User.email.ilike(email))).first()
+    if user is not None and not claims.get("email_verified"):
+        # Anyone can create a Firebase account with someone else's address; only a verified address may
+        # take over an existing 3B account (and its role).
+        audit(db, user.username, "auth.firebase_unverified_email", "", {"uid": claims["sub"]}, ip=ip)
+        db.commit()
+        raise HTTPException(403, "Verify your email address first (check your inbox), then sign in again.")
+    if user is None:
+        base = re.sub(r"[^a-z0-9._-]", "", email.split("@")[0])[:60] or "user"
+        name, n = base, 1
+        while db.scalars(select(User).where(User.username == name)).first():
+            n += 1
+            name = f"{base}{n}"
+        org = db.scalars(select(Organization)).first()
+        user = User(username=name, full_name=claims.get("name") or email.split("@")[0], email=email, role="employee",
+                    organization_id=org.id, password_hash=None)
+        db.add(user)
+        db.flush()
+        audit(db, user.username, "auth.firebase_user_created", "", {"uid": claims["sub"]}, ip=ip)
+    token = create_session(db, user)
+    audit(db, user.username, "auth.login", "", {"method": "firebase", "uid": claims["sub"]}, ip=ip)
+    db.commit()
+    return {"token": token, "user": ser_user(user)}
+
+
+@router.get("/auth/providers")
+def auth_providers():
+    """Which sign-in methods this server accepts (public: the login page needs it)."""
+    from ..config import settings
+
+    return {"password": True, "firebase": bool(settings.firebase_project_id)}

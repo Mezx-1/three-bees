@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..config import settings
-from . import ai, email_analyzer as ea, file_analyzer as fa, network_intel as ni, text_analyzer as ta, url_analyzer as ua
+from . import ai, email_analyzer as ea, file_analyzer as fa, network_intel as ni, text_analyzer as ta, threat_intel as ti, url_analyzer as ua
 from .risk import Finding, build_report, combine, severity_for
 
 MEDIA_EXTS_AUDIO = {"mp3", "wav", "m4a", "ogg", "oga", "opus", "flac", "aac", "amr"}
@@ -50,7 +50,7 @@ def _ai_block(content: str, kind: str, findings: list[Finding], ctx: Context, im
 
 # ---------------------------------------------------------------- URL / domain
 
-def url_subanalysis(url: str, ctx: Context, *, lookups: bool | None = None) -> dict:
+def url_subanalysis(url: str, ctx: Context, *, lookups: bool | None = None, reputation: bool = True) -> dict:
     lookups = ctx.external_lookups if lookups is None else lookups
     findings, info = ua.analyze_url(url, blocklist=ctx.blocked_domains, org_domain=ctx.org_domain)
     if ua.normalize_url(url) in ctx.blocked_urls:
@@ -60,6 +60,11 @@ def url_subanalysis(url: str, ctx: Context, *, lookups: bool | None = None) -> d
         dns_info = ua.resolve_dns(info["host"])
         intel["dns"] = dns_info
         findings += ua.dns_findings(dns_info)
+    if lookups and reputation and info.get("host"):
+        # Sends the URL to the configured reputation providers — only with external lookups switched on (with consent).
+        rep = ti.check_url(info.get("url", url))
+        intel["reputation"] = rep
+        findings += ti.findings(rep)
     score = combine(findings)
     return {"url": info.get("url", url), "host": info.get("host"), "registered_domain": info.get("registered_domain"),
             "score": score, "severity": severity_for(score), "findings": findings, "info": info, "intel": intel}
@@ -70,7 +75,10 @@ def run_url(url: str, ctx: Context) -> AnalysisResult:
     limitations = ["Structural URL analysis only — the page was not visited or rendered."]
     if not ctx.external_lookups:
         limitations.append("External lookups disabled: DNS was not queried.")
-    limitations.append("No URL reputation provider configured (e.g. Google Safe Browsing, VirusTotal); 3B does not claim reputation results.")
+    rep = sub["intel"].get("reputation") or []
+    if not any(r["result"] != "not_configured" for r in rep):
+        limitations.append("No URL reputation provider was queried (no key configured, or external lookups are off); 3B does not claim reputation results.")
+    limitations += ti.limitations(rep)
     report = build_report(sub["findings"], limitations, default_classification="No significant threat detected",
                           extra={"url": sub["info"], "intel": sub["intel"], "ai": {"available": False, "reason": "AI not used for single-URL structural checks."}})
     malicious = report["risk_score"] >= 60
@@ -119,7 +127,7 @@ def run_phone(phone: str, ctx: Context) -> AnalysisResult:
 
 def _analyze_embedded(text: str, ctx: Context, findings: list[Finding], extra: dict, inds: list, url_list: list[str] | None = None):
     urls = url_list if url_list is not None else ea.extract_urls(text)
-    url_reports = [url_subanalysis(u, ctx) for u in urls[:15]]
+    url_reports = [url_subanalysis(u, ctx, reputation=i < 3) for i, u in enumerate(urls[:15])]  # reputation for the first 3 links (provider quotas)
     url_reports.sort(key=lambda r: r["score"], reverse=True)
     for r in url_reports[:3]:  # worst three URLs drive the score
         for f in r["findings"]:

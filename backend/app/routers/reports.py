@@ -15,7 +15,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel, Field
@@ -113,11 +113,17 @@ def _analyse(db: Session, r: ScamReport, actor: str) -> None:
 # ---------------------------------------------------------------- submit and read
 
 @router.post("", dependencies=[Depends(rate_limit)])
-async def submit(category: str = Form(...), channel: str = Form("sms"), phone: str | None = Form(None), url: str | None = Form(None),
+async def submit(request: Request, category: str = Form(...), channel: str = Form("sms"), phone: str | None = Form(None), url: str | None = Form(None),
                  message: str = Form(""), description: str = Form(""), incident_date: str | None = Form(None),
                  amount_lost: int | None = Form(None), currency: str = Form("AED"), emirate: str | None = Form(None),
                  contact: str | None = Form(None), privacy_ack: bool = Form(False), evidence: UploadFile | None = File(None),
+                 turnstile_token: str | None = Form(None),
                  db: Session = Depends(get_db), user: User = Depends(current_user)):
+    from ..services.cloud import turnstile_verify
+
+    check = await run_in_threadpool(turnstile_verify, turnstile_token, request.client.host if request and request.client else None)
+    if not check["ok"]:
+        raise HTTPException(403, "The bot check did not pass. Please complete the check and submit again.")
     if not privacy_ack:
         raise HTTPException(422, "Please confirm you have read how the report is stored and used.")
     if category not in CATEGORIES:

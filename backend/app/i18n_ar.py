@@ -611,6 +611,12 @@ EXACT: dict[str, str] = {
 
 TEMPLATES: dict[str, str] = {
     "AI review not used: {0}": "لم تُستخدم مراجعة الذكاء الاصطناعي: {0}",
+    "No URL reputation provider was queried (no key configured, or external lookups are off); 3B does not claim reputation results.": "لم يُستعلم من أي مزوّد لسمعة الروابط (لا يوجد مفتاح، أو الاستعلامات الخارجية مطفأة)؛ لا يدّعي 3B أي نتيجة سمعة.",
+    "Listed as phishing by {0}": "مُدرج كتصيّد لدى {0}",
+    "Listed as malware by {0}": "مُدرج كبرمجية خبيثة لدى {0}",
+    "Flagged as suspicious by {0}": "مُصنّف كمشبوه لدى {0}",
+    "{0}: no record — not being listed is not proof that a link is safe.": "{0}: لا يوجد سجل — عدم إدراج الرابط ليس دليلاً على أنه آمن.",
+    "{0}: {1} — reputation unknown, not clean.": "{0}: {1} — السمعة غير معروفة، وليست نظيفة.",
     "AI analysis failed: {0}": "فشل التحليل بالذكاء الاصطناعي: {0}",
     "AI provider error ({0}).": "خطأ لدى مزوّد الذكاء الاصطناعي ({0}).",
     "AI assessment: {0}": "تقييم الذكاء الاصطناعي: {0}",

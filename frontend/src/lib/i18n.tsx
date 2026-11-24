@@ -49,6 +49,7 @@ const dict = {
   nav_report: "Report a Scam",
   nav_reports: "Scam Reports",
   nav_learn: "Learn About Scams",
+  nav_integrations: "Integrations",
   section_detect: "Detect",
   section_respond: "Respond",
   section_system: "System",

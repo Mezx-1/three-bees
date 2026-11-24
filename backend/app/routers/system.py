@@ -196,3 +196,40 @@ def privacy_page():
     from fastapi.responses import HTMLResponse
 
     return HTMLResponse(PRIVACY_HTML)
+
+
+# ---------------------------------------------------------------- integrations health (administrators)
+
+def _integrations(db: Session, probe: bool) -> dict:
+    import os
+
+    from ..services import cloud, threat_intel
+
+    intel = threat_intel.health_check() if probe else threat_intel.status()
+    a = ai.ai_status(bool(get_setting(db, "ai_enabled")))
+    ai_state = "not_configured" if not a.get("provider") else ("disabled" if not a["available"] else "unknown")
+    lookups = external_lookups_enabled(db)
+    return {
+        "checked": probe,
+        "external_lookups": lookups,
+        "threat_intel": [{**p, "note": None if lookups else "External lookups are off, so providers are not queried during analyses."} for p in intel],
+        "ai": {"status": ai_state, "provider": a.get("provider"), "model": a.get("model"),
+               "note": "Checked on real use: an analysis shows the AI result or the exact error."},
+        "turnstile": cloud.turnstile_status(probe=probe),
+        "firebase": cloud.firebase_status(probe=probe),
+        "public_url": {"status": "connected" if os.getenv("THREEB_PUBLIC_URL") else "not_configured", "url": os.getenv("THREEB_PUBLIC_URL")},
+    }
+
+
+@router.get("/integrations")
+def integrations(db: Session = Depends(get_db), user: User = Depends(require("admin"))):
+    return _integrations(db, probe=False)
+
+
+@router.post("/integrations/check")
+def integrations_check(db: Session = Depends(get_db), user: User = Depends(require("admin"))):
+    """Make one real, cheap request to each configured service. Never shows "connected" just because a key exists."""
+    out = _integrations(db, probe=True)
+    audit(db, user.username, "integrations.check")
+    db.commit()
+    return out

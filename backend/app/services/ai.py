@@ -1,4 +1,4 @@
-"""Claude-powered analysis layer.
+"""AI analysis layer (Claude by default, Google Gemini as a second provider behind the same interface).
 
 The AI layer *explains and supplements* deterministic findings; it never replaces them. When no API
 key is configured (or AI is disabled in Settings) 3B runs in transparent deterministic-only mode
@@ -51,12 +51,22 @@ Rules:
 - If the content looks legitimate, say so and use classification "benign" with a low score."""
 
 
+def provider() -> str | None:
+    """The AI provider in use: the one chosen in THREEB_AI_PROVIDER if it has a key, else whichever has a key."""
+    keys = {"claude": settings.anthropic_api_key, "gemini": settings.gemini_api_key}
+    if keys.get(settings.ai_provider):
+        return settings.ai_provider
+    return next((p for p, k in keys.items() if k), None)
+
+
 def ai_status(enabled_setting: bool) -> dict:
-    if not settings.anthropic_api_key:
-        return {"available": False, "reason": "not configured (no API key). Results come from 3B's built-in checks.", "model": None}
+    p = provider()
+    if not p:
+        return {"available": False, "reason": "not configured (no API key). Results come from 3B's built-in checks.", "model": None, "provider": None}
+    model = settings.ai_model if p == "claude" else settings.gemini_model
     if not enabled_setting:
-        return {"available": False, "reason": "AI analysis disabled in Settings.", "model": settings.ai_model}
-    return {"available": True, "reason": None, "model": settings.ai_model}
+        return {"available": False, "reason": "AI analysis disabled in Settings.", "model": model, "provider": p}
+    return {"available": True, "reason": None, "model": model, "provider": p}
 
 
 def _client():
@@ -71,6 +81,8 @@ def assess(content: str, kind: str, findings: list[Finding], *, images: list[tup
     status = ai_status(enabled_setting)
     if not status["available"]:
         return {**status, "assessment": None}
+    if status["provider"] == "gemini":
+        return _assess_gemini(content, kind, findings, images, status)
 
     import anthropic
 
@@ -143,3 +155,61 @@ def ai_findings(result: dict) -> list[Finding]:
     for ind in a.get("additional_indicators", [])[:6]:
         out.append(Finding(title="AI-noted indicator", detail=ind, category="ai", severity="low", weight=4, source="ai", tags=tags))
     return out
+
+
+# ---------------------------------------------------------------- Google Gemini (REST, no extra SDK)
+
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+
+def _assess_gemini(content: str, kind: str, findings: list[Finding], images, status: dict, *, client=None) -> dict:
+    """Same rules and output schema as Claude. The reply must be valid JSON that matches AIAssessment, or it is rejected."""
+    import json
+
+    import httpx
+    from pydantic import ValidationError
+
+    det = "\n".join(f"- [{f.source}] {f.title}: {f.evidence or f.detail}" for f in findings[:40]) or "- (none)"
+    parts: list[dict] = []
+    for data, mime in (images or [])[:3]:
+        if mime in ("image/png", "image/jpeg", "image/webp") and len(data) < 4_500_000:
+            parts.append({"inline_data": {"mime_type": mime, "data": base64.standard_b64encode(data).decode()}})
+    schema = json.dumps(AIAssessment.model_json_schema())
+    parts.append({"text": (
+        f"Submission type: {kind}\n\nDeterministic findings already established:\n{det}\n\n"
+        f"<submitted_content>\n{content[:60000]}\n</submitted_content>\n\n"
+        f"Reply with ONE JSON object that matches this JSON schema exactly, and nothing else:\n{schema}"
+    )})
+    body = {"systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]}, "contents": [{"role": "user", "parts": parts}],
+            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2, "maxOutputTokens": 4000}}
+    own = client is None
+    client = client or httpx.Client(timeout=60.0)
+    try:
+        r = client.post(GEMINI_URL.format(model=settings.gemini_model), headers={"x-goog-api-key": settings.gemini_api_key}, json=body)
+        if r.status_code in (401, 403):
+            return {**status, "available": False, "assessment": None, "error": "AI provider rejected the API key."}
+        if r.status_code == 429:
+            return {**status, "assessment": None, "error": "AI provider rate limit reached — deterministic results shown."}
+        if r.status_code >= 400:
+            return {**status, "assessment": None, "error": f"AI provider error ({r.status_code})."}
+        j = r.json()
+        cand = (j.get("candidates") or [{}])[0]
+        if cand.get("finishReason") in ("SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"):
+            return {**status, "assessment": None, "error": "The AI model declined to assess this content."}
+        text = "".join(p.get("text", "") for p in (cand.get("content") or {}).get("parts", []))
+        try:
+            data = AIAssessment.model_validate_json(text).model_dump()
+        except ValidationError:
+            return {**status, "assessment": None, "error": "AI returned a malformed result — deterministic results shown."}
+        data["risk_score"] = max(0, min(100, int(data["risk_score"])))
+        return {**status, "assessment": data, "error": None}
+    except httpx.TimeoutException:
+        return {**status, "assessment": None, "error": "AI provider timed out — deterministic results shown."}
+    except httpx.HTTPError:
+        return {**status, "assessment": None, "error": "Could not reach the AI provider — deterministic results shown."}
+    except Exception as exc:
+        log.exception("Gemini assessment failed")
+        return {**status, "assessment": None, "error": f"AI analysis failed: {exc.__class__.__name__}"}
+    finally:
+        if own:
+            client.close()

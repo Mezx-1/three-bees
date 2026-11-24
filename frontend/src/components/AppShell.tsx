@@ -1,11 +1,12 @@
 "use client";
 
-import { Accessibility, Activity, ClipboardList, FileWarning, GraduationCap, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
+import { Accessibility, Activity, ClipboardList, Plug, FileWarning, GraduationCap, LogOut, PhoneCall, Smartphone, Cpu, FileSearch, Globe2, LayoutDashboard, Mail, Menu, Network, Settings, ShieldAlert, ShieldCheck, Siren, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiGet, apiSend, getMe, getToken, type Me, setSession } from "@/lib/api";
 import { DictKey, useI18n, tr } from "@/lib/i18n";
+import { firebaseSignOut } from "@/lib/firebase";
 import { setSimpleMode, useSimpleMode } from "@/lib/prefs";
 import { BeeMark } from "./BeeMark";
 import { SearchBox } from "./SearchBox";
@@ -25,6 +26,7 @@ const PAGE_KEYWORDS: Record<string, string> = {
   "/incidents": "incident case report police حادثة بلاغ قضية شرطة",
   "/prevention": "block blocklist prevent حظر منع",
   "/settings": "settings language users demo إعدادات لغة مستخدمين",
+  "/integrations": "integrations firebase cloudflare virustotal urlhaus api تكاملات ربط",
   "/report": "report scam complaint police بلاغ إبلاغ شكوى احتيال",
   "/reports": "reports investigator cases demo data بلاغات تحقيق قضايا",
   "/learn": "learn education quiz awareness توعية تعلم اختبار",
@@ -49,7 +51,7 @@ const NAV: { section: DictKey; items: { href: string; key: DictKey; icon: any }[
     { href: "/incidents", key: "nav_incidents", icon: Siren },
     { href: "/prevention", key: "nav_prevention", icon: ShieldCheck },
   ]},
-  { section: "section_system", items: [{ href: "/settings", key: "nav_settings", icon: Settings }] },
+  { section: "section_system", items: [{ href: "/settings", key: "nav_settings", icon: Settings }, { href: "/integrations", key: "nav_integrations", icon: Plug }] },
 ];
 
 
@@ -81,6 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try { await apiSend("/api/auth/logout", "POST"); } catch {}
+    await firebaseSignOut();
     setSession(null, null);
     window.location.href = "/login";
   };

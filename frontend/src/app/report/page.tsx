@@ -2,8 +2,9 @@
 
 import { CheckCircle2, FileWarning, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { FileDrop } from "@/components/FileDrop";
+import { Turnstile, TURNSTILE_SITE_KEY } from "@/components/Turnstile";
 import { Button, Card, ErrorBox, inputCls, Label, PageHeader, ScanBar, SeverityBadge, useApi } from "@/components/ui";
 import { apiGet, apiUpload } from "@/lib/api";
 import { tr } from "@/lib/i18n";
@@ -15,6 +16,8 @@ export default function ReportScam() {
   const [f, setF] = useState(EMPTY);
   const [file, setFile] = useState<File | null>(null);
   const [ack, setAck] = useState(false);
+  const [botToken, setBotToken] = useState<string | null>(null);
+  const onBot = useCallback((t: string | null) => setBotToken(t), []);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<any>(null);
@@ -26,9 +29,11 @@ export default function ReportScam() {
     if (!f.category) return setErr(tr("Choose what kind of scam it was."));
     if (!f.message.trim() && !f.description.trim() && !f.url.trim() && !f.phone.trim() && !file) return setErr(tr("Describe what happened, or add the message, link, number or a screenshot."));
     if (!ack) return setErr(tr("Please confirm you have read how the report is stored and used."));
+    if (TURNSTILE_SITE_KEY && !botToken) return setErr(tr("Please complete the security check first."));
     const fd = new FormData();
     Object.entries(f).forEach(([k, v]) => v !== "" && fd.append(k, v));
     fd.append("privacy_ack", "true");
+    if (botToken) fd.append("turnstile_token", botToken);
     if (file) fd.append("evidence", file);
     setBusy(true);
     try {
@@ -127,6 +132,7 @@ export default function ReportScam() {
                 <input type="checkbox" className="mt-1 h-4 w-4 accent-amber-600" checked={ack} onChange={(e) => setAck(e.target.checked)} />
                 <span>{tr("I understand: the report is stored on this 3B server and only investigators can read it. It is not an official police complaint. Don't include passwords, card numbers or codes.")}</span>
               </label>
+              <Turnstile onToken={onBot} />
               {err && <ErrorBox error={err} />}
               <Button variant="primary" className="px-5 py-2.5 text-base" loading={busy} onClick={submit}><FileWarning className="h-4 w-4" /> {tr("Submit report")}</Button>
               {busy && <ScanBar />}
