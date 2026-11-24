@@ -225,7 +225,7 @@ def analyze_text(text: str, channel: str = "message") -> tuple[list[Finding], di
         findings.append(Finding(
             "Account 'problem' used to make you approve a request",
             "The caller says your account is at risk and asks you to approve a notification. Real banks never ask you to approve a payment to stop one.",
-            "content", "high", 30, "heuristic", ["payment_fraud", "vishing"],
+            "content", "critical", 45, "heuristic", ["payment_fraud", "vishing"],
         ))
     elif {"account_pretext", "authority"} <= keys and "otp" not in keys:
         findings.append(Finding(

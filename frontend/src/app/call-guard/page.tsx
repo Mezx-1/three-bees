@@ -8,7 +8,7 @@ import { NextSteps, ReportView, SimpleVerdict, verdictOf } from "@/components/Re
 import { useSimpleMode } from "@/lib/prefs";
 import { broadcastRefresh, Button, Card, cn, ErrorBox, inputCls, Label, PageHeader, Pill, ScanBar, ScoreRing, Tabs, useApi } from "@/components/ui";
 import { apiGet, apiSend, apiUpload } from "@/lib/api";
-import { tr, trf } from "@/lib/i18n";
+import { getLang, tr, trf } from "@/lib/i18n";
 import type { Analysis } from "@/lib/types";
 
 const CHUNK_MS = 8000;
@@ -59,17 +59,24 @@ function playAlarm() {
   }
 }
 
-function CodeAlarm({ kind }: { kind: "code" | "approval" }) {
-  const title = kind === "code" ? "Stop! Don't give the code" : "Call your bank now!";
-  const body = kind === "code"
-    ? "A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card."
-    : "Someone on the call said they approved the request. If it was a payment, hang up and call your bank now — it can sometimes still be stopped.";
+const ALARM = {
+  code: ["Stop! Don't give the code",
+    "A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card."],
+  approval: ["Call your bank now!",
+    "Someone on the call said they approved the request. If it was a payment, hang up and call your bank now — it can sometimes still be stopped."],
+  scam: ["This is a scam — hang up!",
+    "Don't give any code, don't approve any notification and don't send money. Call the organisation yourself on its official number."],
+};
+
+function CodeAlarm({ kind, reason }: { kind: keyof typeof ALARM; reason?: string }) {
+  const [title, body] = ALARM[kind];
   return (
     <div role="alert" className="flex items-center gap-4 rounded-xl border-2 border-crit bg-crit p-5 text-white shadow-lg motion-safe:animate-pulse">
       <Hand className="h-12 w-12 shrink-0" />
       <div>
         <div className="text-2xl font-bold">{tr(title)}</div>
         <p className="mt-1 text-sm text-white/90">{tr(body)}</p>
+        {reason && <p className="mt-1 text-sm font-medium text-white">{tr("Reason:")} {reason}</p>}
       </div>
     </div>
   );
@@ -79,6 +86,7 @@ export default function CallGuard() {
   const [mode, setMode] = useState<"live" | "upload">("live");
   const [consent, setConsent] = useState(false);
   const [number, setNumber] = useState("");
+  const [callLang, setCallLang] = useState<"en" | "ar" | "auto">(getLang() === "ar" ? "ar" : "en");
   const [extra, setExtra] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -98,9 +106,11 @@ export default function CallGuard() {
 
   const codeSpoken = !!result?.report?.call?.code_spoken;
   const approvalGiven = !!result?.report?.call?.approval_given;
+  const isScam = (result?.risk_score ?? 0) >= 80;
+  const alarm: keyof typeof ALARM | null = codeSpoken ? "code" : approvalGiven ? "approval" : isScam ? "scam" : null;
   useEffect(() => {
-    if (codeSpoken || approvalGiven) playAlarm();
-  }, [codeSpoken, approvalGiven]);
+    if (alarm) playAlarm();
+  }, [alarm]);
 
   const sendChunk = async (blob: Blob) => {
     if (!sessionRef.current || blob.size < 2000) return;
@@ -109,6 +119,7 @@ export default function CallGuard() {
     fd.append("consent", "true");
     fd.append("session_id", sessionRef.current);
     if (number.trim()) fd.append("caller_number", number.trim());
+    if (callLang !== "auto") fd.append("language", callLang);
     try {
       const r = await apiUpload<any>("/api/calls/analyze", fd);
       if (r.chunk_text) setLines((l) => [...l, r.chunk_text]);
@@ -173,6 +184,7 @@ export default function CallGuard() {
       if (file) fd.append("audio", file);
       fd.append("consent", "true");
       if (number.trim()) fd.append("caller_number", number.trim());
+      if (callLang !== "auto") fd.append("language", callLang);
       if (extra.trim()) fd.append("transcript", extra.trim());
       setResult(await apiUpload<Analysis>("/api/calls/analyze", fd));
       broadcastRefresh();
@@ -193,8 +205,7 @@ export default function CallGuard() {
       <PageHeader title={tr("Call Guard")} icon={PhoneCall}
         subtitle={tr("Is the person on the phone a scammer? 3B listens to what they say and how they say it, and checks their number.")} />
 
-      {codeSpoken && <CodeAlarm kind="code" />}
-      {approvalGiven && !codeSpoken && <CodeAlarm kind="approval" />}
+      {alarm && <CodeAlarm kind={alarm} reason={alarm === "scam" ? result?.report?.findings.find((f) => f.weight > 0)?.title : undefined} />}
 
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <Card>
@@ -206,6 +217,14 @@ export default function CallGuard() {
               <div>
                 <Label htmlFor="num">{tr("Caller's number (as shown on your phone)")}</Label>
                 <input id="num" dir="ltr" className={inputCls} value={number} onChange={(e) => setNumber(e.target.value)} placeholder="+971 50 123 4567" disabled={live} />
+              </div>
+              <div>
+                <Label htmlFor="lang">{tr("Language spoken in the call")}</Label>
+                <select id="lang" className={inputCls} value={callLang} onChange={(e) => setCallLang(e.target.value as any)} disabled={live}>
+                  <option value="en">English</option>
+                  <option value="ar">العربية</option>
+                  <option value="auto">{tr("Detect automatically")}</option>
+                </select>
               </div>
             </div>
             {mode === "upload" && (

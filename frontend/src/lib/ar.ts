@@ -127,6 +127,8 @@ export const AR: Record<string, string> = {
   "To hear the result read aloud, add an Arabic voice in Windows: Settings → Time & language → Speech.":
     "لسماع النتيجة بصوت، أضف صوتاً عربياً في ويندوز: الإعدادات ← الوقت واللغة ← الكلام.",
   "Ask the caller": "اسأل المتصل",
+  "Language spoken in the call": "لغة المكالمة",
+  "Detect automatically": "تحديد تلقائي",
   "Ask, then stay quiet while the caller answers. The questions change with what the caller says.":
     "اسأل، ثم اصمت حتى يجيب المتصل. تتغيّر الأسئلة حسب ما يقوله المتصل.",
   "Copy": "نسخ",
@@ -137,6 +139,9 @@ export const AR: Record<string, string> = {
     "هذه المسودة لا تُرسل إلى أي جهة. راجعها، ثم أبلغ عبر تطبيق شرطة أبوظبي أو خدمة أمان (8002626).",
   "Stop! Don't give the code": "توقّف! لا تعطِه الرمز",
   "Call your bank now!": "اتصل ببنكك الآن!",
+  "This is a scam — hang up!": "هذا احتيال — أنهِ المكالمة!",
+  "Don't give any code, don't approve any notification and don't send money. Call the organisation yourself on its official number.":
+    "لا تعطِ أي رمز، ولا توافق على أي إشعار، ولا تحوّل أي مبلغ. اتصل بالجهة بنفسك على رقمها الرسمي.",
   "Someone on the call said they approved the request. If it was a payment, hang up and call your bank now — it can sometimes still be stopped.":
     "قال أحد طرفي المكالمة إنه وافق على الطلب. إذا كانت دفعة، أنهِ المكالمة واتصل ببنكك الآن — فقد يمكن إيقافها أحياناً.",
   "A number that looks like a one-time code was heard after the caller asked for a code. If it was your code, hang up and call your bank now to block the card.":

@@ -45,7 +45,8 @@ def call_status():
 @router.post("/analyze", dependencies=[Depends(rate_limit)])
 async def analyze_call(audio: UploadFile | None = File(default=None), caller_number: str | None = Form(default=None),
                        transcript: str | None = Form(default=None), consent: bool = Form(default=False),
-                       session_id: str | None = Form(default=None), db: Session = Depends(get_db), user: User = Depends(current_user)):
+                       session_id: str | None = Form(default=None), language: str | None = Form(default=None),
+                       db: Session = Depends(get_db), user: User = Depends(current_user)):
     if not consent:
         raise HTTPException(422, "Consent is required: confirm you are a participant in this call and that analysing it is allowed.")
     if caller_number and len(caller_number) > 40:
@@ -66,7 +67,16 @@ async def analyze_call(audio: UploadFile | None = File(default=None), caller_num
                 pcm = await run_in_threadpool(voice.decode_audio, data, suffix)
             except RuntimeError as exc:
                 raise HTTPException(422, str(exc))
-            stt = await run_in_threadpool(voice.transcribe, pcm)
+            # The person can pick the call language; otherwise a live session keeps the first confidently
+            # detected one, so one noisy chunk can't switch an English call to Arabic.
+            with _lock:
+                locked = (_sessions.get(session_id) or {}).get("lang") if session_id else None
+            lang = language if language in voice.LANGUAGES else locked
+            stt = await run_in_threadpool(voice.transcribe, pcm, lang)
+            if session_id and not lang and stt.get("language") in voice.LANGUAGES and (stt.get("language_probability") or 0) >= 0.8:
+                with _lock:
+                    if session_id in _sessions:
+                        _sessions[session_id]["lang"] = stt["language"]
             chunk_text = stt.get("text", "")
 
     ctx = build_context(db)

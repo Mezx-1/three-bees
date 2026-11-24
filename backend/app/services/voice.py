@@ -56,36 +56,39 @@ def stt_status() -> dict:
         return {"available": False, "engine": None, "note": "pip install faster-whisper to enable offline speech-to-text"}
 
 
-def transcribe(pcm: np.ndarray) -> dict:
+def transcribe(pcm: np.ndarray, language: str | None = None) -> dict:
+    """Speech to text. `language` ("ar" / "en") skips detection: faster and avoids mis-detecting accented speech."""
     if not stt_status()["available"]:
         return {"available": False, "text": "", "language": None}
     if len(pcm) < SR * 0.5:
         return {"available": True, "text": "", "language": None}
     with _STT_LOCK:  # one transcription at a time: live chunks queue instead of fighting for the CPU
-        return _transcribe(pcm)
+        return _transcribe(pcm, language if language in LANGUAGES else None)
 
 
 _STT_LOCK = threading.Lock()
 
 
-def _transcribe(pcm: np.ndarray) -> dict:
+def _run(model, pcm: np.ndarray, language: str | None):
+    segments, info = model.transcribe(pcm, beam_size=1, vad_filter=True, condition_on_previous_text=False, language=language)
+    return " ".join(s.text.strip() for s in segments).strip(), info
+
+
+def _transcribe(pcm: np.ndarray, language: str | None) -> dict:
     try:
         model = _model()
-        # Calls here are in Arabic or English. Short, noisy chunks are often mis-detected as another language
-        # (e.g. Persian), which turns the words into nonsense — so pick the more likely of the two.
-        lang, prob = None, None
-        try:
-            _, _, probs = model.detect_language(pcm, vad_filter=True)
-            scores = {code: p for code, p in probs if code in LANGUAGES}
+        text, info = _run(model, pcm, language)
+        prob = info.language_probability
+        if language is None and info.language not in LANGUAGES:
+            # A short, noisy chunk detected as another language (e.g. Persian) comes out as nonsense:
+            # redo it once in the more likely of Arabic / English.
+            scores = {code: p for code, p in (info.all_language_probs or []) if code in LANGUAGES}
             if scores:
-                lang = max(scores, key=scores.get)
-                prob = scores[lang]
-        except Exception:
-            log.debug("language detection failed; letting whisper decide", exc_info=True)
-        segments, info = model.transcribe(pcm, beam_size=1, vad_filter=True, condition_on_previous_text=False, language=lang)
-        text = " ".join(s.text.strip() for s in segments).strip()
-        return {"available": True, "text": text, "language": info.language,
-                "language_probability": round(prob if prob is not None else info.language_probability, 2)}
+                retry = max(scores, key=scores.get)
+                text, info = _run(model, pcm, retry)
+                prob = scores[retry]
+        return {"available": True, "text": text, "language": info.language, "language_probability": round(prob, 2),
+                "language_chosen": language is not None}
     except Exception as exc:
         log.exception("transcription failed")
         return {"available": True, "text": "", "language": None, "error": f"Transcription failed: {exc.__class__.__name__}"}
