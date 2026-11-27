@@ -6,7 +6,7 @@ python-multipart==0.0.34
 pillow==13.0.0
 httpx==0.28.1
 dnspython==2.9.2
-anthropic==2.10.0
+anthropic==2.13.0
 opencv-python-headless==5.1.0.95
 numpy==2.5.5
 # OCR (pip-only; Tesseract is used instead if installed + `pip install pytesseract`)
